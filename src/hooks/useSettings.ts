@@ -9,6 +9,7 @@ export interface AppSettings {
   fontColor: string;
   customFontUrl: string;
   customFontName: string;
+  showWritingPrompts: boolean;
 }
 
 const SETTINGS_KEY = 'diary-settings';
@@ -21,7 +22,8 @@ const defaultSettings: AppSettings = {
   backgroundColor: '#0a0a0a',
   fontColor: '#ededed',
   customFontUrl: '',
-  customFontName: ''
+  customFontName: '',
+  showWritingPrompts: true
 };
 
 const themeColors: Record<string, { primary: string; ring: string }> = {
