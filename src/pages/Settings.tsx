@@ -1,6 +1,7 @@
-import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette } from 'lucide-react';
+import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette, Download, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings, AppSettings } from '@/hooks/useSettings';
+import { useDiaryExportImport } from '@/hooks/useDiaryExportImport';
 
 const fontOptions: { value: AppSettings['fontFamily']; label: string }[] = [
   { value: 'inter', label: 'Inter' },
@@ -66,6 +67,7 @@ const CustomColorPicker = ({ value, onChange }: { value: string; onChange: (colo
 const Settings = () => {
   const navigate = useNavigate();
   const { settings, updateSetting } = useSettings();
+  const { exportData, triggerImport, handleFileChange, fileInputRef } = useDiaryExportImport();
 
   return (
     <main className="h-screen bg-background flex flex-col max-w-md mx-auto overflow-hidden">
@@ -256,11 +258,52 @@ const Settings = () => {
           </div>
         </section>
 
+        {/* Data Management */}
+        <section className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Download className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-sm font-medium text-foreground">Data Management</h2>
+              <p className="text-xs text-muted-foreground">Import or export your diary data</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={exportData}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-border 
+                text-foreground hover:border-primary/30 transition-smooth tap-highlight-none"
+            >
+              <Download className="w-4 h-4" />
+              <span className="text-sm">Export</span>
+            </button>
+            <button
+              onClick={triggerImport}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-border 
+                text-foreground hover:border-primary/30 transition-smooth tap-highlight-none"
+            >
+              <Upload className="w-4 h-4" />
+              <span className="text-sm">Import</span>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".zip"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            Export creates a backup zip file. Import restores from a backup.
+          </p>
+        </section>
+
         {/* About */}
         <section className="bg-card rounded-xl border border-border p-4">
           <h2 className="text-sm font-medium text-foreground mb-2">About</h2>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            My Diary App helps you capture your daily thoughts, tasks, and moments. 
+            KC's Dairy helps you capture your daily thoughts, tasks, and moments. 
             Your data is stored locally on your device.
           </p>
           <p className="text-xs text-muted-foreground/60 mt-3">
