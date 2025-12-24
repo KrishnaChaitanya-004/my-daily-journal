@@ -86,6 +86,8 @@ const Settings = () => {
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [pinError, setPinError] = useState('');
+  const [customFontUrlInput, setCustomFontUrlInput] = useState(settings.customFontUrl || '');
+  const [customFontNameInput, setCustomFontNameInput] = useState(settings.customFontName || '');
 
   const handleSetPin = () => {
     if (newPin.length < 4 || newPin.length > 6) {
@@ -312,8 +314,8 @@ const Settings = () => {
               </p>
               <input
                 type="url"
-                value={settings.customFontUrl || ''}
-                onChange={(e) => updateSetting('customFontUrl', e.target.value)}
+                value={customFontUrlInput}
+                onChange={(e) => setCustomFontUrlInput(e.target.value)}
                 placeholder="https://fonts.googleapis.com/css2?family=..."
                 className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-foreground 
                   placeholder:text-muted-foreground text-sm
@@ -323,14 +325,36 @@ const Settings = () => {
                 <label className="text-xs text-muted-foreground mb-1 block">Font Family Name (exact name from Google Fonts)</label>
                 <input
                   type="text"
-                  value={settings.customFontName || ''}
-                  onChange={(e) => updateSetting('customFontName', e.target.value)}
+                  value={customFontNameInput}
+                  onChange={(e) => setCustomFontNameInput(e.target.value)}
                   placeholder="e.g., Roboto, Open Sans, Poppins"
                   className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-foreground 
                     placeholder:text-muted-foreground text-sm
                     focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
+              <button
+                onClick={() => {
+                  if (customFontUrlInput && customFontNameInput) {
+                    updateSetting('customFontUrl', customFontUrlInput);
+                    updateSetting('customFontName', customFontNameInput);
+                    toast({
+                      title: 'Custom Font Applied',
+                      description: `Font "${customFontNameInput}" has been set.`,
+                    });
+                  } else {
+                    toast({
+                      title: 'Missing Info',
+                      description: 'Please enter both URL and font name.',
+                      variant: 'destructive',
+                    });
+                  }
+                }}
+                className="w-full px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium text-sm
+                  hover:bg-primary/90 transition-smooth"
+              >
+                Apply Font
+              </button>
               <p className="text-xs text-muted-foreground italic">
                 Tip: Go to fonts.google.com, select a font, click "Get embed code", copy the &lt;link&gt; href URL
               </p>
