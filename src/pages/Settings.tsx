@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette, Download, Upload, Lock, Fingerprint, Trash2 } from 'lucide-react';
+import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette, Download, Upload, Lock, Fingerprint, Trash2, Bell, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings, AppSettings } from '@/hooks/useSettings';
 import { useDiaryExportImport } from '@/hooks/useDiaryExportImport';
 import { useAppLock } from '@/hooks/useAppLock';
+import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 import { toast } from '@/hooks/use-toast';
 
 const fontOptions: { value: AppSettings['fontFamily']; label: string }[] = [
@@ -72,6 +73,13 @@ const Settings = () => {
   const { settings, updateSetting } = useSettings();
   const { exportData, triggerImport, handleFileChange, fileInputRef } = useDiaryExportImport();
   const { lockSettings, biometricAvailable, setPassword, removePassword, toggleBiometric } = useAppLock();
+  const { 
+    settings: notificationSettings, 
+    permissionGranted, 
+    updateSettings: updateNotificationSettings, 
+    enableNotifications, 
+    disableNotifications 
+  } = useNotificationSettings();
   
   const [showPinSetup, setShowPinSetup] = useState(false);
   const [newPin, setNewPin] = useState('');
@@ -111,6 +119,30 @@ const Settings = () => {
       title: 'App Lock Disabled',
       description: 'Your diary is no longer protected.',
     });
+  };
+
+  const handleToggleNotifications = async () => {
+    if (notificationSettings.enabled) {
+      disableNotifications();
+      toast({
+        title: 'Notifications Disabled',
+        description: 'Daily reminders turned off.',
+      });
+    } else {
+      const granted = await enableNotifications();
+      if (granted) {
+        toast({
+          title: 'Notifications Enabled',
+          description: `Daily reminder set for ${notificationSettings.time}`,
+        });
+      } else {
+        toast({
+          title: 'Permission Denied',
+          description: 'Please enable notifications in your browser settings.',
+          variant: 'destructive',
+        });
+      }
+    }
   };
 
   return (
@@ -424,6 +456,76 @@ const Settings = () => {
               <Lock className="w-4 h-4" />
               <span className="text-sm">Set PIN Lock</span>
             </button>
+          )}
+        </section>
+
+        {/* Daily Reminder */}
+        <section className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Bell className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-sm font-medium text-foreground">Daily Reminder</h2>
+              <p className="text-xs text-muted-foreground">Get reminded to write in your diary</p>
+            </div>
+          </div>
+          
+          {/* Toggle */}
+          <button
+            onClick={handleToggleNotifications}
+            className={`w-full flex items-center justify-between p-3 rounded-lg border transition-smooth mb-3
+              ${notificationSettings.enabled 
+                ? 'border-primary bg-primary/10' 
+                : 'border-border hover:border-primary/30'
+              }`}
+          >
+            <div className="flex items-center gap-2">
+              <Bell className="w-4 h-4" />
+              <span className="text-sm text-foreground">Enable Notifications</span>
+            </div>
+            <div className={`w-10 h-6 rounded-full transition-all ${
+              notificationSettings.enabled ? 'bg-primary' : 'bg-muted'
+            }`}>
+              <div className={`w-5 h-5 rounded-full bg-white mt-0.5 transition-all`} 
+                style={{ marginLeft: notificationSettings.enabled ? '18px' : '2px' }} />
+            </div>
+          </button>
+          
+          {notificationSettings.enabled && (
+            <div className="space-y-3">
+              {/* Time Picker */}
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  Reminder Time
+                </label>
+                <input
+                  type="time"
+                  value={notificationSettings.time}
+                  onChange={(e) => updateNotificationSettings({ time: e.target.value })}
+                  className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground 
+                    focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+              
+              {/* Message */}
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">
+                  Reminder Message
+                </label>
+                <input
+                  type="text"
+                  value={notificationSettings.message}
+                  onChange={(e) => updateNotificationSettings({ message: e.target.value })}
+                  placeholder="boss! its diary time ✨"
+                  maxLength={100}
+                  className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground 
+                    placeholder:text-muted-foreground
+                    focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+            </div>
           )}
         </section>
 

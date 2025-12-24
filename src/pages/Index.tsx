@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Bookmark } from 'lucide-react';
 import Calendar from '@/components/Calendar';
@@ -7,6 +7,7 @@ import AppMenu from '@/components/AppMenu';
 import { useFileStorage } from '@/hooks/useFileStorage';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { useSettings } from '@/hooks/useSettings';
+import { useAutoSave } from '@/hooks/useAutoSave';
 
 const Index = () => {
   const [searchParams] = useSearchParams();
@@ -41,6 +42,25 @@ const Index = () => {
   } = useFileStorage(selectedDate);
 
   const { isBookmarked, toggleBookmark } = useBookmarks();
+  
+  // Auto-save when app goes to background
+  const { registerSaveCallback } = useAutoSave();
+  const contentRef = useRef(content);
+  
+  // Keep content ref updated
+  useEffect(() => {
+    contentRef.current = content;
+  }, [content]);
+  
+  // Register auto-save callback
+  useEffect(() => {
+    registerSaveCallback(() => {
+      // Content is already saved on each change, but this ensures any pending saves are flushed
+      if (contentRef.current) {
+        saveContent(contentRef.current);
+      }
+    });
+  }, [registerSaveCallback, saveContent]);
 
   // Update date from URL param
   useEffect(() => {
