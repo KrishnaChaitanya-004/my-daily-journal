@@ -144,7 +144,7 @@ const DailyContent = ({
             if (photo) {
               const photoUrl = getPhotoUrl(photo);
               return (
-                <div key={index} className="py-1">
+                <div key={index} className="py-1" onClick={(e) => e.stopPropagation()}>
                   <PhotoThumbnail
                     src={photoUrl}
                     timestamp={photo.timestamp}
