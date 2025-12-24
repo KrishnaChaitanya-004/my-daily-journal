@@ -310,28 +310,35 @@ const Settings = () => {
                 <span className="text-sm font-medium text-foreground">Import Custom Font</span>
               </div>
               <p className="text-xs text-muted-foreground">
-                Paste a <strong>Google Fonts URL</strong> (e.g., https://fonts.googleapis.com/css2?family=Roboto)
+                Paste a <strong>Google Fonts URL</strong>
               </p>
               <input
                 type="url"
                 value={customFontUrlInput}
                 onChange={(e) => setCustomFontUrlInput(e.target.value)}
-                placeholder="https://fonts.googleapis.com/css2?family=..."
+                placeholder="https://fonts.googleapis.com/css2?family=Roboto"
                 className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-foreground 
                   placeholder:text-muted-foreground text-sm
                   focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
               <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Font Family Name (exact name from Google Fonts)</label>
+                <label className="text-xs text-muted-foreground mb-1 block">
+                  Font Family Name <strong>(exact name from URL, replace + with space)</strong>
+                </label>
                 <input
                   type="text"
                   value={customFontNameInput}
                   onChange={(e) => setCustomFontNameInput(e.target.value)}
-                  placeholder="e.g., Roboto, Open Sans, Poppins"
+                  placeholder="Rubik Gemstones"
                   className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-foreground 
                     placeholder:text-muted-foreground text-sm
                     focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
+              </div>
+              <div className="p-3 rounded-lg bg-secondary/50 text-xs text-muted-foreground space-y-1">
+                <p><strong>Example:</strong></p>
+                <p>URL: https://fonts.googleapis.com/css2?family=<strong>Rubik+Gemstones</strong>&display=swap</p>
+                <p>Font Name: <strong>Rubik Gemstones</strong> (replace + with space)</p>
               </div>
               <button
                 onClick={() => {
@@ -340,7 +347,7 @@ const Settings = () => {
                     updateSetting('customFontName', customFontNameInput);
                     toast({
                       title: 'Custom Font Applied',
-                      description: `Font "${customFontNameInput}" has been set.`,
+                      description: `Font "${customFontNameInput}" is loading...`,
                     });
                   } else {
                     toast({
@@ -355,9 +362,6 @@ const Settings = () => {
               >
                 Apply Font
               </button>
-              <p className="text-xs text-muted-foreground italic">
-                Tip: Go to fonts.google.com, select a font, click "Get embed code", copy the &lt;link&gt; href URL
-              </p>
             </div>
           )}
         </section>
