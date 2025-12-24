@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette, Download, Upload, Lock, Fingerprint, Trash2, Bell, Clock } from 'lucide-react';
+import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette, Download, Upload, Lock, Fingerprint, Trash2, Bell, Clock, Link2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings, AppSettings } from '@/hooks/useSettings';
 import { useDiaryExportImport } from '@/hooks/useDiaryExportImport';
@@ -11,7 +11,8 @@ const fontOptions: { value: AppSettings['fontFamily']; label: string }[] = [
   { value: 'inter', label: 'Inter' },
   { value: 'delius', label: 'Delius' },
   { value: 'georgia', label: 'Georgia' },
-  { value: 'courier', label: 'Courier' }
+  { value: 'courier', label: 'Courier' },
+  { value: 'custom', label: 'Custom' }
 ];
 
 const fontSizeOptions: { value: AppSettings['fontSize']; label: string }[] = [
@@ -289,13 +290,52 @@ const Settings = () => {
                 style={{
                   fontFamily: option.value === 'inter' ? "'Inter', sans-serif" :
                     option.value === 'delius' ? "'Delius', cursive" :
-                    option.value === 'georgia' ? "'Georgia', serif" : "'Courier New', monospace"
+                    option.value === 'georgia' ? "'Georgia', serif" :
+                    option.value === 'courier' ? "'Courier New', monospace" :
+                    settings.customFontName ? `'${settings.customFontName}', sans-serif` : "'Inter', sans-serif"
                 }}
               >
                 {option.label}
               </button>
             ))}
           </div>
+          
+          {/* Custom Font Import */}
+          {settings.fontFamily === 'custom' && (
+            <div className="mt-4 space-y-3 pt-4 border-t border-border">
+              <div className="flex items-center gap-2 mb-2">
+                <Link2 className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-foreground">Import Custom Font</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Paste a <strong>Google Fonts URL</strong> (e.g., https://fonts.googleapis.com/css2?family=Roboto)
+              </p>
+              <input
+                type="url"
+                value={settings.customFontUrl || ''}
+                onChange={(e) => updateSetting('customFontUrl', e.target.value)}
+                placeholder="https://fonts.googleapis.com/css2?family=..."
+                className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-foreground 
+                  placeholder:text-muted-foreground text-sm
+                  focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Font Family Name (exact name from Google Fonts)</label>
+                <input
+                  type="text"
+                  value={settings.customFontName || ''}
+                  onChange={(e) => updateSetting('customFontName', e.target.value)}
+                  placeholder="e.g., Roboto, Open Sans, Poppins"
+                  className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-foreground 
+                    placeholder:text-muted-foreground text-sm
+                    focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground italic">
+                Tip: Go to fonts.google.com, select a font, click "Get embed code", copy the &lt;link&gt; href URL
+              </p>
+            </div>
+          )}
         </section>
 
         {/* Font Size */}

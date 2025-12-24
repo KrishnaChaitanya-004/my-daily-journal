@@ -1,12 +1,14 @@
 import { useState, useCallback, useEffect } from 'react';
 
 export interface AppSettings {
-  fontFamily: 'inter' | 'delius' | 'georgia' | 'courier';
+  fontFamily: 'inter' | 'delius' | 'georgia' | 'courier' | 'custom';
   fontSize: 'small' | 'medium' | 'large';
   themeColor: 'red' | 'blue' | 'green' | 'purple' | 'orange' | 'pink' | 'custom';
   customThemeColor: string;
   backgroundColor: string;
   fontColor: string;
+  customFontUrl: string;
+  customFontName: string;
 }
 
 const SETTINGS_KEY = 'diary-settings';
@@ -17,7 +19,9 @@ const defaultSettings: AppSettings = {
   themeColor: 'red',
   customThemeColor: '#ef4444',
   backgroundColor: '#0a0a0a',
-  fontColor: '#ededed'
+  fontColor: '#ededed',
+  customFontUrl: '',
+  customFontName: ''
 };
 
 const themeColors: Record<string, { primary: string; ring: string }> = {
@@ -33,7 +37,8 @@ const fontFamilies: Record<string, string> = {
   inter: "'Inter', system-ui, sans-serif",
   delius: "'Delius', cursive",
   georgia: "'Georgia', serif",
-  courier: "'Courier New', monospace"
+  courier: "'Courier New', monospace",
+  custom: "'CustomFont', system-ui, sans-serif"
 };
 
 // Convert hex to HSL values
@@ -132,8 +137,28 @@ export const useSettings = () => {
     root.style.setProperty('--secondary-foreground', hexToHsl(fgColor));
     root.style.setProperty('--accent-foreground', hexToHsl(fgColor));
     
-    // Apply font family
-    document.body.style.fontFamily = fontFamilies[settings.fontFamily];
+    // Apply custom font if set
+    if (settings.fontFamily === 'custom' && settings.customFontUrl) {
+      // Remove old custom font link if exists
+      const existingLink = document.getElementById('custom-font-link');
+      if (existingLink) existingLink.remove();
+      
+      // Add new custom font link
+      const link = document.createElement('link');
+      link.id = 'custom-font-link';
+      link.rel = 'stylesheet';
+      link.href = settings.customFontUrl;
+      document.head.appendChild(link);
+      
+      // Use custom font name or fallback
+      const customFontFamily = settings.customFontName 
+        ? `'${settings.customFontName}', system-ui, sans-serif`
+        : fontFamilies.custom;
+      document.body.style.fontFamily = customFontFamily;
+    } else {
+      // Apply font family
+      document.body.style.fontFamily = fontFamilies[settings.fontFamily];
+    }
     
     // Apply font size
     const fontSizes = { small: '14px', medium: '16px', large: '18px' };
