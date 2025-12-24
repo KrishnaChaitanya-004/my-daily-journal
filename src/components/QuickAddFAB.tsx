@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Mic, CheckSquare, X, BarChart3 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Plus, Pencil, Mic, CheckSquare, X } from 'lucide-react';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 
 interface QuickAddFABProps {
@@ -11,7 +10,6 @@ interface QuickAddFABProps {
 
 const QuickAddFAB = ({ onAddNote, onAddVoice, onAddTask }: QuickAddFABProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const navigate = useNavigate();
   const { isRecording, duration, startRecording, stopRecording, formatDuration } = useVoiceRecorder();
 
   const handleVoiceRecord = async () => {
@@ -27,20 +25,14 @@ const QuickAddFAB = ({ onAddNote, onAddVoice, onAddTask }: QuickAddFABProps) => 
   };
 
   const handleNoteClick = () => {
-    onAddNote();
     setIsOpen(false);
-    // Scroll to content area and focus - the parent will handle edit mode
-    const contentArea = document.querySelector('[data-content-editor]');
-    if (contentArea instanceof HTMLTextAreaElement) {
-      contentArea.focus();
-    }
+    onAddNote();
   };
 
   const actions = [
     { icon: Pencil, label: 'Note', action: handleNoteClick, color: 'bg-blue-500' },
     { icon: Mic, label: isRecording ? formatDuration(duration) : 'Voice', action: handleVoiceRecord, color: isRecording ? 'bg-red-500' : 'bg-purple-500' },
-    { icon: CheckSquare, label: 'Task', action: () => { onAddTask(); setIsOpen(false); }, color: 'bg-orange-500' },
-    { icon: BarChart3, label: 'Statistics', action: () => { navigate('/statistics'); setIsOpen(false); }, color: 'bg-teal-500' }
+    { icon: CheckSquare, label: 'Task', action: () => { onAddTask(); setIsOpen(false); }, color: 'bg-orange-500' }
   ];
 
   return (
