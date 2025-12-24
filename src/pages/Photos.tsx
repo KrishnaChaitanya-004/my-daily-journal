@@ -1,20 +1,23 @@
-import { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAllPhotos } from '@/hooks/useAllPhotos';
-import PhotoViewer from '@/components/PhotoViewer';
 import { format } from 'date-fns';
 
 const Photos = () => {
   const navigate = useNavigate();
   const { allPhotos, getPhotoUrl } = useAllPhotos();
-  const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
 
   const formatDate = (dateKey: string) => {
     try {
       return format(new Date(dateKey), 'MMM d, yyyy');
     } catch {
       return dateKey;
+    }
+  };
+
+  const handlePhotoClick = (dateKey: string | undefined) => {
+    if (dateKey) {
+      navigate(`/?date=${dateKey}`);
     }
   };
 
@@ -30,14 +33,6 @@ const Photos = () => {
         </button>
         <h1 className="text-lg font-medium text-foreground">Photos</h1>
       </header>
-
-      {/* Photo viewer modal */}
-      {viewingPhoto && (
-        <PhotoViewer 
-          src={viewingPhoto} 
-          onClose={() => setViewingPhoto(null)} 
-        />
-      )}
 
       {/* Photo grid */}
       <div className="flex-1 overflow-y-auto p-4">
@@ -58,7 +53,7 @@ const Photos = () => {
               return (
                 <button
                   key={`${photo.filename}-${index}`}
-                  onClick={() => setViewingPhoto(photoUrl)}
+                  onClick={() => handlePhotoClick(photo.dateKey)}
                   className="aspect-square rounded-lg overflow-hidden bg-secondary relative group"
                 >
                   <img
