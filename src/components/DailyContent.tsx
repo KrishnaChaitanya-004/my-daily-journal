@@ -412,6 +412,7 @@ const DailyContent = ({
           <div className="flex-1 p-4 overflow-hidden">
             <textarea
               ref={textareaRef}
+              data-content-editor
               value={localContent}
               onChange={handleContentChange}
               placeholder="Start writing..."

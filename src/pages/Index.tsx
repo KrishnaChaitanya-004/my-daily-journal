@@ -215,12 +215,14 @@ const Index = () => {
       {/* Quick Add FAB */}
       <QuickAddFAB
         onAddNote={() => {
-          // Trigger edit mode - content area handles this
+          // Focus on content editor
+          const contentArea = document.querySelector('[data-content-editor]');
+          if (contentArea instanceof HTMLTextAreaElement) {
+            contentArea.focus();
+          }
         }}
-        onAddPhoto={handleAddPhoto}
         onAddVoice={handleSaveVoiceNote}
         onAddTask={() => {
-          // Could open a quick task dialog
           const task = prompt('Add a task:');
           if (task) addTask(task);
         }}
