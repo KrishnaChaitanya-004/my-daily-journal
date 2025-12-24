@@ -1,5 +1,6 @@
 import { Menu, X, Image, Bookmark, Settings, Home } from 'lucide-react';
 import { useState } from 'react';
+import appLogo from '@/assets/app-logo.jpeg';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const menuItems = [
@@ -47,7 +48,14 @@ const AppMenu = () => {
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <span className="text-lg font-medium text-foreground">Menu</span>
+          <div className="flex items-center gap-3">
+            <img 
+              src={appLogo} 
+              alt="KC's Dairy" 
+              className="w-10 h-10 rounded-full object-cover border-2 border-primary"
+            />
+            <span className="text-lg font-medium text-foreground">KC's Dairy</span>
+          </div>
           <button
             onClick={() => setIsOpen(false)}
             className="p-2 text-muted-foreground hover:text-foreground transition-smooth tap-highlight-none"
@@ -83,7 +91,7 @@ const AppMenu = () => {
         {/* Footer */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border">
           <p className="text-xs text-muted-foreground text-center">
-            My Diary App
+            KC's Dairy
           </p>
         </div>
       </div>
