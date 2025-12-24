@@ -1,6 +1,7 @@
-import { ArrowLeft, TrendingUp, Calendar, Image, CheckSquare, Flame, BarChart3 } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Calendar, Image, CheckSquare, Flame, BarChart3, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStatistics } from '@/hooks/useStatistics';
+import { useHabits } from '@/hooks/useHabits';
 import { 
   ChartContainer, 
   ChartTooltip, 
@@ -10,18 +11,17 @@ import {
   BarChart, 
   Bar, 
   XAxis, 
-  YAxis, 
-  LineChart, 
-  Line, 
-  ResponsiveContainer,
   AreaChart,
   Area
 } from 'recharts';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, subDays } from 'date-fns';
+import { getAllDiaryData, DayFileData } from '@/hooks/useFileStorage';
 
 const Statistics = () => {
   const navigate = useNavigate();
   const { dailyStats, weekdayStats, monthlyStats, summary } = useStatistics();
+  const { habits, getHabitStats } = useHabits();
+  const allData = getAllDiaryData();
 
   // Format daily stats for chart
   const chartData = dailyStats.map(stat => ({
@@ -31,10 +31,35 @@ const Statistics = () => {
     hasEntry: stat.hasEntry ? 1 : 0
   }));
 
+  // Habits consistency data (last 30 days)
+  const habitsConsistencyData = (() => {
+    const data: { date: string; completed: number; total: number; percentage: number }[] = [];
+    const today = new Date();
+    
+    for (let i = 29; i >= 0; i--) {
+      const date = subDays(today, i);
+      const dateKey = date.toISOString().split('T')[0];
+      const dayData = allData[dateKey] as DayFileData | undefined;
+      
+      const completedHabits = habits.filter(h => dayData?.habits?.[h.id]).length;
+      const percentage = habits.length > 0 ? Math.round((completedHabits / habits.length) * 100) : 0;
+      
+      data.push({
+        date: format(date, 'MMM d'),
+        completed: completedHabits,
+        total: habits.length,
+        percentage
+      });
+    }
+    
+    return data;
+  })();
+
   const chartConfig = {
     words: { label: 'Words', color: 'hsl(var(--primary))' },
     photos: { label: 'Photos', color: 'hsl(var(--accent))' },
-    entries: { label: 'Entries', color: 'hsl(var(--primary))' }
+    entries: { label: 'Entries', color: 'hsl(var(--primary))' },
+    percentage: { label: 'Completion %', color: 'hsl(142, 76%, 36%)' }
   };
 
   return (
@@ -50,7 +75,7 @@ const Statistics = () => {
         <h1 className="text-lg font-medium text-foreground">Statistics</h1>
       </header>
 
-      <div className="p-4 space-y-6">
+      <div className="p-4 space-y-4 pb-8">
         {/* Summary Cards */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-card rounded-xl p-4 border border-border">
@@ -91,8 +116,8 @@ const Statistics = () => {
         </div>
 
         {/* Additional Stats */}
-        <div className="flex gap-3">
-          <div className="flex-1 bg-card rounded-xl p-4 border border-border text-center">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-card rounded-xl p-4 border border-border text-center">
             <div className="flex justify-center text-primary mb-1">
               <Image className="w-4 h-4" />
             </div>
@@ -100,7 +125,7 @@ const Statistics = () => {
             <p className="text-xs text-muted-foreground">Photos</p>
           </div>
           
-          <div className="flex-1 bg-card rounded-xl p-4 border border-border text-center">
+          <div className="bg-card rounded-xl p-4 border border-border text-center">
             <div className="flex justify-center text-primary mb-1">
               <CheckSquare className="w-4 h-4" />
             </div>
@@ -114,7 +139,7 @@ const Statistics = () => {
           <h3 className="text-sm font-medium text-foreground mb-4">Words Written (Last 30 Days)</h3>
           <div className="h-40">
             <ChartContainer config={chartConfig}>
-              <AreaChart data={chartData}>
+              <AreaChart data={chartData} margin={{ left: 0, right: 0, top: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="wordGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
@@ -127,6 +152,7 @@ const Statistics = () => {
                   tickLine={false}
                   axisLine={false}
                   interval="preserveStartEnd"
+                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
                 />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Area 
@@ -141,17 +167,68 @@ const Statistics = () => {
           </div>
         </div>
 
+        {/* Habits Consistency Chart */}
+        {habits.length > 0 && (
+          <div className="bg-card rounded-xl p-4 border border-border">
+            <div className="flex items-center gap-2 mb-4">
+              <Target className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-medium text-foreground">Habits Consistency (Last 30 Days)</h3>
+            </div>
+            <div className="h-32">
+              <ChartContainer config={chartConfig}>
+                <AreaChart data={habitsConsistencyData} margin={{ left: 0, right: 0, top: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="habitGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis 
+                    dataKey="date" 
+                    fontSize={10} 
+                    tickLine={false}
+                    axisLine={false}
+                    interval="preserveStartEnd"
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Area 
+                    type="monotone" 
+                    dataKey="percentage" 
+                    stroke="hsl(142, 76%, 36%)" 
+                    fillOpacity={1}
+                    fill="url(#habitGradient)"
+                  />
+                </AreaChart>
+              </ChartContainer>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {habits.slice(0, 4).map(habit => {
+                const stats = getHabitStats(habit.id);
+                return (
+                  <div key={habit.id} className="flex items-center gap-2 text-xs">
+                    <span>{habit.icon}</span>
+                    <span className="text-muted-foreground truncate">{habit.name}</span>
+                    <span className="text-foreground ml-auto">{stats.streak}🔥</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Most Active Days */}
-        <div className="bg-card rounded-xl p-4 border border-border">
+        <div className="bg-card rounded-xl p-4 border border-border overflow-hidden">
           <h3 className="text-sm font-medium text-foreground mb-4">Most Active Days</h3>
           <div className="h-32">
             <ChartContainer config={chartConfig}>
-              <BarChart data={weekdayStats}>
+              <BarChart data={weekdayStats} margin={{ left: 0, right: 0, top: 0, bottom: 0 }}>
                 <XAxis 
                   dataKey="day" 
                   fontSize={10} 
                   tickLine={false}
                   axisLine={false}
+                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
                 />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar 
