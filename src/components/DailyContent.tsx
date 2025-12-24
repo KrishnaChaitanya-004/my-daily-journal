@@ -168,14 +168,14 @@ const DailyContent = ({
           if (isUncheckedTask || isCheckedTask) {
             const taskContent = line.slice(2);
             return (
-              <div key={index} className="flex items-center gap-2 py-0.5">
+              <div key={index} className="flex items-baseline gap-2 py-0.5">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onToggleTask(index);
                   }}
                   className={`
-                    text-[20px] leading-none transition-smooth tap-highlight-none flex-shrink-0
+                    text-[14px] leading-none transition-smooth tap-highlight-none flex-shrink-0
                     ${isCheckedTask ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}
                   `}
                 >
@@ -183,7 +183,7 @@ const DailyContent = ({
                 </button>
                 <span
                   className={`
-                    text-sm font-light leading-relaxed
+                    text-sm font-light
                     ${isCheckedTask ? 'line-through text-muted-foreground' : 'text-foreground'}
                   `}
                 >
