@@ -205,29 +205,37 @@ const Statistics = () => {
           </div>
         )}
 
-        {/* Most Active Days */}
-        <div className="bg-card rounded-xl p-4 border border-border overflow-hidden">
-          <h3 className="text-sm font-medium text-foreground mb-4">Most Active Days</h3>
-          <div className="h-32">
-            <ChartContainer config={chartConfig}>
-              <BarChart data={weekdayStats} margin={{ left: 0, right: 0, top: 0, bottom: 0 }}>
-                <XAxis 
-                  dataKey="day" 
-                  fontSize={10} 
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar 
-                  dataKey="entries" 
-                  fill="hsl(var(--primary))" 
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ChartContainer>
+        {/* Most Active Months */}
+        {monthlyStats.length > 0 && (
+          <div className="bg-card rounded-xl p-4 border border-border overflow-hidden">
+            <h3 className="text-sm font-medium text-foreground mb-4">Most Active Months</h3>
+            <div className="h-40">
+              <ChartContainer config={chartConfig}>
+                <BarChart 
+                  data={monthlyStats.slice(-6).map(m => ({
+                    month: format(parseISO(m.month + '-01'), 'MMM'),
+                    entries: m.entries
+                  }))} 
+                  margin={{ left: 0, right: 0, top: 0, bottom: 20 }}
+                >
+                  <XAxis 
+                    dataKey="month" 
+                    fontSize={10} 
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar 
+                    dataKey="entries" 
+                    fill="hsl(var(--primary))" 
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ChartContainer>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Monthly Overview */}
         {monthlyStats.length > 0 && (
