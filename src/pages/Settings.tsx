@@ -1,4 +1,4 @@
-import { ArrowLeft, Type, Palette, TextCursor } from 'lucide-react';
+import { ArrowLeft, Type, Palette, TextCursor, PaintBucket } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings, AppSettings } from '@/hooks/useSettings';
 
@@ -22,6 +22,28 @@ const colorOptions: { value: AppSettings['themeColor']; color: string }[] = [
   { value: 'purple', color: 'bg-purple-500' },
   { value: 'orange', color: 'bg-orange-500' },
   { value: 'pink', color: 'bg-pink-500' }
+];
+
+const backgroundColorOptions = [
+  { value: '#0a0a0a', label: 'Black' },
+  { value: '#1a1a2e', label: 'Navy' },
+  { value: '#16213e', label: 'Dark Blue' },
+  { value: '#1a1a1a', label: 'Charcoal' },
+  { value: '#2d2d2d', label: 'Gray' },
+  { value: '#f5f5f5', label: 'Light Gray' },
+  { value: '#ffffff', label: 'White' },
+  { value: '#fef3e2', label: 'Cream' }
+];
+
+const fontColorOptions = [
+  { value: '#ededed', label: 'White' },
+  { value: '#a0a0a0', label: 'Gray' },
+  { value: '#e0e0e0', label: 'Light Gray' },
+  { value: '#1a1a1a', label: 'Black' },
+  { value: '#333333', label: 'Dark Gray' },
+  { value: '#5c4033', label: 'Brown' },
+  { value: '#2c5530', label: 'Forest' },
+  { value: '#1e3a5f', label: 'Navy' }
 ];
 
 const Settings = () => {
@@ -68,6 +90,96 @@ const Settings = () => {
                 `}
               />
             ))}
+          </div>
+        </section>
+
+        {/* Background Color */}
+        <section className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <PaintBucket className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-sm font-medium text-foreground">Background Color</h2>
+              <p className="text-xs text-muted-foreground">Set your background color</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {backgroundColorOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => updateSetting('backgroundColor', option.value)}
+                title={option.label}
+                className={`
+                  w-10 h-10 rounded-full transition-smooth tap-highlight-none border border-border
+                  ${settings.backgroundColor === option.value 
+                    ? 'ring-2 ring-offset-2 ring-offset-card ring-foreground scale-110' 
+                    : 'hover:scale-105'
+                  }
+                `}
+                style={{ backgroundColor: option.value }}
+              />
+            ))}
+            {/* Custom color picker */}
+            <label
+              className={`
+                w-10 h-10 rounded-full transition-smooth tap-highlight-none border-2 border-dashed border-muted-foreground 
+                flex items-center justify-center cursor-pointer hover:border-primary overflow-hidden
+              `}
+              title="Custom color"
+            >
+              <input
+                type="color"
+                value={settings.backgroundColor}
+                onChange={(e) => updateSetting('backgroundColor', e.target.value)}
+                className="w-12 h-12 cursor-pointer border-none"
+              />
+            </label>
+          </div>
+        </section>
+
+        {/* Font Color */}
+        <section className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Type className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-sm font-medium text-foreground">Font Color</h2>
+              <p className="text-xs text-muted-foreground">Set your text color</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {fontColorOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => updateSetting('fontColor', option.value)}
+                title={option.label}
+                className={`
+                  w-10 h-10 rounded-full transition-smooth tap-highlight-none border border-border
+                  ${settings.fontColor === option.value 
+                    ? 'ring-2 ring-offset-2 ring-offset-card ring-foreground scale-110' 
+                    : 'hover:scale-105'
+                  }
+                `}
+                style={{ backgroundColor: option.value }}
+              />
+            ))}
+            {/* Custom color picker */}
+            <label
+              className={`
+                w-10 h-10 rounded-full transition-smooth tap-highlight-none border-2 border-dashed border-muted-foreground 
+                flex items-center justify-center cursor-pointer hover:border-primary overflow-hidden
+              `}
+              title="Custom color"
+            >
+              <input
+                type="color"
+                value={settings.fontColor}
+                onChange={(e) => updateSetting('fontColor', e.target.value)}
+                className="w-12 h-12 cursor-pointer border-none"
+              />
+            </label>
           </div>
         </section>
 
