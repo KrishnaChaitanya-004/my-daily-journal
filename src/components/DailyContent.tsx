@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Check, X, Type, CheckSquare } from 'lucide-react';
+import { Type, CheckSquare } from 'lucide-react';
 import type { ContentItem } from '@/hooks/useDiaryStorage';
 
 interface DailyContentProps {
@@ -29,10 +29,8 @@ const DailyContent = ({
   };
 
   const startEdit = (item: ContentItem) => {
-    if (item.type === 'note') {
-      setEditingId(item.id);
-      setEditText(item.text);
-    }
+    setEditingId(item.id);
+    setEditText(item.text);
   };
 
   const saveEdit = () => {
@@ -43,92 +41,104 @@ const DailyContent = ({
     setEditText('');
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      saveEdit();
+    }
+    if (e.key === 'Escape') {
+      setEditingId(null);
+      setEditText('');
+    }
+  };
+
   return (
     <div className="w-full p-4 animate-fade-in flex flex-col h-full">
-      {/* Content list */}
-      <div className="flex-1 space-y-3 mb-4 overflow-y-auto">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className="flex items-start gap-3 group animate-slide-up"
-          >
-            {item.type === 'task' ? (
-              <>
-                <button
-                  onClick={() => onToggleItem(item.id)}
-                  className={`
-                    flex-shrink-0 w-5 h-5 mt-0.5 rounded border
-                    flex items-center justify-center
-                    transition-smooth tap-highlight-none
-                    ${item.completed 
-                      ? 'bg-primary border-primary' 
-                      : 'border-muted-foreground/40 hover:border-muted-foreground'
-                    }
-                  `}
-                >
-                  {item.completed && <Check className="w-3 h-3 text-primary-foreground" />}
-                </button>
-                <span
-                  className={`
-                    flex-1 text-sm font-light transition-smooth leading-relaxed
-                    ${item.completed ? 'text-muted-foreground line-through' : 'text-foreground'}
-                  `}
-                >
-                  {item.text}
-                </span>
-              </>
-            ) : (
-              <>
-                <div className="flex-shrink-0 w-5 h-5 mt-0.5 flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
-                </div>
-                {editingId === item.id ? (
-                  <input
-                    type="text"
-                    value={editText}
-                    onChange={(e) => setEditText(e.target.value)}
-                    onBlur={saveEdit}
-                    onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
-                    autoFocus
-                    className="
-                      flex-1 text-sm font-light leading-relaxed
-                      bg-transparent text-foreground
-                      border-b border-primary
-                      focus:outline-none
-                    "
-                  />
+      {/* Document-style flowing content */}
+      <div className="flex-1 mb-4 overflow-y-auto">
+        <div className="text-sm font-light leading-relaxed text-foreground">
+          {items.length === 0 ? (
+            <p className="text-muted-foreground/60 py-8 text-center">
+              Start writing...
+            </p>
+          ) : (
+            items.map((item, index) => (
+              <span key={item.id} className="inline">
+                {item.type === 'task' ? (
+                  <span className="inline-flex items-baseline group">
+                    <button
+                      onClick={() => onToggleItem(item.id)}
+                      className={`
+                        inline-flex items-center justify-center
+                        w-4 h-4 mr-1 align-middle
+                        transition-smooth tap-highlight-none
+                        ${item.completed ? 'text-primary' : 'text-muted-foreground'}
+                      `}
+                    >
+                      {item.completed ? '✓' : '□'}
+                    </button>
+                    {editingId === item.id ? (
+                      <input
+                        type="text"
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        onBlur={saveEdit}
+                        onKeyDown={handleKeyDown}
+                        autoFocus
+                        className="
+                          bg-transparent border-b border-primary
+                          focus:outline-none text-sm font-light
+                        "
+                        style={{ width: `${editText.length + 1}ch` }}
+                      />
+                    ) : (
+                      <span
+                        onClick={() => startEdit(item)}
+                        onDoubleClick={() => onDeleteItem(item.id)}
+                        className={`
+                          cursor-pointer hover:text-primary transition-smooth
+                          ${item.completed ? 'line-through text-muted-foreground' : ''}
+                        `}
+                        title="Click to edit, double-click to delete"
+                      >
+                        {item.text}
+                      </span>
+                    )}
+                    {index < items.length - 1 && <br />}
+                  </span>
                 ) : (
-                  <span
-                    onClick={() => startEdit(item)}
-                    className="
-                      flex-1 text-sm font-light text-foreground leading-relaxed
-                      cursor-text hover:text-foreground/80 transition-smooth
-                    "
-                  >
-                    {item.text}
+                  <span className="inline group">
+                    {editingId === item.id ? (
+                      <textarea
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        onBlur={saveEdit}
+                        onKeyDown={handleKeyDown}
+                        autoFocus
+                        rows={Math.max(1, editText.split('\n').length)}
+                        className="
+                          bg-transparent border-b border-primary
+                          focus:outline-none text-sm font-light
+                          w-full resize-none
+                        "
+                      />
+                    ) : (
+                      <span
+                        onClick={() => startEdit(item)}
+                        onDoubleClick={() => onDeleteItem(item.id)}
+                        className="cursor-pointer hover:text-foreground/80 transition-smooth whitespace-pre-wrap"
+                        title="Click to edit, double-click to delete"
+                      >
+                        {item.text}
+                      </span>
+                    )}
+                    {index < items.length - 1 && ' '}
                   </span>
                 )}
-              </>
-            )}
-            
-            <button
-              onClick={() => onDeleteItem(item.id)}
-              className="
-                opacity-0 group-hover:opacity-100
-                p-1 text-muted-foreground hover:text-destructive
-                transition-smooth tap-highlight-none flex-shrink-0
-              "
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        ))}
-        
-        {items.length === 0 && (
-          <p className="text-sm text-muted-foreground/60 font-light py-8 text-center">
-            Start writing...
-          </p>
-        )}
+              </span>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Input area */}
