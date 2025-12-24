@@ -35,21 +35,22 @@ const DailyContent = ({
 }: DailyContentProps) => {
   const [taskText, setTaskText] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const [localContent, setLocalContent] = useState(content);
+  const [editableText, setEditableText] = useState('');
   const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Sync localContent when content changes (e.g., date change or task toggle)
-  useEffect(() => {
-    setLocalContent(content);
-  }, [content]);
-
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newContent = e.target.value;
-    setLocalContent(newContent);
-    onUpdateContent(newContent);
+  // Helper to strip photo markers
+  const stripPhotoMarkers = (text: string): string => {
+    return text.replace(/\[photo:.+?\]\n?/g, '').trim();
   };
+  
+  // When entering edit mode, initialize editable text without photo markers
+  useEffect(() => {
+    if (isEditing) {
+      setEditableText(stripPhotoMarkers(content));
+    }
+  }, [isEditing, content]);
 
   const handleAddTask = () => {
     if (taskText.trim()) {
@@ -100,7 +101,7 @@ const DailyContent = ({
     return photos.find(p => p.filename === filename);
   };
 
-  // Get content without photo markers for editing
+  // Get content without photo markers for display
   const getContentWithoutPhotos = (text: string): string => {
     return text.replace(/\[photo:.+?\]\n?/g, '').trim();
   };
@@ -119,14 +120,19 @@ const DailyContent = ({
   // Handle content change while preserving photo markers
   const handleEditableContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newTextContent = e.target.value;
+    setEditableText(newTextContent);
+  };
+  
+  // Save content when exiting edit mode
+  const handleBlur = () => {
     // Extract existing photo markers from original content
     const photoMarkers = content.match(/\[photo:.+?\]\n?/g) || [];
     // Append photo markers to the end
     const newContent = photoMarkers.length > 0 
-      ? newTextContent + (newTextContent ? '\n' : '') + photoMarkers.join('')
-      : newTextContent;
-    setLocalContent(newContent);
+      ? editableText + (editableText ? '\n' : '') + photoMarkers.join('')
+      : editableText;
     onUpdateContent(newContent);
+    setIsEditing(false);
   };
 
   // Parse content into lines for rendering with inline photos
@@ -205,7 +211,6 @@ const DailyContent = ({
     );
   };
 
-  const editableContent = getContentWithoutPhotos(localContent);
   const inlinePhotos = getPhotosFromContent();
 
   return (
@@ -240,9 +245,9 @@ const DailyContent = ({
           <div className="flex flex-col gap-3">
             <textarea
               ref={textareaRef}
-              value={editableContent}
+              value={editableText}
               onChange={handleEditableContentChange}
-              onBlur={() => setIsEditing(false)}
+              onBlur={handleBlur}
               placeholder="Start writing..."
               className="
                 w-full min-h-[200px]
