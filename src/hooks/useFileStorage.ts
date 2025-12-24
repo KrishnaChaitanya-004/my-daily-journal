@@ -6,11 +6,37 @@ export interface PhotoData {
   filename: string;
   path: string;
   timestamp: number;
+  base64?: string;
+}
+
+export interface VoiceNoteData {
+  filename: string;
+  duration: number;
+  timestamp: number;
+  base64?: string;
+}
+
+export interface LocationData {
+  name: string;
+  lat?: number;
+  lng?: number;
+}
+
+export interface WeatherData {
+  temp: number;
+  condition: string;
+  icon: string;
 }
 
 export interface DayFileData {
   content: string;
   photos: PhotoData[];
+  tags?: string[];
+  mood?: 'great' | 'good' | 'okay' | 'bad' | 'awful';
+  location?: LocationData;
+  weather?: WeatherData;
+  habits?: Record<string, boolean>;
+  voiceNotes?: VoiceNoteData[];
 }
 
 const APP_FOLDER = 'mydiaryapp';
@@ -78,6 +104,11 @@ const saveToLocalStorage = (data: Record<string, DayFileData>) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 };
 
+// Export for use in other hooks
+export const getAllDiaryData = (): Record<string, DayFileData> => {
+  return loadFromLocalStorage();
+};
+
 export const useFileStorage = (selectedDate: Date) => {
   const [allData, setAllData] = useState<Record<string, DayFileData>>(loadFromLocalStorage);
   const [isLoading, setIsLoading] = useState(false);
@@ -126,6 +157,17 @@ export const useFileStorage = (selectedDate: Date) => {
     }
   }, [allData, dateKey, dayData, dateFolder, ensureFolder]);
 
+  // Save day metadata (tags, location, weather, habits, mood)
+  const saveDayMeta = useCallback(async (meta: Partial<DayFileData>) => {
+    const newDayData = { ...dayData, ...meta };
+    const newData = { 
+      ...allData, 
+      [dateKey]: newDayData
+    };
+    setAllData(newData);
+    saveToLocalStorage(newData);
+  }, [allData, dateKey, dayData]);
+
   // Save photo and insert marker into content
   const savePhoto = useCallback(async (base64Data: string): Promise<PhotoData | null> => {
     const timestamp = Date.now();
@@ -146,7 +188,7 @@ export const useFileStorage = (selectedDate: Date) => {
     
     const newData = { 
       ...allData, 
-      [dateKey]: { content: newContent, photos: newPhotos } 
+      [dateKey]: { ...dayData, content: newContent, photos: newPhotos } 
     };
     setAllData(newData);
     
@@ -184,6 +226,7 @@ export const useFileStorage = (selectedDate: Date) => {
       const webData = { 
         ...allData, 
         [dateKey]: { 
+          ...dayData,
           content: newContent,
           photos: [...dayData.photos, webPhotoData] 
         } 
@@ -194,6 +237,40 @@ export const useFileStorage = (selectedDate: Date) => {
     
     return photoData;
   }, [allData, dateKey, dayData, dateFolder, ensureFolder]);
+
+  // Save voice note
+  const saveVoiceNote = useCallback(async (base64Data: string, duration: number): Promise<VoiceNoteData | null> => {
+    const timestamp = Date.now();
+    const filename = `voice_${timestamp}.webm`;
+    
+    const voiceData: VoiceNoteData = {
+      filename,
+      duration,
+      timestamp,
+      base64: base64Data
+    };
+    
+    const newVoiceNotes = [...(dayData.voiceNotes || []), voiceData];
+    const newData = { 
+      ...allData, 
+      [dateKey]: { ...dayData, voiceNotes: newVoiceNotes } 
+    };
+    setAllData(newData);
+    saveToLocalStorage(newData);
+    
+    return voiceData;
+  }, [allData, dateKey, dayData]);
+
+  // Delete voice note
+  const deleteVoiceNote = useCallback(async (filename: string) => {
+    const newVoiceNotes = (dayData.voiceNotes || []).filter(v => v.filename !== filename);
+    const newData = { 
+      ...allData, 
+      [dateKey]: { ...dayData, voiceNotes: newVoiceNotes } 
+    };
+    setAllData(newData);
+    saveToLocalStorage(newData);
+  }, [allData, dateKey, dayData]);
 
   // Delete photo and remove marker from content
   const deletePhoto = useCallback(async (filename: string) => {
@@ -207,7 +284,7 @@ export const useFileStorage = (selectedDate: Date) => {
     
     const newData = { 
       ...allData, 
-      [dateKey]: { content: newContent, photos: newPhotos } 
+      [dateKey]: { ...dayData, content: newContent, photos: newPhotos } 
     };
     setAllData(newData);
     
@@ -302,11 +379,21 @@ export const useFileStorage = (selectedDate: Date) => {
   return {
     content: dayData.content,
     photos: dayData.photos,
+    tags: dayData.tags || [],
+    mood: dayData.mood,
+    location: dayData.location,
+    weather: dayData.weather,
+    habits: dayData.habits || {},
+    voiceNotes: dayData.voiceNotes || [],
     isLoading,
     saveContent,
+    saveDayMeta,
     savePhoto,
+    saveVoiceNote,
+    deleteVoiceNote,
     deletePhoto,
     getPhotoUrl,
-    hasContent
+    hasContent,
+    allData
   };
 };
