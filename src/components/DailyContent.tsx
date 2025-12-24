@@ -262,7 +262,7 @@ const DailyContent = ({
               title="Add photo"
               className="p-1.5 text-muted-foreground hover:text-primary transition-smooth tap-highlight-none"
             >
-              <Camera className="w-4 h-4" />
+              <Camera className="w-5 h-5" />
             </button>
             
             <button
@@ -270,7 +270,7 @@ const DailyContent = ({
               title="Insert current time"
               className="p-1.5 text-muted-foreground hover:text-primary transition-smooth tap-highlight-none"
             >
-              <Clock className="w-4 h-4" />
+              <Clock className="w-5 h-5" />
             </button>
             
             <input
@@ -291,7 +291,7 @@ const DailyContent = ({
               title="Add task"
               className="p-1.5 text-muted-foreground hover:text-primary disabled:opacity-40 transition-smooth tap-highlight-none"
             >
-              <CheckSquare className="w-4 h-4" />
+              <CheckSquare className="w-5 h-5" />
             </button>
           </div>
         </div>
