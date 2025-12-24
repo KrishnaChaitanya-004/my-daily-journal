@@ -100,6 +100,35 @@ const DailyContent = ({
     return photos.find(p => p.filename === filename);
   };
 
+  // Get content without photo markers for editing
+  const getContentWithoutPhotos = (text: string): string => {
+    return text.replace(/\[photo:.+?\]\n?/g, '').trim();
+  };
+
+  // Get photo markers from content
+  const getPhotosFromContent = (): PhotoData[] => {
+    const photoMarkers = content.match(/\[photo:(.+?)\]/g) || [];
+    return photoMarkers
+      .map(marker => {
+        const filename = marker.match(/\[photo:(.+)\]/)?.[1];
+        return filename ? getPhotoByFilename(filename) : undefined;
+      })
+      .filter((p): p is PhotoData => p !== undefined);
+  };
+
+  // Handle content change while preserving photo markers
+  const handleEditableContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newTextContent = e.target.value;
+    // Extract existing photo markers from original content
+    const photoMarkers = content.match(/\[photo:.+?\]\n?/g) || [];
+    // Append photo markers to the end
+    const newContent = photoMarkers.length > 0 
+      ? newTextContent + (newTextContent ? '\n' : '') + photoMarkers.join('')
+      : newTextContent;
+    setLocalContent(newContent);
+    onUpdateContent(newContent);
+  };
+
   // Parse content into lines for rendering with inline photos
   const renderContent = () => {
     if (!content && photos.length === 0) return null;
@@ -176,6 +205,9 @@ const DailyContent = ({
     );
   };
 
+  const editableContent = getContentWithoutPhotos(localContent);
+  const inlinePhotos = getPhotosFromContent();
+
   return (
     <div className="w-full p-4 animate-fade-in flex flex-col h-full">
       {/* Hidden file input for web */}
@@ -205,21 +237,40 @@ const DailyContent = ({
         }}
       >
         {isEditing ? (
-          <textarea
-            ref={textareaRef}
-            value={localContent}
-            onChange={handleContentChange}
-            onBlur={() => setIsEditing(false)}
-            placeholder="Start writing..."
-            className="
-              w-full h-full min-h-[200px]
-              bg-transparent text-foreground text-sm font-light
-              placeholder:text-muted-foreground/60
-              focus:outline-none resize-none
-              leading-relaxed
-            "
-            autoFocus
-          />
+          <div className="flex flex-col gap-3">
+            <textarea
+              ref={textareaRef}
+              value={editableContent}
+              onChange={handleEditableContentChange}
+              onBlur={() => setIsEditing(false)}
+              placeholder="Start writing..."
+              className="
+                w-full min-h-[200px]
+                bg-transparent text-foreground text-sm font-light
+                placeholder:text-muted-foreground/60
+                focus:outline-none resize-none
+                leading-relaxed
+              "
+              autoFocus
+            />
+            {/* Show photos separately during editing */}
+            {inlinePhotos.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50">
+                {inlinePhotos.map((photo) => {
+                  const photoUrl = getPhotoUrl(photo);
+                  return (
+                    <PhotoThumbnail
+                      key={photo.filename}
+                      src={photoUrl}
+                      timestamp={photo.timestamp}
+                      onView={() => setViewingPhoto(photoUrl)}
+                      onDelete={() => onDeletePhoto(photo.filename)}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </div>
         ) : (
           <div className="min-h-[200px]">
             {content || photos.length > 0 ? (
