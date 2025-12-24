@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { BiometricAuth } from '@aparajita/capacitor-biometric-auth';
 
 export interface LockSettings {
   isEnabled: boolean;
@@ -12,14 +13,16 @@ const LOCK_STATE_KEY = 'diary-lock-state';
 const defaultLockSettings: LockSettings = {
   isEnabled: false,
   password: '',
-  useBiometric: false
+  useBiometric: false,
 };
 
 export const useAppLock = () => {
   const [lockSettings, setLockSettings] = useState<LockSettings>(() => {
     try {
       const stored = localStorage.getItem(LOCK_SETTINGS_KEY);
-      return stored ? { ...defaultLockSettings, ...JSON.parse(stored) } : defaultLockSettings;
+      return stored
+        ? { ...defaultLockSettings, ...JSON.parse(stored) }
+        : defaultLockSettings;
     } catch {
       return defaultLockSettings;
     }
@@ -29,10 +32,10 @@ export const useAppLock = () => {
     try {
       const settings = localStorage.getItem(LOCK_SETTINGS_KEY);
       if (!settings) return false;
+
       const parsed = JSON.parse(settings);
       if (!parsed.isEnabled) return false;
-      
-      // Check session state
+
       const lockState = sessionStorage.getItem(LOCK_STATE_KEY);
       return lockState !== 'unlocked';
     } catch {
@@ -40,24 +43,7 @@ export const useAppLock = () => {
     }
   });
 
-  const [biometricAvailable, setBiometricAvailable] = useState(false);
-
-  // Check if biometric is available
-  useEffect(() => {
-    const checkBiometric = async () => {
-      try {
-        if (window.PublicKeyCredential) {
-          const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-          setBiometricAvailable(available);
-        }
-      } catch {
-        setBiometricAvailable(false);
-      }
-    };
-    checkBiometric();
-  }, []);
-
-  // Save settings when changed
+  // Persist settings
   useEffect(() => {
     localStorage.setItem(LOCK_SETTINGS_KEY, JSON.stringify(lockSettings));
   }, [lockSettings]);
@@ -66,13 +52,16 @@ export const useAppLock = () => {
     setLockSettings(prev => ({ ...prev, ...updates }));
   }, []);
 
-  const setPassword = useCallback((password: string) => {
-    if (password.length >= 4 && password.length <= 6 && /^\d+$/.test(password)) {
-      updateLockSettings({ password, isEnabled: true });
-      return true;
-    }
-    return false;
-  }, [updateLockSettings]);
+  const setPassword = useCallback(
+    (password: string) => {
+      if (password.length >= 4 && password.length <= 6 && /^\d+$/.test(password)) {
+        updateLockSettings({ password, isEnabled: true });
+        return true;
+      }
+      return false;
+    },
+    [updateLockSettings]
+  );
 
   const removePassword = useCallback(() => {
     updateLockSettings({ password: '', isEnabled: false, useBiometric: false });
@@ -80,47 +69,46 @@ export const useAppLock = () => {
     setIsLocked(false);
   }, [updateLockSettings]);
 
-  const toggleBiometric = useCallback((enabled: boolean) => {
-    updateLockSettings({ useBiometric: enabled });
-  }, [updateLockSettings]);
+  const toggleBiometric = useCallback(
+    (enabled: boolean) => {
+      updateLockSettings({ useBiometric: enabled });
+    },
+    [updateLockSettings]
+  );
 
-  const unlock = useCallback((enteredPassword: string): boolean => {
-    if (enteredPassword === lockSettings.password) {
-      sessionStorage.setItem(LOCK_STATE_KEY, 'unlocked');
-      setIsLocked(false);
-      return true;
-    }
-    return false;
-  }, [lockSettings.password]);
-
-  const unlockWithBiometric = useCallback(async (): Promise<boolean> => {
-    if (!lockSettings.useBiometric || !biometricAvailable) return false;
-
-    try {
-      // Use WebAuthn for biometric authentication
-      const challenge = new Uint8Array(32);
-      crypto.getRandomValues(challenge);
-
-      const credential = await navigator.credentials.get({
-        publicKey: {
-          challenge,
-          timeout: 60000,
-          userVerification: 'required',
-          rpId: window.location.hostname,
-          allowCredentials: []
-        }
-      });
-
-      if (credential) {
+  // 🔓 PIN unlock
+  const unlock = useCallback(
+    (enteredPassword: string): boolean => {
+      if (enteredPassword === lockSettings.password) {
         sessionStorage.setItem(LOCK_STATE_KEY, 'unlocked');
         setIsLocked(false);
         return true;
       }
-    } catch (error) {
-      console.log('Biometric auth failed or cancelled');
+      return false;
+    },
+    [lockSettings.password]
+  );
+
+  // 🔐 BIOMETRIC UNLOCK (CORRECT API)
+  const unlockWithBiometric = useCallback(async (): Promise<boolean> => {
+    if (!lockSettings.useBiometric) return false;
+
+    try {
+      await BiometricAuth.authenticate({
+        reason: 'Unlock KC’s Diary',
+        cancelTitle: 'Cancel',
+        allowDeviceCredential: true, // PIN / Pattern fallback
+      });
+
+      // ✅ If no error → authenticated
+      sessionStorage.setItem(LOCK_STATE_KEY, 'unlocked');
+      setIsLocked(false);
+      return true;
+    } catch {
+      console.log('Biometric authentication cancelled or failed');
+      return false;
     }
-    return false;
-  }, [lockSettings.useBiometric, biometricAvailable]);
+  }, [lockSettings.useBiometric]);
 
   const lockApp = useCallback(() => {
     if (lockSettings.isEnabled) {
@@ -132,12 +120,12 @@ export const useAppLock = () => {
   return {
     lockSettings,
     isLocked,
-    biometricAvailable,
+    biometricAvailable: lockSettings.useBiometric, // UI-only flag
     setPassword,
     removePassword,
     toggleBiometric,
     unlock,
     unlockWithBiometric,
-    lockApp
+    lockApp,
   };
 };

@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { Geolocation } from '@capacitor/geolocation';
 import { LocationData } from './useFileStorage';
 
 export const useLocation = () => {
@@ -9,66 +10,54 @@ export const useLocation = () => {
     setIsLoading(true);
     setError(null);
 
-    return new Promise((resolve) => {
-      if (!navigator.geolocation) {
-        setError('Geolocation is not supported');
-        setIsLoading(false);
-        resolve(null);
-        return;
-      }
+    try {
+      // 🔐 THIS triggers Android permission dialog
+      const position = await Geolocation.getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: 10000,
+      });
 
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          
-          try {
-            // Reverse geocoding using free OpenStreetMap Nominatim API
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=14`
-            );
-            const data = await response.json();
-            
-            // Extract a readable location name
-            const name = data.address?.city || 
-                        data.address?.town || 
-                        data.address?.village || 
-                        data.address?.suburb ||
-                        data.address?.county ||
-                        'Unknown location';
-            
-            setIsLoading(false);
-            resolve({
-              name,
-              lat: latitude,
-              lng: longitude
-            });
-          } catch (e) {
-            // If reverse geocoding fails, still return coordinates
-            setIsLoading(false);
-            resolve({
-              name: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
-              lat: latitude,
-              lng: longitude
-            });
-          }
-        },
-        (err) => {
-          setError(err.message);
-          setIsLoading(false);
-          resolve(null);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000
-        }
-      );
-    });
+      const { latitude, longitude } = position.coords;
+
+      try {
+        // Reverse geocoding (your existing logic)
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=14`
+        );
+        const data = await response.json();
+
+        const name =
+          data.address?.city ||
+          data.address?.town ||
+          data.address?.village ||
+          data.address?.suburb ||
+          data.address?.county ||
+          'Unknown location';
+
+        return {
+          name,
+          lat: latitude,
+          lng: longitude,
+        };
+      } catch {
+        // fallback if API fails
+        return {
+          name: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+          lat: latitude,
+          lng: longitude,
+        };
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Location permission denied');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   return {
     getCurrentLocation,
     isLoading,
-    error
+    error,
   };
 };
