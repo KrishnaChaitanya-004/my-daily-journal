@@ -1,39 +1,18 @@
-import { useState, useCallback } from 'react';
-import { Plus, Pencil, Camera, Mic, CheckSquare, X } from 'lucide-react';
-import { Camera as CapacitorCamera, CameraResultType, CameraSource } from '@capacitor/camera';
-import { Capacitor } from '@capacitor/core';
+import { useState } from 'react';
+import { Plus, Pencil, Mic, CheckSquare, X, BarChart3 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 
 interface QuickAddFABProps {
   onAddNote: () => void;
-  onAddPhoto: (base64: string) => Promise<void>;
   onAddVoice: (base64: string, duration: number) => Promise<void>;
   onAddTask: () => void;
 }
 
-const QuickAddFAB = ({ onAddNote, onAddPhoto, onAddVoice, onAddTask }: QuickAddFABProps) => {
+const QuickAddFAB = ({ onAddNote, onAddVoice, onAddTask }: QuickAddFABProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
   const { isRecording, duration, startRecording, stopRecording, formatDuration } = useVoiceRecorder();
-
-  const handlePhotoCapture = async () => {
-    setIsOpen(false);
-    if (Capacitor.isNativePlatform()) {
-      try {
-        const image = await CapacitorCamera.getPhoto({
-          quality: 80,
-          allowEditing: false,
-          resultType: CameraResultType.Base64,
-          source: CameraSource.Prompt
-        });
-        
-        if (image.base64String) {
-          await onAddPhoto(image.base64String);
-        }
-      } catch (e) {
-        console.error('Camera error:', e);
-      }
-    }
-  };
 
   const handleVoiceRecord = async () => {
     if (isRecording) {
@@ -47,11 +26,21 @@ const QuickAddFAB = ({ onAddNote, onAddPhoto, onAddVoice, onAddTask }: QuickAddF
     }
   };
 
+  const handleNoteClick = () => {
+    onAddNote();
+    setIsOpen(false);
+    // Scroll to content area and focus - the parent will handle edit mode
+    const contentArea = document.querySelector('[data-content-editor]');
+    if (contentArea instanceof HTMLTextAreaElement) {
+      contentArea.focus();
+    }
+  };
+
   const actions = [
-    { icon: Pencil, label: 'Note', action: () => { onAddNote(); setIsOpen(false); }, color: 'bg-blue-500' },
-    { icon: Camera, label: 'Photo', action: handlePhotoCapture, color: 'bg-green-500' },
+    { icon: Pencil, label: 'Note', action: handleNoteClick, color: 'bg-blue-500' },
     { icon: Mic, label: isRecording ? formatDuration(duration) : 'Voice', action: handleVoiceRecord, color: isRecording ? 'bg-red-500' : 'bg-purple-500' },
-    { icon: CheckSquare, label: 'Task', action: () => { onAddTask(); setIsOpen(false); }, color: 'bg-orange-500' }
+    { icon: CheckSquare, label: 'Task', action: () => { onAddTask(); setIsOpen(false); }, color: 'bg-orange-500' },
+    { icon: BarChart3, label: 'Statistics', action: () => { navigate('/statistics'); setIsOpen(false); }, color: 'bg-teal-500' }
   ];
 
   return (
@@ -86,11 +75,11 @@ const QuickAddFAB = ({ onAddNote, onAddPhoto, onAddVoice, onAddTask }: QuickAddF
           </button>
         ))}
 
-        {/* Main FAB button */}
+        {/* Main FAB button - smaller size matching date circle */}
         <button
           onClick={() => setIsOpen(!isOpen)}
           className={`
-            w-14 h-14 rounded-full shadow-lg
+            w-9 h-9 rounded-full shadow-lg
             flex items-center justify-center
             transition-all duration-300 ease-out
             ${isOpen 
@@ -99,9 +88,9 @@ const QuickAddFAB = ({ onAddNote, onAddPhoto, onAddVoice, onAddTask }: QuickAddF
           `}
         >
           {isOpen ? (
-            <X className="w-6 h-6 text-white" />
+            <X className="w-4 h-4 text-white" />
           ) : (
-            <Plus className="w-6 h-6 text-primary-foreground" />
+            <Plus className="w-4 h-4 text-primary-foreground" />
           )}
         </button>
       </div>
