@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { ArrowLeft, Plus, Trash2, Check, Flame, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Check, Flame, BarChart2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useHabits } from '@/hooks/useHabits';
+import { getAllDiaryData, DayFileData } from '@/hooks/useFileStorage';
 import { format, subDays } from 'date-fns';
 import {
   Dialog,
@@ -12,6 +13,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { 
+  ChartContainer, 
+  ChartTooltip, 
+  ChartTooltipContent 
+} from '@/components/ui/chart';
+import { AreaChart, Area, XAxis } from 'recharts';
 
 const Habits = () => {
   const navigate = useNavigate();
@@ -29,8 +36,10 @@ const Habits = () => {
   const [newHabitName, setNewHabitName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState('🎯');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [graphHabit, setGraphHabit] = useState<string | null>(null);
   const [, forceUpdate] = useState(0);
 
+  const allData = getAllDiaryData();
   const today = new Date().toISOString().split('T')[0];
 
   const handleAddHabit = () => {
@@ -47,6 +56,30 @@ const Habits = () => {
     forceUpdate(n => n + 1);
   };
 
+  // Get habit graph data for a specific habit
+  const getHabitGraphData = (habitId: string) => {
+    const data: { date: string; completed: number }[] = [];
+    const todayDate = new Date();
+    
+    for (let i = 29; i >= 0; i--) {
+      const date = subDays(todayDate, i);
+      const dateKey = date.toISOString().split('T')[0];
+      const dayData = allData[dateKey] as DayFileData | undefined;
+      const isCompleted = dayData?.habits?.[habitId] ? 1 : 0;
+      
+      data.push({
+        date: format(date, 'MMM d'),
+        completed: isCompleted
+      });
+    }
+    
+    return data;
+  };
+
+  const chartConfig = {
+    completed: { label: 'Completed', color: 'hsl(var(--primary))' }
+  };
+
   // Get last 7 days for the week view
   const last7Days = Array.from({ length: 7 }, (_, i) => {
     const date = subDays(new Date(), 6 - i);
@@ -57,6 +90,8 @@ const Habits = () => {
       dayNum: format(date, 'd')
     };
   });
+
+  const selectedHabit = habits.find(h => h.id === graphHabit);
 
   return (
     <main className="min-h-screen bg-background max-w-md mx-auto">
@@ -221,9 +256,16 @@ const Habits = () => {
                   </div>
                   
                   {/* Stats */}
-                  <div className="flex justify-between text-xs text-muted-foreground pt-2 border-t border-border">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border">
                     <span>This week: {stats.last7Days}/7</span>
                     <span>This month: {stats.last30Days}</span>
+                    <button
+                      onClick={() => setGraphHabit(habit.id)}
+                      className="text-primary hover:text-primary/80 p-1"
+                      title="View Graph"
+                    >
+                      <BarChart2 className="w-4 h-4" />
+                    </button>
                     <button
                       onClick={() => deleteHabit(habit.id)}
                       className="text-destructive hover:text-destructive/80"
@@ -237,6 +279,72 @@ const Habits = () => {
           </div>
         )}
       </div>
+
+      {/* Habit Graph Modal */}
+      {graphHabit && selectedHabit && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-xl p-4 w-full max-w-md">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">{selectedHabit.icon}</span>
+                <h3 className="font-medium text-foreground">{selectedHabit.name}</h3>
+              </div>
+              <button 
+                onClick={() => setGraphHabit(null)}
+                className="p-2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <p className="text-xs text-muted-foreground mb-3">Last 30 Days</p>
+            
+            <div className="h-40">
+              <ChartContainer config={chartConfig}>
+                <AreaChart data={getHabitGraphData(graphHabit)} margin={{ left: 0, right: 0, top: 0, bottom: 20 }}>
+                  <defs>
+                    <linearGradient id="habitGraphGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis 
+                    dataKey="date" 
+                    fontSize={9} 
+                    tickLine={false}
+                    axisLine={false}
+                    interval="preserveStartEnd"
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Area 
+                    type="stepAfter" 
+                    dataKey="completed" 
+                    stroke="hsl(var(--primary))" 
+                    fillOpacity={1}
+                    fill="url(#habitGraphGradient)"
+                  />
+                </AreaChart>
+              </ChartContainer>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-2 mt-4 text-center">
+              <div className="bg-secondary rounded-lg p-2">
+                <p className="text-lg font-bold text-foreground">{getHabitStats(graphHabit).streak}</p>
+                <p className="text-[10px] text-muted-foreground">Current Streak</p>
+              </div>
+              <div className="bg-secondary rounded-lg p-2">
+                <p className="text-lg font-bold text-foreground">{getHabitStats(graphHabit).last7Days}/7</p>
+                <p className="text-[10px] text-muted-foreground">This Week</p>
+              </div>
+              <div className="bg-secondary rounded-lg p-2">
+                <p className="text-lg font-bold text-foreground">{getHabitStats(graphHabit).last30Days}</p>
+                <p className="text-[10px] text-muted-foreground">This Month</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 };
