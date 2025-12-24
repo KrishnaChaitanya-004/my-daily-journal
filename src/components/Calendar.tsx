@@ -58,12 +58,16 @@ const Calendar = ({
     return days;
   }, [currentMonth]);
 
-  const formatMonthYear = (date: Date) => {
+  const formatDateHeader = (date: Date) => {
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
     const weekday = date.toLocaleDateString('en-US', { weekday: 'short' });
     return `${day}.${month}.${year} ${weekday}`;
+  };
+
+  const getMonthAbbr = (date: Date) => {
+    return date.toLocaleDateString('en-US', { month: 'short' });
   };
 
   const goToPrevMonth = () => {
@@ -88,7 +92,7 @@ const Calendar = ({
 
   return (
     <div className="w-full px-3">
-      {/* Header */}
+      {/* Header with month abbreviation on right */}
       <div className="flex items-center justify-between mb-3 px-1">
         <button
           onClick={goToPrevMonth}
@@ -97,14 +101,19 @@ const Calendar = ({
           <ChevronLeft className="w-4 h-4" />
         </button>
         <span className="text-xs text-muted-foreground font-normal tracking-wide">
-          {formatMonthYear(selectedDate)}
+          {formatDateHeader(selectedDate)}
         </span>
-        <button
-          onClick={goToNextMonth}
-          className="p-1 text-muted-foreground hover:text-foreground transition-smooth tap-highlight-none"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground font-normal tracking-wide">
+            {getMonthAbbr(currentMonth)}
+          </span>
+          <button
+            onClick={goToNextMonth}
+            className="p-1 text-muted-foreground hover:text-foreground transition-smooth tap-highlight-none"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Days of week */}
