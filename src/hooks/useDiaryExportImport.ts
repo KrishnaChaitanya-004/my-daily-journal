@@ -6,6 +6,7 @@ import { toast } from '@/hooks/use-toast';
 const STORAGE_KEY = 'diary-app-data';
 const SETTINGS_KEY = 'diary-settings';
 const BOOKMARKS_KEY = 'diary-bookmarks';
+const HABITS_KEY = 'diary-habits-list';
 
 export const useDiaryExportImport = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -21,7 +22,7 @@ export const useDiaryExportImport = () => {
 
       // Get diary data
       const diaryData = localStorage.getItem(STORAGE_KEY);
-      const parsedData: Record<string, DayFileData & { photos: Array<{ filename: string; base64?: string }> }> = diaryData ? JSON.parse(diaryData) : {};
+      const parsedData: Record<string, DayFileData> = diaryData ? JSON.parse(diaryData) : {};
 
       // Create folder structure for each date
       for (const [dateKey, dayData] of Object.entries(parsedData)) {
@@ -31,6 +32,17 @@ export const useDiaryExportImport = () => {
         // Save content.txt
         if (dayData.content) {
           dateFolder.file('content.txt', dayData.content);
+        }
+
+        // Save metadata (tags, location, weather, habits)
+        const metadata: Record<string, any> = {};
+        if (dayData.tags && dayData.tags.length > 0) metadata.tags = dayData.tags;
+        if (dayData.location) metadata.location = dayData.location;
+        if (dayData.weather) metadata.weather = dayData.weather;
+        if (dayData.habits) metadata.habits = dayData.habits;
+        
+        if (Object.keys(metadata).length > 0) {
+          dateFolder.file('metadata.json', JSON.stringify(metadata, null, 2));
         }
 
         // Save photos
@@ -45,13 +57,34 @@ export const useDiaryExportImport = () => {
           // Save each photo
           for (const photo of dayData.photos) {
             if (photo.base64) {
-              // Convert base64 to binary
               const binaryData = atob(photo.base64);
               const bytes = new Uint8Array(binaryData.length);
               for (let i = 0; i < binaryData.length; i++) {
                 bytes[i] = binaryData.charCodeAt(i);
               }
               dateFolder.file(photo.filename, bytes, { binary: true });
+            }
+          }
+        }
+
+        // Save voice notes
+        if (dayData.voiceNotes && dayData.voiceNotes.length > 0) {
+          const voiceNotesWithoutBase64 = dayData.voiceNotes.map(v => ({
+            filename: v.filename,
+            duration: v.duration,
+            timestamp: v.timestamp
+          }));
+          dateFolder.file('voicenotes.json', JSON.stringify(voiceNotesWithoutBase64, null, 2));
+
+          // Save each voice note
+          for (const voiceNote of dayData.voiceNotes) {
+            if (voiceNote.base64) {
+              const binaryData = atob(voiceNote.base64);
+              const bytes = new Uint8Array(binaryData.length);
+              for (let i = 0; i < binaryData.length; i++) {
+                bytes[i] = binaryData.charCodeAt(i);
+              }
+              dateFolder.file(voiceNote.filename, bytes, { binary: true });
             }
           }
         }
@@ -67,6 +100,12 @@ export const useDiaryExportImport = () => {
       const bookmarksData = localStorage.getItem(BOOKMARKS_KEY);
       if (bookmarksData) {
         diaryFolder.file('bookmarks.json', bookmarksData);
+      }
+
+      // Save habits list
+      const habitsData = localStorage.getItem(HABITS_KEY);
+      if (habitsData) {
+        diaryFolder.file('habits.json', habitsData);
       }
 
       // Generate zip file
@@ -106,7 +145,7 @@ export const useDiaryExportImport = () => {
         throw new Error('Invalid backup file: mydairy folder not found');
       }
 
-      const newData: Record<string, DayFileData & { photos: Array<{ filename: string; base64?: string; path?: string; timestamp?: number }> }> = {};
+      const newData: Record<string, DayFileData> = {};
 
       // Get all folders (dates)
       const folders = new Set<string>();
@@ -122,15 +161,28 @@ export const useDiaryExportImport = () => {
         const dateFolder = diaryFolder.folder(dateKey);
         if (!dateFolder) continue;
 
-        const dayData: DayFileData & { photos: Array<{ filename: string; base64?: string; path?: string; timestamp?: number }> } = {
+        const dayData: DayFileData = {
           content: '',
-          photos: []
+          photos: [],
+          tags: [],
+          voiceNotes: []
         };
 
         // Read content.txt
         const contentFile = dateFolder.file('content.txt');
         if (contentFile) {
           dayData.content = await contentFile.async('string');
+        }
+
+        // Read metadata.json (tags, location, weather, habits)
+        const metadataFile = dateFolder.file('metadata.json');
+        if (metadataFile) {
+          const metadataJson = await metadataFile.async('string');
+          const metadata = JSON.parse(metadataJson);
+          if (metadata.tags) dayData.tags = metadata.tags;
+          if (metadata.location) dayData.location = metadata.location;
+          if (metadata.weather) dayData.weather = metadata.weather;
+          if (metadata.habits) dayData.habits = metadata.habits;
         }
 
         // Read photos.json
@@ -149,6 +201,26 @@ export const useDiaryExportImport = () => {
             dayData.photos.push({
               ...photoMeta,
               base64: photoData
+            } as any);
+          }
+        }
+
+        // Read voicenotes.json
+        const voiceNotesJsonFile = dateFolder.file('voicenotes.json');
+        let voiceNotesMeta: Array<{ filename: string; duration: number; timestamp: number }> = [];
+        if (voiceNotesJsonFile) {
+          const voiceNotesJson = await voiceNotesJsonFile.async('string');
+          voiceNotesMeta = JSON.parse(voiceNotesJson);
+        }
+
+        // Read each voice note file
+        for (const voiceMeta of voiceNotesMeta) {
+          const voiceFile = dateFolder.file(voiceMeta.filename);
+          if (voiceFile) {
+            const voiceData = await voiceFile.async('base64');
+            dayData.voiceNotes!.push({
+              ...voiceMeta,
+              base64: voiceData
             });
           }
         }
@@ -168,6 +240,13 @@ export const useDiaryExportImport = () => {
       if (bookmarksFile) {
         const bookmarksJson = await bookmarksFile.async('string');
         localStorage.setItem(BOOKMARKS_KEY, bookmarksJson);
+      }
+
+      // Import habits list
+      const habitsFile = diaryFolder.file('habits.json');
+      if (habitsFile) {
+        const habitsJson = await habitsFile.async('string');
+        localStorage.setItem(HABITS_KEY, habitsJson);
       }
 
       // Merge with existing data or replace
