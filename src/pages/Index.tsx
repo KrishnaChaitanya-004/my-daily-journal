@@ -4,7 +4,9 @@ import { Bookmark } from 'lucide-react';
 import Calendar from '@/components/Calendar';
 import DailyContent from '@/components/DailyContent';
 import AppMenu from '@/components/AppMenu';
-import { useFileStorage } from '@/hooks/useFileStorage';
+import QuickAddFAB from '@/components/QuickAddFAB';
+import WritingPromptCard from '@/components/WritingPromptCard';
+import { useFileStorage, LocationData, WeatherData } from '@/hooks/useFileStorage';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { useSettings } from '@/hooks/useSettings';
 import { useAutoSave } from '@/hooks/useAutoSave';
@@ -34,8 +36,15 @@ const Index = () => {
   const {
     content,
     photos,
+    tags,
+    location,
+    weather,
+    voiceNotes,
     saveContent,
+    saveDayMeta,
     savePhoto,
+    saveVoiceNote,
+    deleteVoiceNote,
     deletePhoto,
     getPhotoUrl,
     hasContent
@@ -55,7 +64,6 @@ const Index = () => {
   // Register auto-save callback
   useEffect(() => {
     registerSaveCallback(() => {
-      // Content is already saved on each change, but this ensures any pending saves are flushed
       if (contentRef.current) {
         saveContent(contentRef.current);
       }
@@ -86,10 +94,7 @@ const Index = () => {
     const year = newMonth.getFullYear();
     const month = newMonth.getMonth();
     
-    // Get the last day of the new month
     const lastDayOfNewMonth = new Date(year, month + 1, 0).getDate();
-    
-    // Use the same day, or last day if it doesn't exist
     const newDay = Math.min(currentDay, lastDayOfNewMonth);
     
     const newSelectedDate = new Date(year, month, newDay);
@@ -121,6 +126,21 @@ const Index = () => {
   const handleAddPhoto = useCallback(async (base64: string) => {
     await savePhoto(base64);
   }, [savePhoto]);
+
+  const handleSaveMeta = useCallback((meta: { tags?: string[]; location?: LocationData; weather?: WeatherData }) => {
+    saveDayMeta(meta);
+  }, [saveDayMeta]);
+
+  const handleSaveVoiceNote = useCallback(async (base64: string, duration: number) => {
+    await saveVoiceNote(base64, duration);
+  }, [saveVoiceNote]);
+
+  const handleInsertPrompt = useCallback((promptText: string) => {
+    const newContent = content 
+      ? `${content}\n\n${promptText}\n` 
+      : `${promptText}\n`;
+    saveContent(newContent);
+  }, [content, saveContent]);
 
   const currentDateBookmarked = isBookmarked(selectedDate);
 
@@ -162,16 +182,26 @@ const Index = () => {
       {/* Divider */}
       <div className="h-px bg-border mx-4 shrink-0" />
 
-      {/* Content Section - takes remaining space ~65% */}
+      {/* Writing Prompt Card */}
+      <WritingPromptCard onInsertPrompt={handleInsertPrompt} />
+
+      {/* Content Section - takes remaining space */}
       <section key={selectedDate.toISOString()} className="flex-1 flex flex-col min-h-0 overflow-hidden">
         <DailyContent
           content={content}
           photos={photos}
+          tags={tags}
+          location={location}
+          weather={weather}
+          voiceNotes={voiceNotes}
           onUpdateContent={saveContent}
           onAddTask={addTask}
           onToggleTask={toggleTask}
           onAddPhoto={handleAddPhoto}
           onDeletePhoto={deletePhoto}
+          onSaveMeta={handleSaveMeta}
+          onSaveVoiceNote={handleSaveVoiceNote}
+          onDeleteVoiceNote={deleteVoiceNote}
           getPhotoUrl={getPhotoUrl}
         />
       </section>
@@ -181,6 +211,20 @@ const Index = () => {
 
       {/* Safe area spacer for mobile */}
       <div className="h-4 shrink-0" />
+
+      {/* Quick Add FAB */}
+      <QuickAddFAB
+        onAddNote={() => {
+          // Trigger edit mode - content area handles this
+        }}
+        onAddPhoto={handleAddPhoto}
+        onAddVoice={handleSaveVoiceNote}
+        onAddTask={() => {
+          // Could open a quick task dialog
+          const task = prompt('Add a task:');
+          if (task) addTask(task);
+        }}
+      />
     </main>
   );
 };
