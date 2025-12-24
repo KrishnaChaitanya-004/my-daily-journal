@@ -122,7 +122,7 @@ const Calendar = ({
       </div>
 
       {/* Calendar grid - with more spacing */}
-      <div className="grid grid-cols-7 gap-y-1">
+      <div className="grid grid-cols-7 gap-y-0.5">
         {calendarDays.map((date, index) => {
           if (!date) return <div key={index} />;
           
