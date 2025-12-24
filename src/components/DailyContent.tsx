@@ -95,7 +95,12 @@ const DailyContent = ({
     e.target.value = '';
   };
 
-  // Parse content into lines for rendering with interactive checkboxes
+  // Get photo by filename from photos array
+  const getPhotoByFilename = (filename: string): PhotoData | undefined => {
+    return photos.find(p => p.filename === filename);
+  };
+
+  // Parse content into lines for rendering with inline photos
   const renderContent = () => {
     if (!content && photos.length === 0) return null;
     
@@ -103,26 +108,33 @@ const DailyContent = ({
     
     return (
       <>
-        {/* Photos section */}
-        {photos.length > 0 && (
-          <div className="flex flex-wrap gap-3 mb-4 pb-4 border-b border-border">
-            {photos.map((photo) => {
+        {lines.map((line, index) => {
+          // Check for photo marker: [photo:filename.jpg]
+          const photoMatch = line.match(/^\[photo:(.+)\]$/);
+          if (photoMatch) {
+            const filename = photoMatch[1];
+            const photo = getPhotoByFilename(filename);
+            if (photo) {
               const photoUrl = getPhotoUrl(photo);
               return (
-                <PhotoThumbnail
-                  key={photo.filename}
-                  src={photoUrl}
-                  timestamp={photo.timestamp}
-                  onView={() => setViewingPhoto(photoUrl)}
-                  onDelete={() => onDeletePhoto(photo.filename)}
-                />
+                <div key={index} className="py-1">
+                  <PhotoThumbnail
+                    src={photoUrl}
+                    timestamp={photo.timestamp}
+                    onView={() => setViewingPhoto(photoUrl)}
+                    onDelete={() => onDeletePhoto(photo.filename)}
+                  />
+                </div>
               );
-            })}
-          </div>
-        )}
-        
-        {/* Text content */}
-        {lines.map((line, index) => {
+            }
+            // Photo not found, show placeholder
+            return (
+              <div key={index} className="text-sm text-muted-foreground py-0.5 italic">
+                [Photo not found: {filename}]
+              </div>
+            );
+          }
+
           const isUncheckedTask = line.startsWith('□ ');
           const isCheckedTask = line.startsWith('✓ ');
           
