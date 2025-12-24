@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect, ChangeEvent } from 'react';
-import { CheckSquare, Camera } from 'lucide-react';
+import { CheckSquare, Camera, Clock, Check } from 'lucide-react';
 import { Camera as CapacitorCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
 import PhotoThumbnail from './PhotoThumbnail';
 import PhotoViewer from './PhotoViewer';
+import { format } from 'date-fns';
 
 interface PhotoData {
   filename: string;
@@ -48,13 +49,39 @@ const DailyContent = ({
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
     setLocalContent(newContent);
-    onUpdateContent(newContent);
+  };
+
+  const handleSave = () => {
+    onUpdateContent(localContent);
+    setIsEditing(false);
   };
 
   const handleAddTask = () => {
     if (taskText.trim()) {
       onAddTask(taskText.trim());
       setTaskText('');
+    }
+  };
+
+  const handleInsertTime = () => {
+    const currentTime = format(new Date(), 'hh:mm a');
+    const timeText = `[${currentTime}] `;
+    
+    if (isEditing && textareaRef.current) {
+      const textarea = textareaRef.current;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newContent = localContent.slice(0, start) + timeText + localContent.slice(end);
+      setLocalContent(newContent);
+      // Set cursor position after inserted time
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + timeText.length;
+        textarea.focus();
+      }, 0);
+    } else {
+      const newContent = localContent ? `${localContent}\n${timeText}` : timeText;
+      setLocalContent(newContent);
+      onUpdateContent(newContent);
     }
   };
 
@@ -195,6 +222,51 @@ const DailyContent = ({
           onClose={() => setViewingPhoto(null)} 
         />
       )}
+
+      {/* Fullscreen editor overlay */}
+      {isEditing && (
+        <div className="fixed inset-0 z-50 bg-background flex flex-col">
+          {/* Header with save button */}
+          <div className="flex items-center justify-between p-4 border-b border-border">
+            <span className="text-sm text-muted-foreground">Editing</span>
+            <button
+              onClick={handleSave}
+              className="p-2 text-primary hover:bg-primary/10 rounded-full transition-smooth"
+            >
+              <Check className="w-5 h-5" />
+            </button>
+          </div>
+          
+          {/* Textarea */}
+          <div className="flex-1 p-4 overflow-hidden">
+            <textarea
+              ref={textareaRef}
+              value={localContent}
+              onChange={handleContentChange}
+              placeholder="Start writing..."
+              className="
+                w-full h-full
+                bg-transparent text-foreground text-sm font-light
+                placeholder:text-muted-foreground/60
+                focus:outline-none resize-none
+                leading-snug
+              "
+              autoFocus
+            />
+          </div>
+          
+          {/* Bottom toolbar */}
+          <div className="flex items-center gap-2 p-4 border-t border-border">
+            <button
+              onClick={handleInsertTime}
+              title="Insert current time"
+              className="p-2 text-muted-foreground hover:text-primary transition-smooth tap-highlight-none"
+            >
+              <Clock className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
       
       {/* Main content area - click to edit */}
       <div 
@@ -204,33 +276,15 @@ const DailyContent = ({
           setTimeout(() => textareaRef.current?.focus(), 0);
         }}
       >
-        {isEditing ? (
-          <textarea
-            ref={textareaRef}
-            value={localContent}
-            onChange={handleContentChange}
-            onBlur={() => setIsEditing(false)}
-            placeholder="Start writing..."
-            className="
-              w-full h-full min-h-[200px]
-              bg-transparent text-foreground text-sm font-light
-              placeholder:text-muted-foreground/60
-              focus:outline-none resize-none
-              leading-snug
-            "
-            autoFocus
-          />
-        ) : (
-          <div className="min-h-[200px]">
-            {content || photos.length > 0 ? (
-              renderContent()
-            ) : (
-              <span className="text-muted-foreground/60 text-sm font-light">
-                Start writing...
-              </span>
-            )}
-          </div>
-        )}
+        <div className="min-h-[200px]">
+          {content || photos.length > 0 ? (
+            renderContent()
+          ) : (
+            <span className="text-muted-foreground/60 text-sm font-light">
+              Start writing...
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Bottom bar - for adding tasks and photos */}
@@ -243,6 +297,14 @@ const DailyContent = ({
           <Camera className="w-4 h-4" />
         </button>
         
+        <button
+          onClick={handleInsertTime}
+          title="Insert current time"
+          className="p-1.5 text-muted-foreground hover:text-primary transition-smooth tap-highlight-none"
+        >
+          <Clock className="w-4 h-4" />
+        </button>
+        
         <input
           type="text"
           value={taskText}
@@ -253,7 +315,7 @@ const DailyContent = ({
             }
           }}
           placeholder="Add a task..."
-          className="flex-1 py-1 px-0 bg-transparent text-foreground text-xs placeholder:text-muted-foreground/60 border-b border-border focus:outline-none focus:border-primary transition-smooth"
+          className="flex-1 py-1 px-2 bg-transparent text-foreground text-xs placeholder:text-muted-foreground/60 border-b border-border focus:outline-none focus:border-primary transition-smooth"
         />
         <button
           onClick={handleAddTask}
