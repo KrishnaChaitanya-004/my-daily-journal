@@ -14,7 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Nunito', 'system-ui', 'sans-serif'],
+        sans: ['Delius', 'cursive'],
+        delius: ['Delius', 'cursive'],
       },
       colors: {
         border: "hsl(var(--border))",
