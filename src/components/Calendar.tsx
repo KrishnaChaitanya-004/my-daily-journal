@@ -87,40 +87,40 @@ const Calendar = ({
   };
 
   return (
-    <div className="w-full px-2">
+    <div className="w-full px-3">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 px-2">
+      <div className="flex items-center justify-between mb-4 px-1">
         <button
           onClick={goToPrevMonth}
-          className="p-2 text-muted-foreground hover:text-foreground transition-smooth tap-highlight-none"
+          className="p-1.5 text-muted-foreground hover:text-foreground transition-smooth tap-highlight-none"
         >
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-4 h-4" />
         </button>
-        <span className="text-sm text-muted-foreground font-light tracking-wide">
+        <span className="text-sm text-muted-foreground font-normal tracking-wide">
           {formatMonthYear(selectedDate)}
         </span>
         <button
           onClick={goToNextMonth}
-          className="p-2 text-muted-foreground hover:text-foreground transition-smooth tap-highlight-none"
+          className="p-1.5 text-muted-foreground hover:text-foreground transition-smooth tap-highlight-none"
         >
-          <ChevronRight className="w-5 h-5" />
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
       {/* Days of week */}
-      <div className="grid grid-cols-7 mb-2">
+      <div className="grid grid-cols-7 mb-1">
         {DAYS.map((day) => (
           <div
             key={day}
-            className="text-center text-xs text-muted-foreground font-light py-2"
+            className="text-center text-xs text-muted-foreground font-normal py-1"
           >
             {day}
           </div>
         ))}
       </div>
 
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-y-1">
+      {/* Calendar grid - compact */}
+      <div className="grid grid-cols-7">
         {calendarDays.map((date, index) => {
           if (!date) return <div key={index} />;
           
@@ -134,7 +134,7 @@ const Calendar = ({
               key={index}
               onClick={() => onDateSelect(date)}
               className={`
-                relative flex items-center justify-center py-3 text-sm font-light
+                relative flex items-center justify-center py-2 text-sm font-normal
                 transition-smooth tap-highlight-none
                 ${!dateInCurrentMonth ? 'text-muted-foreground/40' : 'text-foreground'}
                 ${dateIsSelected && !dateIsToday ? 'text-foreground' : ''}
@@ -142,7 +142,7 @@ const Calendar = ({
             >
               <span
                 className={`
-                  relative z-10 w-9 h-9 flex items-center justify-center rounded-full
+                  relative z-10 w-8 h-8 flex items-center justify-center rounded-full
                   transition-smooth
                   ${dateIsToday ? 'ring-2 ring-primary text-primary' : ''}
                   ${dateIsSelected && !dateIsToday ? 'bg-secondary' : ''}
@@ -153,7 +153,7 @@ const Calendar = ({
               
               {/* Content indicator dot */}
               {dateHasContent && (
-                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
+                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
               )}
             </button>
           );
