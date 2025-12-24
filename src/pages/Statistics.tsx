@@ -174,7 +174,7 @@ const Statistics = () => {
               <Target className="w-4 h-4 text-primary" />
               <h3 className="text-sm font-medium text-foreground">Habits Consistency (Last 30 Days)</h3>
             </div>
-            <div className="h-32">
+            <div className="h-44">
               <ChartContainer config={chartConfig}>
                 <AreaChart data={habitsConsistencyData} margin={{ left: 0, right: 0, top: 0, bottom: 20 }}>
                   <defs>
