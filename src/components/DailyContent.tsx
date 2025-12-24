@@ -1,118 +1,128 @@
 import { useState, useRef, useEffect } from 'react';
 import { CheckSquare } from 'lucide-react';
-import type { ContentItem } from '@/hooks/useDiaryStorage';
 
 interface DailyContentProps {
-  items: ContentItem[];
-  onAddItem: (text: string, type: 'note' | 'task') => void;
-  onUpdateItem: (id: string, text: string) => void;
-  onToggleItem: (id: string) => void;
-  onDeleteItem: (id: string) => void;
+  content: string;
+  onUpdateContent: (content: string) => void;
+  onAddTask: (taskText: string) => void;
+  onToggleTask: (lineIndex: number) => void;
 }
 
 const DailyContent = ({ 
-  items, 
-  onAddItem, 
-  onUpdateItem, 
-  onToggleItem, 
-  onDeleteItem 
+  content, 
+  onUpdateContent, 
+  onAddTask,
+  onToggleTask 
 }: DailyContentProps) => {
   const [taskText, setTaskText] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [localContent, setLocalContent] = useState(content);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
-  // Get the note item (we'll use a single note for free-form text)
-  const noteItem = items.find(item => item.type === 'note');
-  const tasks = items.filter(item => item.type === 'task');
-  
-  const [noteText, setNoteText] = useState(noteItem?.text || '');
-  
-  // Sync noteText when noteItem changes (e.g., date change)
+  // Sync localContent when content changes (e.g., date change or task toggle)
   useEffect(() => {
-    setNoteText(noteItem?.text || '');
-  }, [noteItem?.id, noteItem?.text]);
+    setLocalContent(content);
+  }, [content]);
 
-  const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newText = e.target.value;
-    setNoteText(newText);
-    
-    if (noteItem) {
-      if (newText.trim()) {
-        onUpdateItem(noteItem.id, newText);
-      } else {
-        onDeleteItem(noteItem.id);
-      }
-    } else if (newText.trim()) {
-      onAddItem(newText, 'note');
-    }
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value;
+    setLocalContent(newContent);
+    onUpdateContent(newContent);
   };
 
   const handleAddTask = () => {
     if (taskText.trim()) {
-      onAddItem(taskText.trim(), 'task');
+      onAddTask(taskText.trim());
       setTaskText('');
     }
   };
 
+  // Parse content into lines for rendering with interactive checkboxes
+  const renderContent = () => {
+    if (!content) return null;
+    
+    const lines = content.split('\n');
+    
+    return lines.map((line, index) => {
+      const isUncheckedTask = line.startsWith('□ ');
+      const isCheckedTask = line.startsWith('✓ ');
+      
+      if (isUncheckedTask || isCheckedTask) {
+        const taskContent = line.slice(2);
+        return (
+          <div key={index} className="flex items-start gap-2 py-0.5">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleTask(index);
+              }}
+              className={`
+                text-base leading-relaxed transition-smooth tap-highlight-none flex-shrink-0
+                ${isCheckedTask ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}
+              `}
+            >
+              {isCheckedTask ? '✓' : '□'}
+            </button>
+            <span
+              className={`
+                text-sm font-light leading-relaxed
+                ${isCheckedTask ? 'line-through text-muted-foreground' : 'text-foreground'}
+              `}
+            >
+              {taskContent}
+            </span>
+          </div>
+        );
+      }
+      
+      return (
+        <div key={index} className="text-sm font-light leading-relaxed text-foreground py-0.5">
+          {line || <br />}
+        </div>
+      );
+    });
+  };
+
   return (
     <div className="w-full p-4 animate-fade-in flex flex-col h-full">
-      {/* Free-form note area */}
-      <div className="flex-1 mb-4 overflow-y-auto">
-        <textarea
-          ref={textareaRef}
-          value={noteText}
-          onChange={handleNoteChange}
-          placeholder="Start writing..."
-          className="
-            w-full h-full min-h-[200px]
-            bg-transparent text-foreground text-sm font-light
-            placeholder:text-muted-foreground/60
-            focus:outline-none resize-none
-            leading-relaxed
-          "
-        />
-        
-        {/* Tasks displayed below notes */}
-        {tasks.length > 0 && (
-          <div className="mt-4 space-y-2 border-t border-border pt-4">
-            {tasks.map((task) => (
-              <div 
-                key={task.id} 
-                className="flex items-center gap-2 group"
-              >
-                <button
-                  onClick={() => onToggleItem(task.id)}
-                  className={`
-                    text-lg transition-smooth tap-highlight-none
-                    ${task.completed ? 'text-primary' : 'text-muted-foreground'}
-                  `}
-                >
-                  {task.completed ? '✓' : '□'}
-                </button>
-                <span
-                  className={`
-                    flex-1 text-sm font-light
-                    ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}
-                  `}
-                >
-                  {task.text}
-                </span>
-                <button
-                  onClick={() => onDeleteItem(task.id)}
-                  className="
-                    opacity-0 group-hover:opacity-100
-                    text-xs text-muted-foreground hover:text-destructive
-                    transition-smooth
-                  "
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
+      {/* Main content area - click to edit */}
+      <div 
+        className="flex-1 mb-4 overflow-y-auto cursor-text"
+        onClick={() => {
+          setIsEditing(true);
+          setTimeout(() => textareaRef.current?.focus(), 0);
+        }}
+      >
+        {isEditing ? (
+          <textarea
+            ref={textareaRef}
+            value={localContent}
+            onChange={handleContentChange}
+            onBlur={() => setIsEditing(false)}
+            placeholder="Start writing..."
+            className="
+              w-full h-full min-h-[200px]
+              bg-transparent text-foreground text-sm font-light
+              placeholder:text-muted-foreground/60
+              focus:outline-none resize-none
+              leading-relaxed
+            "
+            autoFocus
+          />
+        ) : (
+          <div className="min-h-[200px]">
+            {content ? (
+              renderContent()
+            ) : (
+              <span className="text-muted-foreground/60 text-sm font-light">
+                Start writing...
+              </span>
+            )}
           </div>
         )}
       </div>
 
-      {/* Bottom bar - only for adding tasks */}
+      {/* Bottom bar - for adding tasks */}
       <div className="flex items-center gap-2 border-t border-border pt-4">
         <input
           type="text"

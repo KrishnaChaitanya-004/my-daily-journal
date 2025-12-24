@@ -1,24 +1,13 @@
 import { useState, useCallback } from 'react';
 
-export interface ContentItem {
-  id: string;
-  type: 'note' | 'task';
-  text: string;
-  completed?: boolean;
-}
-
 export interface DayData {
-  items: ContentItem[];
+  content: string;
 }
 
 const STORAGE_KEY = 'diary-app-data';
 
 const formatDateKey = (date: Date): string => {
   return date.toISOString().split('T')[0];
-};
-
-const generateId = (): string => {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2);
 };
 
 const loadAllData = (): Record<string, DayData> => {
@@ -33,38 +22,34 @@ const loadAllData = (): Record<string, DayData> => {
     for (const [key, value] of Object.entries(parsed)) {
       const oldData = value as any;
       
-      // Check if it's old format (has diary/todos) or new format (has items)
-      if (oldData.items) {
+      // Check if it's new format (has content string)
+      if (typeof oldData.content === 'string') {
         migrated[key] = oldData as DayData;
+      } else if (oldData.items) {
+        // Migrate from items array format
+        const lines: string[] = [];
+        oldData.items.forEach((item: any) => {
+          if (item.type === 'task') {
+            const checkbox = item.completed ? '✓' : '□';
+            lines.push(`${checkbox} ${item.text}`);
+          } else {
+            lines.push(item.text);
+          }
+        });
+        migrated[key] = { content: lines.join('\n') };
       } else {
-        // Migrate old format
-        const items: ContentItem[] = [];
-        
-        // Convert diary text to note items (split by lines)
+        // Migrate very old format (diary/todos)
+        const lines: string[] = [];
         if (oldData.diary) {
-          const lines = oldData.diary.split('\n').filter((line: string) => line.trim());
-          lines.forEach((line: string) => {
-            items.push({
-              id: generateId(),
-              type: 'note',
-              text: line.trim()
-            });
-          });
+          lines.push(oldData.diary);
         }
-        
-        // Convert todos to task items
         if (oldData.todos && Array.isArray(oldData.todos)) {
           oldData.todos.forEach((todo: any) => {
-            items.push({
-              id: todo.id || generateId(),
-              type: 'task',
-              text: todo.text,
-              completed: todo.completed
-            });
+            const checkbox = todo.completed ? '✓' : '□';
+            lines.push(`${checkbox} ${todo.text}`);
           });
         }
-        
-        migrated[key] = { items };
+        migrated[key] = { content: lines.join('\n') };
       }
     }
     
@@ -82,62 +67,48 @@ export const useDiaryStorage = (selectedDate: Date) => {
   const [allData, setAllData] = useState<Record<string, DayData>>(loadAllData);
   
   const dateKey = formatDateKey(selectedDate);
-  const dayData = allData[dateKey] || { items: [] };
+  const dayData = allData[dateKey] || { content: '' };
 
-  const updateDayData = useCallback((newDayData: DayData) => {
+  const updateContent = useCallback((content: string) => {
     setAllData(prev => {
-      const updated = { ...prev, [dateKey]: newDayData };
+      const updated = { ...prev, [dateKey]: { content } };
       saveAllData(updated);
       return updated;
     });
   }, [dateKey]);
 
-  const addItem = useCallback((text: string, type: 'note' | 'task') => {
-    const newItem: ContentItem = {
-      id: generateId(),
-      type,
-      text,
-      ...(type === 'task' ? { completed: false } : {})
-    };
-    updateDayData({ items: [...dayData.items, newItem] });
-  }, [dayData.items, updateDayData]);
+  const addTask = useCallback((taskText: string) => {
+    const taskLine = `□ ${taskText}`;
+    const newContent = dayData.content 
+      ? `${dayData.content}\n${taskLine}` 
+      : taskLine;
+    updateContent(newContent);
+  }, [dayData.content, updateContent]);
 
-  const updateItem = useCallback((id: string, text: string) => {
-    updateDayData({
-      items: dayData.items.map(item =>
-        item.id === id ? { ...item, text } : item
-      )
-    });
-  }, [dayData.items, updateDayData]);
-
-  const toggleItem = useCallback((id: string) => {
-    updateDayData({
-      items: dayData.items.map(item =>
-        item.id === id && item.type === 'task'
-          ? { ...item, completed: !item.completed }
-          : item
-      )
-    });
-  }, [dayData.items, updateDayData]);
-
-  const deleteItem = useCallback((id: string) => {
-    updateDayData({
-      items: dayData.items.filter(item => item.id !== id)
-    });
-  }, [dayData.items, updateDayData]);
+  const toggleTask = useCallback((lineIndex: number) => {
+    const lines = dayData.content.split('\n');
+    const line = lines[lineIndex];
+    
+    if (line.startsWith('□ ')) {
+      lines[lineIndex] = '✓ ' + line.slice(2);
+    } else if (line.startsWith('✓ ')) {
+      lines[lineIndex] = '□ ' + line.slice(2);
+    }
+    
+    updateContent(lines.join('\n'));
+  }, [dayData.content, updateContent]);
 
   const hasContent = useCallback((date: Date): boolean => {
     const key = formatDateKey(date);
     const data = allData[key];
-    return data?.items?.length > 0;
+    return data?.content?.trim().length > 0;
   }, [allData]);
 
   return {
-    items: dayData.items,
-    addItem,
-    updateItem,
-    toggleItem,
-    deleteItem,
+    content: dayData.content,
+    updateContent,
+    addTask,
+    toggleTask,
     hasContent
   };
 };
