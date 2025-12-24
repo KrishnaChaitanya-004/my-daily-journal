@@ -25,6 +25,22 @@ const Index = () => {
     }
   }, [currentMonth]);
 
+  const handleMonthChange = useCallback((newMonth: Date) => {
+    const currentDay = selectedDate.getDate();
+    const year = newMonth.getFullYear();
+    const month = newMonth.getMonth();
+    
+    // Get the last day of the new month
+    const lastDayOfNewMonth = new Date(year, month + 1, 0).getDate();
+    
+    // Use the same day, or last day if it doesn't exist
+    const newDay = Math.min(currentDay, lastDayOfNewMonth);
+    
+    const newSelectedDate = new Date(year, month, newDay);
+    setSelectedDate(newSelectedDate);
+    setCurrentMonth(newMonth);
+  }, [selectedDate]);
+
   const addTask = useCallback((taskText: string) => {
     const taskLine = `□ ${taskText}`;
     const newContent = content 
@@ -58,7 +74,7 @@ const Index = () => {
           selectedDate={selectedDate}
           currentMonth={currentMonth}
           onDateSelect={handleDateSelect}
-          onMonthChange={setCurrentMonth}
+          onMonthChange={handleMonthChange}
           hasContent={hasContent}
         />
       </section>
