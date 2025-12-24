@@ -117,12 +117,12 @@ export const useSettings = () => {
     const bgColor = settings.backgroundColor || defaultSettings.backgroundColor;
     root.style.setProperty('--background', hexToHsl(bgColor));
     
-    // Set card color as a slightly different shade of background
-    root.style.setProperty('--card', getDarkerHsl(bgColor, 5));
-    root.style.setProperty('--popover', getDarkerHsl(bgColor, 5));
-    root.style.setProperty('--secondary', getDarkerHsl(bgColor, 8));
-    root.style.setProperty('--muted', getDarkerHsl(bgColor, 10));
-    root.style.setProperty('--accent', getDarkerHsl(bgColor, 10));
+    // Set card color as a more noticeably different shade of background
+    root.style.setProperty('--card', getDarkerHsl(bgColor, 12));
+    root.style.setProperty('--popover', getDarkerHsl(bgColor, 12));
+    root.style.setProperty('--secondary', getDarkerHsl(bgColor, 18));
+    root.style.setProperty('--muted', getDarkerHsl(bgColor, 22));
+    root.style.setProperty('--accent', getDarkerHsl(bgColor, 22));
     
     // Apply font color
     const fgColor = settings.fontColor || defaultSettings.fontColor;
