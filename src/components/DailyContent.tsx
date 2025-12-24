@@ -35,22 +35,21 @@ const DailyContent = ({
 }: DailyContentProps) => {
   const [taskText, setTaskText] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const [editableText, setEditableText] = useState('');
+  const [localContent, setLocalContent] = useState(content);
   const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Helper to strip photo markers
-  const stripPhotoMarkers = (text: string): string => {
-    return text.replace(/\[photo:.+?\]\n?/g, '').trim();
-  };
-  
-  // When entering edit mode, initialize editable text without photo markers
+  // Sync localContent when content changes (e.g., date change or task toggle)
   useEffect(() => {
-    if (isEditing) {
-      setEditableText(stripPhotoMarkers(content));
-    }
-  }, [isEditing, content]);
+    setLocalContent(content);
+  }, [content]);
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newContent = e.target.value;
+    setLocalContent(newContent);
+    onUpdateContent(newContent);
+  };
 
   const handleAddTask = () => {
     if (taskText.trim()) {
@@ -99,40 +98,6 @@ const DailyContent = ({
   // Get photo by filename from photos array
   const getPhotoByFilename = (filename: string): PhotoData | undefined => {
     return photos.find(p => p.filename === filename);
-  };
-
-  // Get content without photo markers for display
-  const getContentWithoutPhotos = (text: string): string => {
-    return text.replace(/\[photo:.+?\]\n?/g, '').trim();
-  };
-
-  // Get photo markers from content
-  const getPhotosFromContent = (): PhotoData[] => {
-    const photoMarkers = content.match(/\[photo:(.+?)\]/g) || [];
-    return photoMarkers
-      .map(marker => {
-        const filename = marker.match(/\[photo:(.+)\]/)?.[1];
-        return filename ? getPhotoByFilename(filename) : undefined;
-      })
-      .filter((p): p is PhotoData => p !== undefined);
-  };
-
-  // Handle content change while preserving photo markers
-  const handleEditableContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newTextContent = e.target.value;
-    setEditableText(newTextContent);
-  };
-  
-  // Save content when exiting edit mode
-  const handleBlur = () => {
-    // Extract existing photo markers from original content
-    const photoMarkers = content.match(/\[photo:.+?\]\n?/g) || [];
-    // Append photo markers to the end
-    const newContent = photoMarkers.length > 0 
-      ? editableText + (editableText ? '\n' : '') + photoMarkers.join('')
-      : editableText;
-    onUpdateContent(newContent);
-    setIsEditing(false);
   };
 
   // Parse content into lines for rendering with inline photos
@@ -211,8 +176,6 @@ const DailyContent = ({
     );
   };
 
-  const inlinePhotos = getPhotosFromContent();
-
   return (
     <div className="w-full p-4 animate-fade-in flex flex-col h-full">
       {/* Hidden file input for web */}
@@ -242,40 +205,21 @@ const DailyContent = ({
         }}
       >
         {isEditing ? (
-          <div className="flex flex-col gap-3">
-            <textarea
-              ref={textareaRef}
-              value={editableText}
-              onChange={handleEditableContentChange}
-              onBlur={handleBlur}
-              placeholder="Start writing..."
-              className="
-                w-full min-h-[200px]
-                bg-transparent text-foreground text-sm font-light
-                placeholder:text-muted-foreground/60
-                focus:outline-none resize-none
-                leading-relaxed
-              "
-              autoFocus
-            />
-            {/* Show photos separately during editing */}
-            {inlinePhotos.length > 0 && (
-              <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50">
-                {inlinePhotos.map((photo) => {
-                  const photoUrl = getPhotoUrl(photo);
-                  return (
-                    <PhotoThumbnail
-                      key={photo.filename}
-                      src={photoUrl}
-                      timestamp={photo.timestamp}
-                      onView={() => setViewingPhoto(photoUrl)}
-                      onDelete={() => onDeletePhoto(photo.filename)}
-                    />
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <textarea
+            ref={textareaRef}
+            value={localContent}
+            onChange={handleContentChange}
+            onBlur={() => setIsEditing(false)}
+            placeholder="Start writing..."
+            className="
+              w-full h-full min-h-[200px]
+              bg-transparent text-foreground text-sm font-light
+              placeholder:text-muted-foreground/60
+              focus:outline-none resize-none
+              leading-relaxed
+            "
+            autoFocus
+          />
         ) : (
           <div className="min-h-[200px]">
             {content || photos.length > 0 ? (
