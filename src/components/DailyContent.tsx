@@ -216,7 +216,7 @@ const DailyContent = ({
               bg-transparent text-foreground text-sm font-light
               placeholder:text-muted-foreground/60
               focus:outline-none resize-none
-              leading-relaxed
+              leading-tight
             "
             autoFocus
           />
