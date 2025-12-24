@@ -126,7 +126,7 @@ export const useFileStorage = (selectedDate: Date) => {
     }
   }, [allData, dateKey, dayData, dateFolder, ensureFolder]);
 
-  // Save photo
+  // Save photo and insert marker into content
   const savePhoto = useCallback(async (base64Data: string): Promise<PhotoData | null> => {
     const timestamp = Date.now();
     const filename = `photo_${timestamp}.jpg`;
@@ -138,9 +138,15 @@ export const useFileStorage = (selectedDate: Date) => {
     };
     
     const newPhotos = [...dayData.photos, photoData];
+    // Insert photo marker at end of content
+    const photoMarker = `[photo:${filename}]`;
+    const newContent = dayData.content 
+      ? `${dayData.content}\n${photoMarker}` 
+      : photoMarker;
+    
     const newData = { 
       ...allData, 
-      [dateKey]: { ...dayData, photos: newPhotos } 
+      [dateKey]: { content: newContent, photos: newPhotos } 
     };
     setAllData(newData);
     
@@ -151,6 +157,14 @@ export const useFileStorage = (selectedDate: Date) => {
           path: `${APP_FOLDER}/${dateFolder}/${filename}`,
           data: base64Data,
           directory: Directory.Documents
+        });
+        
+        // Save content with photo marker
+        await Filesystem.writeFile({
+          path: `${APP_FOLDER}/${dateFolder}/content.txt`,
+          data: newContent,
+          directory: Directory.Documents,
+          encoding: Encoding.UTF8
         });
         
         // Also save metadata
@@ -170,7 +184,7 @@ export const useFileStorage = (selectedDate: Date) => {
       const webData = { 
         ...allData, 
         [dateKey]: { 
-          ...dayData, 
+          content: newContent,
           photos: [...dayData.photos, webPhotoData] 
         } 
       };
@@ -181,12 +195,19 @@ export const useFileStorage = (selectedDate: Date) => {
     return photoData;
   }, [allData, dateKey, dayData, dateFolder, ensureFolder]);
 
-  // Delete photo
+  // Delete photo and remove marker from content
   const deletePhoto = useCallback(async (filename: string) => {
     const newPhotos = dayData.photos.filter(p => p.filename !== filename);
+    // Remove photo marker from content
+    const photoMarker = `[photo:${filename}]`;
+    const newContent = dayData.content
+      .split('\n')
+      .filter(line => line !== photoMarker)
+      .join('\n');
+    
     const newData = { 
       ...allData, 
-      [dateKey]: { ...dayData, photos: newPhotos } 
+      [dateKey]: { content: newContent, photos: newPhotos } 
     };
     setAllData(newData);
     
@@ -195,6 +216,14 @@ export const useFileStorage = (selectedDate: Date) => {
         await Filesystem.deleteFile({
           path: `${APP_FOLDER}/${dateFolder}/${filename}`,
           directory: Directory.Documents
+        });
+        
+        // Update content file
+        await Filesystem.writeFile({
+          path: `${APP_FOLDER}/${dateFolder}/content.txt`,
+          data: newContent,
+          directory: Directory.Documents,
+          encoding: Encoding.UTF8
         });
         
         await Filesystem.writeFile({
