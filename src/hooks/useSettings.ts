@@ -150,14 +150,28 @@ export const useSettings = () => {
       link.href = settings.customFontUrl;
       document.head.appendChild(link);
       
-      // Use custom font name or fallback
+      // Wait for font to load then apply
       const customFontFamily = settings.customFontName 
         ? `'${settings.customFontName}', system-ui, sans-serif`
         : fontFamilies.custom;
+      
+      // Apply to root CSS variable and body
+      root.style.setProperty('--font-family', customFontFamily);
       document.body.style.fontFamily = customFontFamily;
+      
+      // Force reflow after font loads
+      if (settings.customFontName) {
+        document.fonts.load(`16px "${settings.customFontName}"`).then(() => {
+          document.body.style.fontFamily = customFontFamily;
+        }).catch(() => {
+          // Font may already be loaded or name mismatch
+        });
+      }
     } else {
       // Apply font family
-      document.body.style.fontFamily = fontFamilies[settings.fontFamily];
+      const fontFamily = fontFamilies[settings.fontFamily];
+      root.style.setProperty('--font-family', fontFamily);
+      document.body.style.fontFamily = fontFamily;
     }
     
     // Apply font size
