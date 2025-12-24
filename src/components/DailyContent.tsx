@@ -234,17 +234,13 @@ const DailyContent = ({
       </div>
 
       {/* Bottom bar - for adding tasks and photos */}
-      <div className="flex items-center gap-2 border-t border-border pt-4">
+      <div className="flex items-center gap-1 border-t border-border pt-2">
         <button
           onClick={handlePhotoCapture}
           title="Add photo"
-          className="
-            p-2 text-muted-foreground
-            hover:text-primary
-            transition-smooth tap-highlight-none
-          "
+          className="p-1.5 text-muted-foreground hover:text-primary transition-smooth tap-highlight-none"
         >
-          <Camera className="w-5 h-5" />
+          <Camera className="w-4 h-4" />
         </button>
         
         <input
@@ -257,26 +253,15 @@ const DailyContent = ({
             }
           }}
           placeholder="Add a task..."
-          className="
-            flex-1 py-2 px-0
-            bg-transparent text-foreground text-sm font-light
-            placeholder:text-muted-foreground/60
-            border-b border-border
-            focus:outline-none focus:border-primary
-            transition-smooth
-          "
+          className="flex-1 py-1 px-0 bg-transparent text-foreground text-xs placeholder:text-muted-foreground/60 border-b border-border focus:outline-none focus:border-primary transition-smooth"
         />
         <button
           onClick={handleAddTask}
           disabled={!taskText.trim()}
           title="Add task"
-          className="
-            p-2 text-muted-foreground
-            hover:text-primary disabled:opacity-40
-            transition-smooth tap-highlight-none
-          "
+          className="p-1.5 text-muted-foreground hover:text-primary disabled:opacity-40 transition-smooth tap-highlight-none"
         >
-          <CheckSquare className="w-5 h-5" />
+          <CheckSquare className="w-4 h-4" />
         </button>
       </div>
     </div>
