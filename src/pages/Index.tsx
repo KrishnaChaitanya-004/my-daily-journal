@@ -51,9 +51,9 @@ const Index = () => {
   }, [savePhoto]);
 
   return (
-    <main className="min-h-screen bg-background flex flex-col max-w-md mx-auto">
-      {/* Calendar Section */}
-      <section className="pt-8 pb-4">
+    <main className="h-screen bg-background flex flex-col max-w-md mx-auto overflow-hidden">
+      {/* Calendar Section - compact, ~35% of screen */}
+      <section className="pt-6 pb-2 shrink-0">
         <Calendar
           selectedDate={selectedDate}
           currentMonth={currentMonth}
@@ -64,10 +64,10 @@ const Index = () => {
       </section>
 
       {/* Divider */}
-      <div className="h-px bg-border mx-4" />
+      <div className="h-px bg-border mx-4 shrink-0" />
 
-      {/* Content Section */}
-      <section key={selectedDate.toISOString()} className="flex-1 flex flex-col">
+      {/* Content Section - takes remaining space ~65% */}
+      <section key={selectedDate.toISOString()} className="flex-1 flex flex-col min-h-0 overflow-hidden">
         <DailyContent
           content={content}
           photos={photos}
@@ -81,7 +81,7 @@ const Index = () => {
       </section>
 
       {/* Safe area spacer for mobile */}
-      <div className="h-8" />
+      <div className="h-4 shrink-0" />
     </main>
   );
 };
