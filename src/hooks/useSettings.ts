@@ -35,7 +35,12 @@ const fontFamilies: Record<string, string> = {
 };
 
 // Convert hex to HSL string for CSS variables
-const hexToHsl = (hex: string): string => {
+const hexToHsl = (hex: string | undefined): string => {
+  // Fallback for undefined or invalid hex
+  if (!hex || typeof hex !== 'string' || !hex.startsWith('#') || hex.length < 7) {
+    return '0 0% 50%'; // Default gray
+  }
+  
   const r = parseInt(hex.slice(1, 3), 16) / 255;
   const g = parseInt(hex.slice(3, 5), 16) / 255;
   const b = parseInt(hex.slice(5, 7), 16) / 255;
@@ -81,10 +86,12 @@ export const useSettings = () => {
     root.style.setProperty('--has-content', colors.primary);
     
     // Apply background color
-    root.style.setProperty('--background', hexToHsl(settings.backgroundColor));
+    const bgColor = settings.backgroundColor || defaultSettings.backgroundColor;
+    root.style.setProperty('--background', hexToHsl(bgColor));
     
     // Apply font color
-    root.style.setProperty('--foreground', hexToHsl(settings.fontColor));
+    const fgColor = settings.fontColor || defaultSettings.fontColor;
+    root.style.setProperty('--foreground', hexToHsl(fgColor));
     
     // Apply font family
     document.body.style.fontFamily = fontFamilies[settings.fontFamily];
