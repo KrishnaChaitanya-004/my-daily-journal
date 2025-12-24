@@ -64,10 +64,10 @@ const DailyContent = ({
   };
 
   const handleInsertTime = () => {
-    const currentTime = format(new Date(), 'hh:mm a');
-    const timeText = `[${currentTime}] `;
+    const currentTime = format(new Date(), 'hh:mm a').toLowerCase();
+    const timeText = `${currentTime}: `;
     
-    if (isEditing && textareaRef.current) {
+    if (textareaRef.current) {
       const textarea = textareaRef.current;
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
@@ -256,13 +256,42 @@ const DailyContent = ({
           </div>
           
           {/* Bottom toolbar */}
-          <div className="flex items-center gap-2 p-4 border-t border-border">
+          <div className="flex items-center gap-1 p-4 border-t border-border">
+            <button
+              onClick={handlePhotoCapture}
+              title="Add photo"
+              className="p-1.5 text-muted-foreground hover:text-primary transition-smooth tap-highlight-none"
+            >
+              <Camera className="w-4 h-4" />
+            </button>
+            
             <button
               onClick={handleInsertTime}
               title="Insert current time"
-              className="p-2 text-muted-foreground hover:text-primary transition-smooth tap-highlight-none"
+              className="p-1.5 text-muted-foreground hover:text-primary transition-smooth tap-highlight-none"
             >
-              <Clock className="w-5 h-5" />
+              <Clock className="w-4 h-4" />
+            </button>
+            
+            <input
+              type="text"
+              value={taskText}
+              onChange={(e) => setTaskText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && taskText.trim()) {
+                  handleAddTask();
+                }
+              }}
+              placeholder="Add a task..."
+              className="flex-1 py-1 px-2 bg-transparent text-foreground text-xs placeholder:text-muted-foreground/60 border-b border-border focus:outline-none focus:border-primary transition-smooth"
+            />
+            <button
+              onClick={handleAddTask}
+              disabled={!taskText.trim()}
+              title="Add task"
+              className="p-1.5 text-muted-foreground hover:text-primary disabled:opacity-40 transition-smooth tap-highlight-none"
+            >
+              <CheckSquare className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -287,45 +316,6 @@ const DailyContent = ({
         </div>
       </div>
 
-      {/* Bottom bar - for adding tasks and photos */}
-      <div className="flex items-center gap-1 border-t border-border pt-2">
-        <button
-          onClick={handlePhotoCapture}
-          title="Add photo"
-          className="p-1.5 text-muted-foreground hover:text-primary transition-smooth tap-highlight-none"
-        >
-          <Camera className="w-4 h-4" />
-        </button>
-        
-        <button
-          onClick={handleInsertTime}
-          title="Insert current time"
-          className="p-1.5 text-muted-foreground hover:text-primary transition-smooth tap-highlight-none"
-        >
-          <Clock className="w-4 h-4" />
-        </button>
-        
-        <input
-          type="text"
-          value={taskText}
-          onChange={(e) => setTaskText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && taskText.trim()) {
-              handleAddTask();
-            }
-          }}
-          placeholder="Add a task..."
-          className="flex-1 py-1 px-2 bg-transparent text-foreground text-xs placeholder:text-muted-foreground/60 border-b border-border focus:outline-none focus:border-primary transition-smooth"
-        />
-        <button
-          onClick={handleAddTask}
-          disabled={!taskText.trim()}
-          title="Add task"
-          className="p-1.5 text-muted-foreground hover:text-primary disabled:opacity-40 transition-smooth tap-highlight-none"
-        >
-          <CheckSquare className="w-4 h-4" />
-        </button>
-      </div>
     </div>
   );
 };
