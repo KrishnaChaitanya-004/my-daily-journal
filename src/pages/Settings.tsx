@@ -1,7 +1,10 @@
-import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette, Download, Upload } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette, Download, Upload, Lock, Fingerprint, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings, AppSettings } from '@/hooks/useSettings';
 import { useDiaryExportImport } from '@/hooks/useDiaryExportImport';
+import { useAppLock } from '@/hooks/useAppLock';
+import { toast } from '@/hooks/use-toast';
 
 const fontOptions: { value: AppSettings['fontFamily']; label: string }[] = [
   { value: 'inter', label: 'Inter' },
@@ -68,6 +71,47 @@ const Settings = () => {
   const navigate = useNavigate();
   const { settings, updateSetting } = useSettings();
   const { exportData, triggerImport, handleFileChange, fileInputRef } = useDiaryExportImport();
+  const { lockSettings, biometricAvailable, setPassword, removePassword, toggleBiometric } = useAppLock();
+  
+  const [showPinSetup, setShowPinSetup] = useState(false);
+  const [newPin, setNewPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
+  const [pinError, setPinError] = useState('');
+
+  const handleSetPin = () => {
+    if (newPin.length < 4 || newPin.length > 6) {
+      setPinError('PIN must be 4-6 digits');
+      return;
+    }
+    if (!/^\d+$/.test(newPin)) {
+      setPinError('PIN must contain only numbers');
+      return;
+    }
+    if (newPin !== confirmPin) {
+      setPinError('PINs do not match');
+      return;
+    }
+    
+    const success = setPassword(newPin);
+    if (success) {
+      setShowPinSetup(false);
+      setNewPin('');
+      setConfirmPin('');
+      setPinError('');
+      toast({
+        title: 'App Lock Enabled',
+        description: 'Your diary is now protected with a PIN.',
+      });
+    }
+  };
+
+  const handleRemoveLock = () => {
+    removePassword();
+    toast({
+      title: 'App Lock Disabled',
+      description: 'Your diary is no longer protected.',
+    });
+  };
 
   return (
     <main className="h-screen bg-background flex flex-col max-w-md mx-auto overflow-hidden">
@@ -256,6 +300,131 @@ const Settings = () => {
               </button>
             ))}
           </div>
+        </section>
+
+        {/* App Lock */}
+        <section className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Lock className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-sm font-medium text-foreground">App Lock</h2>
+              <p className="text-xs text-muted-foreground">Protect your diary with PIN</p>
+            </div>
+          </div>
+          
+          {lockSettings.isEnabled ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                <div className="flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-primary" />
+                  <span className="text-sm text-foreground">PIN Lock Enabled</span>
+                </div>
+                <button
+                  onClick={handleRemoveLock}
+                  className="p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-smooth"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              
+              {biometricAvailable && (
+                <button
+                  onClick={() => toggleBiometric(!lockSettings.useBiometric)}
+                  className={`w-full flex items-center justify-between p-3 rounded-lg border transition-smooth
+                    ${lockSettings.useBiometric 
+                      ? 'border-primary bg-primary/10' 
+                      : 'border-border hover:border-primary/30'
+                    }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Fingerprint className="w-4 h-4" />
+                    <span className="text-sm text-foreground">Fingerprint Unlock</span>
+                  </div>
+                  <div className={`w-10 h-6 rounded-full transition-all ${
+                    lockSettings.useBiometric ? 'bg-primary' : 'bg-muted'
+                  }`}>
+                    <div className={`w-5 h-5 rounded-full bg-white mt-0.5 transition-all ${
+                      lockSettings.useBiometric ? 'ml-4.5' : 'ml-0.5'
+                    }`} style={{ marginLeft: lockSettings.useBiometric ? '18px' : '2px' }} />
+                  </div>
+                </button>
+              )}
+            </div>
+          ) : showPinSetup ? (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Enter PIN (4-6 digits)</label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  value={newPin}
+                  onChange={(e) => {
+                    setNewPin(e.target.value.replace(/\D/g, ''));
+                    setPinError('');
+                  }}
+                  placeholder="Enter PIN"
+                  className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground 
+                    placeholder:text-muted-foreground text-center text-lg tracking-widest
+                    focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Confirm PIN</label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  value={confirmPin}
+                  onChange={(e) => {
+                    setConfirmPin(e.target.value.replace(/\D/g, ''));
+                    setPinError('');
+                  }}
+                  placeholder="Confirm PIN"
+                  className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground 
+                    placeholder:text-muted-foreground text-center text-lg tracking-widest
+                    focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+              {pinError && (
+                <p className="text-xs text-destructive">{pinError}</p>
+              )}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setShowPinSetup(false);
+                    setNewPin('');
+                    setConfirmPin('');
+                    setPinError('');
+                  }}
+                  className="flex-1 px-4 py-3 rounded-lg border border-border text-foreground 
+                    hover:bg-secondary transition-smooth"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSetPin}
+                  className="flex-1 px-4 py-3 rounded-lg bg-primary text-primary-foreground 
+                    hover:bg-primary/90 transition-smooth"
+                >
+                  Set PIN
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowPinSetup(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-border 
+                text-foreground hover:border-primary/30 transition-smooth tap-highlight-none"
+            >
+              <Lock className="w-4 h-4" />
+              <span className="text-sm">Set PIN Lock</span>
+            </button>
+          )}
         </section>
 
         {/* Data Management */}
