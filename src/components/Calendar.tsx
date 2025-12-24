@@ -138,7 +138,7 @@ const Calendar = ({
               key={index}
               onClick={() => onDateSelect(date)}
               className={`
-                relative flex items-center justify-center py-1.5 text-xs font-normal
+                relative flex items-center justify-center py-0.5 text-xs font-normal
                 transition-smooth tap-highlight-none
                 ${!dateInCurrentMonth ? 'text-muted-foreground/40' : 'text-foreground'}
                 ${dateIsSelected && !dateIsToday ? 'text-foreground' : ''}
@@ -146,7 +146,7 @@ const Calendar = ({
             >
               <span
                 className={`
-                  relative z-10 w-7 h-7 flex items-center justify-center rounded-full
+                  relative z-10 w-6 h-6 flex items-center justify-center rounded-full
                   transition-smooth
                   ${dateIsToday ? 'ring-2 ring-primary text-primary' : ''}
                   ${dateIsSelected && !dateIsToday ? 'bg-secondary' : ''}
