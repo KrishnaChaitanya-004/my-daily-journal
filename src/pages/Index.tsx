@@ -106,9 +106,10 @@ const Index = () => {
 
   return (
     <main className="h-screen bg-background flex flex-col max-w-md mx-auto overflow-hidden">
-      {/* Top bar with hamburger and bookmark */}
+      {/* Top bar with hamburger, app name, and bookmark */}
       <header className="flex items-center justify-between px-2 pt-3 pb-1 shrink-0">
         <AppMenu />
+        <h1 className="text-lg font-semibold text-foreground">KC's Dairy</h1>
         <button
           onClick={() => toggleBookmark(selectedDate)}
           className={`
