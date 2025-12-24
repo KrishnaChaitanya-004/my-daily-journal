@@ -36,11 +36,11 @@ const fontFamilies: Record<string, string> = {
   courier: "'Courier New', monospace"
 };
 
-// Convert hex to HSL string for CSS variables
-const hexToHsl = (hex: string | undefined): string => {
+// Convert hex to HSL values
+const hexToHslValues = (hex: string | undefined): { h: number; s: number; l: number } => {
   // Fallback for undefined or invalid hex
   if (!hex || typeof hex !== 'string' || !hex.startsWith('#') || hex.length < 7) {
-    return '0 0% 50%'; // Default gray
+    return { h: 0, s: 0, l: 50 };
   }
   
   const r = parseInt(hex.slice(1, 3), 16) / 255;
@@ -63,7 +63,25 @@ const hexToHsl = (hex: string | undefined): string => {
     }
   }
 
-  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+  return { 
+    h: Math.round(h * 360), 
+    s: Math.round(s * 100), 
+    l: Math.round(l * 100) 
+  };
+};
+
+// Convert hex to HSL string for CSS variables
+const hexToHsl = (hex: string | undefined): string => {
+  const { h, s, l } = hexToHslValues(hex);
+  return `${h} ${s}% ${l}%`;
+};
+
+// Create a darker version of a color
+const getDarkerHsl = (hex: string | undefined, amount: number = 5): string => {
+  const { h, s, l } = hexToHslValues(hex);
+  // For light colors, darken more; for dark colors, lighten slightly to create contrast
+  const newL = l > 50 ? Math.max(0, l - amount - 10) : Math.min(100, l + amount);
+  return `${h} ${s}% ${newL}%`;
 };
 
 export const useSettings = () => {
@@ -95,13 +113,24 @@ export const useSettings = () => {
     root.style.setProperty('--today', primaryHsl);
     root.style.setProperty('--has-content', primaryHsl);
     
-    // Apply background color
+    // Apply background color and derived colors
     const bgColor = settings.backgroundColor || defaultSettings.backgroundColor;
     root.style.setProperty('--background', hexToHsl(bgColor));
+    
+    // Set card color as a slightly different shade of background
+    root.style.setProperty('--card', getDarkerHsl(bgColor, 5));
+    root.style.setProperty('--popover', getDarkerHsl(bgColor, 5));
+    root.style.setProperty('--secondary', getDarkerHsl(bgColor, 8));
+    root.style.setProperty('--muted', getDarkerHsl(bgColor, 10));
+    root.style.setProperty('--accent', getDarkerHsl(bgColor, 10));
     
     // Apply font color
     const fgColor = settings.fontColor || defaultSettings.fontColor;
     root.style.setProperty('--foreground', hexToHsl(fgColor));
+    root.style.setProperty('--card-foreground', hexToHsl(fgColor));
+    root.style.setProperty('--popover-foreground', hexToHsl(fgColor));
+    root.style.setProperty('--secondary-foreground', hexToHsl(fgColor));
+    root.style.setProperty('--accent-foreground', hexToHsl(fgColor));
     
     // Apply font family
     document.body.style.fontFamily = fontFamilies[settings.fontFamily];
