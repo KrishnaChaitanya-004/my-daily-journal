@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Type, CheckSquare } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { CheckSquare } from 'lucide-react';
 import type { ContentItem } from '@/hooks/useDiaryStorage';
 
 interface DailyContentProps {
@@ -17,142 +17,113 @@ const DailyContent = ({
   onToggleItem, 
   onDeleteItem 
 }: DailyContentProps) => {
-  const [newText, setNewText] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editText, setEditText] = useState('');
+  const [taskText, setTaskText] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Get the note item (we'll use a single note for free-form text)
+  const noteItem = items.find(item => item.type === 'note');
+  const tasks = items.filter(item => item.type === 'task');
+  
+  const [noteText, setNoteText] = useState(noteItem?.text || '');
+  
+  // Sync noteText when noteItem changes (e.g., date change)
+  useEffect(() => {
+    setNoteText(noteItem?.text || '');
+  }, [noteItem?.id, noteItem?.text]);
 
-  const handleAdd = (type: 'note' | 'task') => {
-    if (newText.trim()) {
-      onAddItem(newText.trim(), type);
-      setNewText('');
+  const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newText = e.target.value;
+    setNoteText(newText);
+    
+    if (noteItem) {
+      if (newText.trim()) {
+        onUpdateItem(noteItem.id, newText);
+      } else {
+        onDeleteItem(noteItem.id);
+      }
+    } else if (newText.trim()) {
+      onAddItem(newText, 'note');
     }
   };
 
-  const startEdit = (item: ContentItem) => {
-    setEditingId(item.id);
-    setEditText(item.text);
-  };
-
-  const saveEdit = () => {
-    if (editingId && editText.trim()) {
-      onUpdateItem(editingId, editText.trim());
-    }
-    setEditingId(null);
-    setEditText('');
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      saveEdit();
-    }
-    if (e.key === 'Escape') {
-      setEditingId(null);
-      setEditText('');
+  const handleAddTask = () => {
+    if (taskText.trim()) {
+      onAddItem(taskText.trim(), 'task');
+      setTaskText('');
     }
   };
 
   return (
     <div className="w-full p-4 animate-fade-in flex flex-col h-full">
-      {/* Document-style flowing content */}
+      {/* Free-form note area */}
       <div className="flex-1 mb-4 overflow-y-auto">
-        <div className="text-sm font-light leading-relaxed text-foreground">
-          {items.length === 0 ? (
-            <p className="text-muted-foreground/60 py-8 text-center">
-              Start writing...
-            </p>
-          ) : (
-            items.map((item, index) => (
-              <span key={item.id} className="inline">
-                {item.type === 'task' ? (
-                  <span className="inline-flex items-baseline group">
-                    <button
-                      onClick={() => onToggleItem(item.id)}
-                      className={`
-                        inline-flex items-center justify-center
-                        w-4 h-4 mr-1 align-middle
-                        transition-smooth tap-highlight-none
-                        ${item.completed ? 'text-primary' : 'text-muted-foreground'}
-                      `}
-                    >
-                      {item.completed ? '✓' : '□'}
-                    </button>
-                    {editingId === item.id ? (
-                      <input
-                        type="text"
-                        value={editText}
-                        onChange={(e) => setEditText(e.target.value)}
-                        onBlur={saveEdit}
-                        onKeyDown={handleKeyDown}
-                        autoFocus
-                        className="
-                          bg-transparent border-b border-primary
-                          focus:outline-none text-sm font-light
-                        "
-                        style={{ width: `${editText.length + 1}ch` }}
-                      />
-                    ) : (
-                      <span
-                        onClick={() => startEdit(item)}
-                        onDoubleClick={() => onDeleteItem(item.id)}
-                        className={`
-                          cursor-pointer hover:text-primary transition-smooth
-                          ${item.completed ? 'line-through text-muted-foreground' : ''}
-                        `}
-                        title="Click to edit, double-click to delete"
-                      >
-                        {item.text}
-                      </span>
-                    )}
-                    {index < items.length - 1 && <br />}
-                  </span>
-                ) : (
-                  <span className="inline group">
-                    {editingId === item.id ? (
-                      <textarea
-                        value={editText}
-                        onChange={(e) => setEditText(e.target.value)}
-                        onBlur={saveEdit}
-                        onKeyDown={handleKeyDown}
-                        autoFocus
-                        rows={Math.max(1, editText.split('\n').length)}
-                        className="
-                          bg-transparent border-b border-primary
-                          focus:outline-none text-sm font-light
-                          w-full resize-none
-                        "
-                      />
-                    ) : (
-                      <span
-                        onClick={() => startEdit(item)}
-                        onDoubleClick={() => onDeleteItem(item.id)}
-                        className="cursor-pointer hover:text-foreground/80 transition-smooth whitespace-pre-wrap"
-                        title="Click to edit, double-click to delete"
-                      >
-                        {item.text}
-                      </span>
-                    )}
-                    {index < items.length - 1 && ' '}
-                  </span>
-                )}
-              </span>
-            ))
-          )}
-        </div>
+        <textarea
+          ref={textareaRef}
+          value={noteText}
+          onChange={handleNoteChange}
+          placeholder="Start writing..."
+          className="
+            w-full h-full min-h-[200px]
+            bg-transparent text-foreground text-sm font-light
+            placeholder:text-muted-foreground/60
+            focus:outline-none resize-none
+            leading-relaxed
+          "
+        />
+        
+        {/* Tasks displayed below notes */}
+        {tasks.length > 0 && (
+          <div className="mt-4 space-y-2 border-t border-border pt-4">
+            {tasks.map((task) => (
+              <div 
+                key={task.id} 
+                className="flex items-center gap-2 group"
+              >
+                <button
+                  onClick={() => onToggleItem(task.id)}
+                  className={`
+                    text-lg transition-smooth tap-highlight-none
+                    ${task.completed ? 'text-primary' : 'text-muted-foreground'}
+                  `}
+                >
+                  {task.completed ? '✓' : '□'}
+                </button>
+                <span
+                  className={`
+                    flex-1 text-sm font-light
+                    ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}
+                  `}
+                >
+                  {task.text}
+                </span>
+                <button
+                  onClick={() => onDeleteItem(task.id)}
+                  className="
+                    opacity-0 group-hover:opacity-100
+                    text-xs text-muted-foreground hover:text-destructive
+                    transition-smooth
+                  "
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Input area */}
+      {/* Bottom bar - only for adding tasks */}
       <div className="flex items-center gap-2 border-t border-border pt-4">
         <input
           type="text"
-          value={newText}
-          onChange={(e) => setNewText(e.target.value)}
+          value={taskText}
+          onChange={(e) => setTaskText(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && newText.trim()) {
-              handleAdd('note');
+            if (e.key === 'Enter' && taskText.trim()) {
+              handleAddTask();
             }
           }}
-          placeholder="Write something..."
+          placeholder="Add a task..."
           className="
             flex-1 py-2 px-0
             bg-transparent text-foreground text-sm font-light
@@ -163,21 +134,9 @@ const DailyContent = ({
           "
         />
         <button
-          onClick={() => handleAdd('note')}
-          disabled={!newText.trim()}
-          title="Add as note"
-          className="
-            p-2 text-muted-foreground
-            hover:text-primary disabled:opacity-40
-            transition-smooth tap-highlight-none
-          "
-        >
-          <Type className="w-5 h-5" />
-        </button>
-        <button
-          onClick={() => handleAdd('task')}
-          disabled={!newText.trim()}
-          title="Add as task"
+          onClick={handleAddTask}
+          disabled={!taskText.trim()}
+          title="Add task"
           className="
             p-2 text-muted-foreground
             hover:text-primary disabled:opacity-40
