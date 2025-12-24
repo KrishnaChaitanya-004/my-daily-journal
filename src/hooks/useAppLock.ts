@@ -27,7 +27,6 @@ export const useAppLock = () => {
 
   const [isLocked, setIsLocked] = useState<boolean>(() => {
     try {
-      // Check if lock is enabled and if app was locked
       const settings = localStorage.getItem(LOCK_SETTINGS_KEY);
       if (!settings) return false;
       const parsed = JSON.parse(settings);
