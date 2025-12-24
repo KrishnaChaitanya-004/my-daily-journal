@@ -137,9 +137,9 @@ const Statistics = () => {
         {/* Word Count Chart */}
         <div className="bg-card rounded-xl p-4 border border-border">
           <h3 className="text-sm font-medium text-foreground mb-4">Words Written (Last 30 Days)</h3>
-          <div className="h-40">
+          <div className="h-48">
             <ChartContainer config={chartConfig}>
-              <AreaChart data={chartData} margin={{ left: 0, right: 0, top: 0, bottom: 0 }}>
+              <AreaChart data={chartData} margin={{ left: 0, right: 0, top: 0, bottom: 20 }}>
                 <defs>
                   <linearGradient id="wordGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
