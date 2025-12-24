@@ -92,7 +92,7 @@ const Calendar = ({
 
   return (
     <div className="w-full px-3">
-      {/* Header with month abbreviation on right */}
+      {/* Header */}
       <div className="flex items-center justify-between mb-3 px-1">
         <button
           onClick={goToPrevMonth}
@@ -103,17 +103,12 @@ const Calendar = ({
         <span className="text-xs text-muted-foreground font-normal tracking-wide">
           {formatDateHeader(selectedDate)}
         </span>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground font-normal tracking-wide">
-            {getMonthAbbr(currentMonth)}
-          </span>
-          <button
-            onClick={goToNextMonth}
-            className="p-1 text-muted-foreground hover:text-foreground transition-smooth tap-highlight-none"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+        <button
+          onClick={goToNextMonth}
+          className="p-1 text-muted-foreground hover:text-foreground transition-smooth tap-highlight-none"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Days of week */}
