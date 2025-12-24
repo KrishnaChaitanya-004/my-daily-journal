@@ -206,36 +206,42 @@ const Statistics = () => {
         )}
 
         {/* Most Active Months */}
-        {monthlyStats.length > 0 && (
-          <div className="bg-card rounded-xl p-4 border border-border overflow-hidden">
-            <h3 className="text-sm font-medium text-foreground mb-4">Most Active Months</h3>
-            <div className="h-40">
-              <ChartContainer config={chartConfig}>
-                <BarChart 
-                  data={monthlyStats.slice(-6).map(m => ({
-                    month: format(parseISO(m.month + '-01'), 'MMM'),
-                    entries: m.entries
-                  }))} 
-                  margin={{ left: 0, right: 0, top: 0, bottom: 20 }}
-                >
-                  <XAxis 
-                    dataKey="month" 
-                    fontSize={10} 
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar 
-                    dataKey="entries" 
-                    fill="hsl(var(--primary))" 
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ChartContainer>
-            </div>
+        <div className="bg-card rounded-xl p-4 border border-border overflow-hidden">
+          <h3 className="text-sm font-medium text-foreground mb-4">Most Active Months ({new Date().getFullYear()})</h3>
+          <div className="h-40">
+            <ChartContainer config={chartConfig}>
+              <BarChart 
+                data={(() => {
+                  const year = new Date().getFullYear();
+                  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                  return months.map((monthName, index) => {
+                    const monthKey = `${year}-${String(index + 1).padStart(2, '0')}`;
+                    const monthData = monthlyStats.find(m => m.month === monthKey);
+                    return {
+                      month: monthName,
+                      entries: monthData?.entries || 0
+                    };
+                  });
+                })()} 
+                margin={{ left: 0, right: 0, top: 0, bottom: 20 }}
+              >
+                <XAxis 
+                  dataKey="month" 
+                  fontSize={9} 
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar 
+                  dataKey="entries" 
+                  fill="hsl(var(--primary))" 
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ChartContainer>
           </div>
-        )}
+        </div>
 
         {/* Monthly Overview */}
         {monthlyStats.length > 0 && (
