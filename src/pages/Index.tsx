@@ -52,8 +52,8 @@ const Index = () => {
 
   return (
     <main className="h-screen bg-background flex flex-col max-w-md mx-auto overflow-hidden">
-      {/* Calendar Section - compact, ~35% of screen */}
-      <section className="pt-6 pb-2 shrink-0">
+      {/* Calendar Section - compact */}
+      <section className="pt-4 pb-1 shrink-0">
         <Calendar
           selectedDate={selectedDate}
           currentMonth={currentMonth}
