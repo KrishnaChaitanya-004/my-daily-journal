@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import Calendar from '@/components/Calendar';
 import DailyContent from '@/components/DailyContent';
-import { useDiaryStorage } from '@/hooks/useDiaryStorage';
+import { useFileStorage } from '@/hooks/useFileStorage';
 
 const Index = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -9,11 +9,13 @@ const Index = () => {
 
   const {
     content,
-    updateContent,
-    addTask,
-    toggleTask,
+    photos,
+    saveContent,
+    savePhoto,
+    deletePhoto,
+    getPhotoUrl,
     hasContent
-  } = useDiaryStorage(selectedDate);
+  } = useFileStorage(selectedDate);
 
   const handleDateSelect = useCallback((date: Date) => {
     setSelectedDate(date);
@@ -22,6 +24,31 @@ const Index = () => {
       setCurrentMonth(new Date(date.getFullYear(), date.getMonth(), 1));
     }
   }, [currentMonth]);
+
+  const addTask = useCallback((taskText: string) => {
+    const taskLine = `□ ${taskText}`;
+    const newContent = content 
+      ? `${content}\n${taskLine}` 
+      : taskLine;
+    saveContent(newContent);
+  }, [content, saveContent]);
+
+  const toggleTask = useCallback((lineIndex: number) => {
+    const lines = content.split('\n');
+    const line = lines[lineIndex];
+    
+    if (line.startsWith('□ ')) {
+      lines[lineIndex] = '✓ ' + line.slice(2);
+    } else if (line.startsWith('✓ ')) {
+      lines[lineIndex] = '□ ' + line.slice(2);
+    }
+    
+    saveContent(lines.join('\n'));
+  }, [content, saveContent]);
+
+  const handleAddPhoto = useCallback(async (base64: string) => {
+    await savePhoto(base64);
+  }, [savePhoto]);
 
   return (
     <main className="min-h-screen bg-background flex flex-col max-w-md mx-auto">
@@ -43,9 +70,13 @@ const Index = () => {
       <section key={selectedDate.toISOString()} className="flex-1 flex flex-col">
         <DailyContent
           content={content}
-          onUpdateContent={updateContent}
+          photos={photos}
+          onUpdateContent={saveContent}
           onAddTask={addTask}
           onToggleTask={toggleTask}
+          onAddPhoto={handleAddPhoto}
+          onDeletePhoto={deletePhoto}
+          getPhotoUrl={getPhotoUrl}
         />
       </section>
 
