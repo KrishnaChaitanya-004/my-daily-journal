@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import Calendar from '@/components/Calendar';
-import DiarySection from '@/components/DiarySection';
-import TodoSection from '@/components/TodoSection';
+import DailyContent from '@/components/DailyContent';
 import { useDiaryStorage } from '@/hooks/useDiaryStorage';
 
 const Index = () => {
@@ -9,18 +8,16 @@ const Index = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const {
-    diary,
-    todos,
-    saveDiary,
-    addTodo,
-    toggleTodo,
-    deleteTodo,
-    hasContent,
+    items,
+    addItem,
+    updateItem,
+    toggleItem,
+    deleteItem,
+    hasContent
   } = useDiaryStorage(selectedDate);
 
   const handleDateSelect = useCallback((date: Date) => {
     setSelectedDate(date);
-    // If selecting a date in a different month, update the month view
     if (date.getMonth() !== currentMonth.getMonth() || 
         date.getFullYear() !== currentMonth.getFullYear()) {
       setCurrentMonth(new Date(date.getFullYear(), date.getMonth(), 1));
@@ -45,16 +42,12 @@ const Index = () => {
 
       {/* Content Section */}
       <section key={selectedDate.toISOString()} className="flex-1 flex flex-col">
-        <DiarySection
-          diary={diary}
-          onSave={saveDiary}
-        />
-        
-        <TodoSection
-          todos={todos}
-          onAdd={addTodo}
-          onToggle={toggleTodo}
-          onDelete={deleteTodo}
+        <DailyContent
+          items={items}
+          onAddItem={addItem}
+          onUpdateItem={updateItem}
+          onToggleItem={toggleItem}
+          onDeleteItem={deleteItem}
         />
       </section>
 
