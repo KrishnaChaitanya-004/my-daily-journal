@@ -202,18 +202,6 @@ const Statistics = () => {
                 </AreaChart>
               </ChartContainer>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              {habits.slice(0, 4).map(habit => {
-                const stats = getHabitStats(habit.id);
-                return (
-                  <div key={habit.id} className="flex items-center gap-2 text-xs">
-                    <span>{habit.icon}</span>
-                    <span className="text-muted-foreground truncate">{habit.name}</span>
-                    <span className="text-foreground ml-auto">{stats.streak}🔥</span>
-                  </div>
-                );
-              })}
-            </div>
           </div>
         )}
 
