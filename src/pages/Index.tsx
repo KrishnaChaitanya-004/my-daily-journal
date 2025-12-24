@@ -1,11 +1,34 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Bookmark } from 'lucide-react';
 import Calendar from '@/components/Calendar';
 import DailyContent from '@/components/DailyContent';
+import AppMenu from '@/components/AppMenu';
 import { useFileStorage } from '@/hooks/useFileStorage';
+import { useBookmarks } from '@/hooks/useBookmarks';
+import { useSettings } from '@/hooks/useSettings';
 
 const Index = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [searchParams] = useSearchParams();
+  const dateParam = searchParams.get('date');
+  
+  const [selectedDate, setSelectedDate] = useState(() => {
+    if (dateParam) {
+      const parsed = new Date(dateParam);
+      if (!isNaN(parsed.getTime())) return parsed;
+    }
+    return new Date();
+  });
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    if (dateParam) {
+      const parsed = new Date(dateParam);
+      if (!isNaN(parsed.getTime())) return new Date(parsed.getFullYear(), parsed.getMonth(), 1);
+    }
+    return new Date();
+  });
+
+  // Initialize settings on mount
+  useSettings();
 
   const {
     content,
@@ -16,6 +39,19 @@ const Index = () => {
     getPhotoUrl,
     hasContent
   } = useFileStorage(selectedDate);
+
+  const { isBookmarked, toggleBookmark } = useBookmarks();
+
+  // Update date from URL param
+  useEffect(() => {
+    if (dateParam) {
+      const parsed = new Date(dateParam);
+      if (!isNaN(parsed.getTime())) {
+        setSelectedDate(parsed);
+        setCurrentMonth(new Date(parsed.getFullYear(), parsed.getMonth(), 1));
+      }
+    }
+  }, [dateParam]);
 
   const handleDateSelect = useCallback((date: Date) => {
     setSelectedDate(date);
@@ -66,16 +102,39 @@ const Index = () => {
     await savePhoto(base64);
   }, [savePhoto]);
 
+  const currentDateBookmarked = isBookmarked(selectedDate);
+
   return (
     <main className="h-screen bg-background flex flex-col max-w-md mx-auto overflow-hidden">
+      {/* Top bar with hamburger and bookmark */}
+      <header className="flex items-center justify-between px-2 pt-3 pb-1 shrink-0">
+        <AppMenu />
+        <button
+          onClick={() => toggleBookmark(selectedDate)}
+          className={`
+            p-2 transition-smooth tap-highlight-none
+            ${currentDateBookmarked 
+              ? 'text-primary' 
+              : 'text-muted-foreground hover:text-foreground'
+            }
+          `}
+          title={currentDateBookmarked ? 'Remove bookmark' : 'Bookmark this day'}
+        >
+          <Bookmark 
+            className={`w-5 h-5 ${currentDateBookmarked ? 'fill-primary' : ''}`} 
+          />
+        </button>
+      </header>
+
       {/* Calendar Section - compact */}
-      <section className="pt-4 pb-1 shrink-0">
+      <section className="pb-1 shrink-0">
         <Calendar
           selectedDate={selectedDate}
           currentMonth={currentMonth}
           onDateSelect={handleDateSelect}
           onMonthChange={handleMonthChange}
           hasContent={hasContent}
+          isBookmarked={isBookmarked}
         />
       </section>
 

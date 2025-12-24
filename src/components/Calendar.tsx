@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Bookmark } from 'lucide-react';
 import { useMemo } from 'react';
 
 interface CalendarProps {
@@ -7,6 +7,7 @@ interface CalendarProps {
   onDateSelect: (date: Date) => void;
   onMonthChange: (date: Date) => void;
   hasContent: (date: Date) => boolean;
+  isBookmarked?: (date: Date) => boolean;
 }
 
 const DAYS = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
@@ -17,6 +18,7 @@ const Calendar = ({
   onDateSelect,
   onMonthChange,
   hasContent,
+  isBookmarked,
 }: CalendarProps) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -66,10 +68,6 @@ const Calendar = ({
     return `${day}.${month}.${year} ${weekday}`;
   };
 
-  const getMonthAbbr = (date: Date) => {
-    return date.toLocaleDateString('en-US', { month: 'short' });
-  };
-
   const goToPrevMonth = () => {
     onMonthChange(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
   };
@@ -93,10 +91,10 @@ const Calendar = ({
   return (
     <div className="w-full px-3">
       {/* Header */}
-      <div className="flex items-center justify-between mb-3 px-1">
+      <div className="flex items-center justify-between mb-4 px-1">
         <button
           onClick={goToPrevMonth}
-          className="p-1 text-muted-foreground hover:text-foreground transition-smooth tap-highlight-none"
+          className="p-2 text-muted-foreground hover:text-foreground transition-smooth tap-highlight-none rounded-lg hover:bg-secondary"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -105,26 +103,26 @@ const Calendar = ({
         </span>
         <button
           onClick={goToNextMonth}
-          className="p-1 text-muted-foreground hover:text-foreground transition-smooth tap-highlight-none"
+          className="p-2 text-muted-foreground hover:text-foreground transition-smooth tap-highlight-none rounded-lg hover:bg-secondary"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
       {/* Days of week */}
-      <div className="grid grid-cols-7">
+      <div className="grid grid-cols-7 mb-2">
         {DAYS.map((day) => (
           <div
             key={day}
-            className="text-center text-[11px] text-muted-foreground font-normal py-0.5"
+            className="text-center text-[10px] text-muted-foreground font-medium uppercase tracking-wider py-1"
           >
             {day}
           </div>
         ))}
       </div>
 
-      {/* Calendar grid - compact */}
-      <div className="grid grid-cols-7">
+      {/* Calendar grid - with more spacing */}
+      <div className="grid grid-cols-7 gap-y-1">
         {calendarDays.map((date, index) => {
           if (!date) return <div key={index} />;
           
@@ -132,13 +130,14 @@ const Calendar = ({
           const dateIsSelected = isSelected(date);
           const dateInCurrentMonth = isCurrentMonth(date);
           const dateHasContent = hasContent(date);
+          const dateIsBookmarked = isBookmarked?.(date);
 
           return (
             <button
               key={index}
               onClick={() => onDateSelect(date)}
               className={`
-                relative flex items-center justify-center py-0.5 text-xs font-normal
+                relative flex items-center justify-center py-1.5 text-xs font-normal
                 transition-smooth tap-highlight-none
                 ${!dateInCurrentMonth ? 'text-muted-foreground/40' : 'text-foreground'}
                 ${dateIsSelected && !dateIsToday ? 'text-foreground' : ''}
@@ -146,14 +145,20 @@ const Calendar = ({
             >
               <span
                 className={`
-                  relative z-10 w-6 h-6 flex items-center justify-center rounded-full
+                  relative z-10 w-7 h-7 flex items-center justify-center rounded-full
                   transition-smooth
-                  ${dateIsToday ? 'ring-2 ring-primary text-primary' : ''}
+                  ${dateIsToday ? 'ring-2 ring-primary text-primary font-medium' : ''}
                   ${dateIsSelected && !dateIsToday ? 'bg-secondary' : ''}
+                  ${dateInCurrentMonth ? 'hover:bg-secondary/50' : ''}
                 `}
               >
                 {date.getDate()}
               </span>
+              
+              {/* Bookmark indicator */}
+              {dateIsBookmarked && (
+                <Bookmark className="absolute top-0 right-0.5 w-2.5 h-2.5 text-primary fill-primary" />
+              )}
               
               {/* Content indicator dot */}
               {dateHasContent && (
