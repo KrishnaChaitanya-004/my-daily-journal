@@ -8,11 +8,10 @@ const Index = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const {
-    items,
-    addItem,
-    updateItem,
-    toggleItem,
-    deleteItem,
+    content,
+    updateContent,
+    addTask,
+    toggleTask,
     hasContent
   } = useDiaryStorage(selectedDate);
 
@@ -43,11 +42,10 @@ const Index = () => {
       {/* Content Section */}
       <section key={selectedDate.toISOString()} className="flex-1 flex flex-col">
         <DailyContent
-          items={items}
-          onAddItem={addItem}
-          onUpdateItem={updateItem}
-          onToggleItem={toggleItem}
-          onDeleteItem={deleteItem}
+          content={content}
+          onUpdateContent={updateContent}
+          onAddTask={addTask}
+          onToggleTask={toggleTask}
         />
       </section>
 
