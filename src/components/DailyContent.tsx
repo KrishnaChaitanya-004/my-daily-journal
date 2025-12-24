@@ -1,10 +1,14 @@
 import { useState, useRef, useEffect, ChangeEvent } from 'react';
-import { CheckSquare, Camera, Clock, Check } from 'lucide-react';
+import { CheckSquare, Camera, Clock, Check, MapPin, Cloud, Hash, X, Mic, Square, Play, Pause, Trash2 } from 'lucide-react';
 import { Camera as CapacitorCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
 import PhotoThumbnail from './PhotoThumbnail';
 import PhotoViewer from './PhotoViewer';
 import { format } from 'date-fns';
+import { LocationData, WeatherData, VoiceNoteData } from '@/hooks/useFileStorage';
+import { useLocation } from '@/hooks/useLocation';
+import { useWeather } from '@/hooks/useWeather';
+import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 
 interface PhotoData {
   filename: string;
@@ -16,30 +20,51 @@ interface PhotoData {
 interface DailyContentProps {
   content: string;
   photos: PhotoData[];
+  tags: string[];
+  location?: LocationData;
+  weather?: WeatherData;
+  voiceNotes: VoiceNoteData[];
   onUpdateContent: (content: string) => void;
   onAddTask: (taskText: string) => void;
   onToggleTask: (lineIndex: number) => void;
   onAddPhoto: (base64: string) => Promise<void>;
   onDeletePhoto: (filename: string) => void;
+  onSaveMeta: (meta: { tags?: string[]; location?: LocationData; weather?: WeatherData }) => void;
+  onSaveVoiceNote: (base64: string, duration: number) => Promise<void>;
+  onDeleteVoiceNote: (filename: string) => void;
   getPhotoUrl: (photo: PhotoData) => string;
 }
 
 const DailyContent = ({ 
   content, 
   photos,
+  tags,
+  location,
+  weather,
+  voiceNotes,
   onUpdateContent, 
   onAddTask,
   onToggleTask,
   onAddPhoto,
   onDeletePhoto,
+  onSaveMeta,
+  onSaveVoiceNote,
+  onDeleteVoiceNote,
   getPhotoUrl
 }: DailyContentProps) => {
   const [taskText, setTaskText] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [localContent, setLocalContent] = useState(content);
   const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
+  const [tagInput, setTagInput] = useState('');
+  const [playingVoice, setPlayingVoice] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  const { getCurrentLocation, isLoading: locationLoading } = useLocation();
+  const { fetchWeather, isLoading: weatherLoading } = useWeather();
+  const { isRecording, duration, startRecording, stopRecording, cancelRecording, formatDuration } = useVoiceRecorder();
   
   // Sync localContent when content changes (e.g., date change or task toggle)
   useEffect(() => {
@@ -73,7 +98,6 @@ const DailyContent = ({
       const end = textarea.selectionEnd;
       const newContent = localContent.slice(0, start) + timeText + localContent.slice(end);
       setLocalContent(newContent);
-      // Set cursor position after inserted time
       setTimeout(() => {
         textarea.selectionStart = textarea.selectionEnd = start + timeText.length;
         textarea.focus();
@@ -102,7 +126,6 @@ const DailyContent = ({
         console.error('Camera error:', e);
       }
     } else {
-      // Web fallback - trigger file input
       fileInputRef.current?.click();
     }
   };
@@ -117,17 +140,66 @@ const DailyContent = ({
       await onAddPhoto(base64);
     };
     reader.readAsDataURL(file);
-    
-    // Reset input
     e.target.value = '';
   };
 
-  // Get photo by filename from photos array
+  const handleAddLocation = async () => {
+    const loc = await getCurrentLocation();
+    if (loc) {
+      onSaveMeta({ location: loc });
+    }
+  };
+
+  const handleAddWeather = async () => {
+    const w = await fetchWeather(location?.lat, location?.lng);
+    if (w) {
+      onSaveMeta({ weather: w });
+    }
+  };
+
+  const handleAddTag = () => {
+    const newTag = tagInput.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (newTag && !tags.includes(newTag)) {
+      onSaveMeta({ tags: [...tags, newTag] });
+    }
+    setTagInput('');
+  };
+
+  const handleRemoveTag = (tag: string) => {
+    onSaveMeta({ tags: tags.filter(t => t !== tag) });
+  };
+
+  const handleVoiceRecord = async () => {
+    if (isRecording) {
+      const result = await stopRecording();
+      if (result) {
+        await onSaveVoiceNote(result.base64, result.duration);
+      }
+    } else {
+      await startRecording();
+    }
+  };
+
+  const handlePlayVoice = (note: VoiceNoteData) => {
+    if (playingVoice === note.filename) {
+      audioRef.current?.pause();
+      setPlayingVoice(null);
+    } else {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      const audio = new Audio(`data:audio/webm;base64,${note.base64}`);
+      audio.onended = () => setPlayingVoice(null);
+      audio.play();
+      audioRef.current = audio;
+      setPlayingVoice(note.filename);
+    }
+  };
+
   const getPhotoByFilename = (filename: string): PhotoData | undefined => {
     return photos.find(p => p.filename === filename);
   };
 
-  // Parse content into lines for rendering with inline photos
   const renderContent = () => {
     if (!content && photos.length === 0) return null;
     
@@ -136,7 +208,6 @@ const DailyContent = ({
     return (
       <>
         {lines.map((line, index) => {
-          // Check for photo marker: [photo:filename.jpg]
           const photoMatch = line.match(/^\[photo:(.+)\]$/);
           if (photoMatch) {
             const filename = photoMatch[1];
@@ -154,7 +225,6 @@ const DailyContent = ({
                 </div>
               );
             }
-            // Photo not found, show placeholder
             return (
               <div key={index} className="text-sm text-muted-foreground py-0.5 italic">
                 [Photo not found: {filename}]
@@ -205,7 +275,6 @@ const DailyContent = ({
 
   return (
     <div className="w-full p-4 animate-fade-in flex flex-col h-full">
-      {/* Hidden file input for web */}
       <input
         ref={fileInputRef}
         type="file"
@@ -215,7 +284,6 @@ const DailyContent = ({
         className="hidden"
       />
       
-      {/* Photo viewer modal */}
       {viewingPhoto && (
         <PhotoViewer 
           src={viewingPhoto} 
@@ -223,10 +291,114 @@ const DailyContent = ({
         />
       )}
 
+      {/* Metadata Row - Location, Weather, Tags */}
+      <div className="flex flex-wrap items-center gap-2 mb-3 -mt-1" onClick={(e) => e.stopPropagation()}>
+        {/* Location */}
+        {location ? (
+          <div className="flex items-center gap-1 px-2 py-1 bg-secondary rounded-full text-xs text-foreground">
+            <MapPin className="w-3 h-3 text-primary" />
+            <span>{location.name}</span>
+          </div>
+        ) : (
+          <button
+            onClick={handleAddLocation}
+            disabled={locationLoading}
+            className="flex items-center gap-1 px-2 py-1 bg-secondary/50 rounded-full text-xs text-muted-foreground hover:bg-secondary transition-smooth"
+          >
+            <MapPin className="w-3 h-3" />
+            <span>{locationLoading ? '...' : 'Add location'}</span>
+          </button>
+        )}
+
+        {/* Weather */}
+        {weather ? (
+          <div className="flex items-center gap-1 px-2 py-1 bg-secondary rounded-full text-xs text-foreground">
+            <span>{weather.icon}</span>
+            <span>{weather.temp}°C</span>
+          </div>
+        ) : (
+          <button
+            onClick={handleAddWeather}
+            disabled={weatherLoading}
+            className="flex items-center gap-1 px-2 py-1 bg-secondary/50 rounded-full text-xs text-muted-foreground hover:bg-secondary transition-smooth"
+          >
+            <Cloud className="w-3 h-3" />
+            <span>{weatherLoading ? '...' : 'Add weather'}</span>
+          </button>
+        )}
+
+        {/* Tags */}
+        {tags.map(tag => (
+          <div key={tag} className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-full text-xs text-primary">
+            <Hash className="w-3 h-3" />
+            <span>{tag}</span>
+            <button onClick={() => handleRemoveTag(tag)} className="ml-0.5 hover:text-destructive">
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        ))}
+        
+        {/* Add Tag Input */}
+        <div className="flex items-center">
+          <input
+            type="text"
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
+            onBlur={handleAddTag}
+            placeholder="#tag"
+            className="w-16 px-2 py-1 bg-transparent text-xs placeholder:text-muted-foreground/50 focus:outline-none"
+          />
+        </div>
+      </div>
+
+      {/* Voice Notes */}
+      {voiceNotes.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-3" onClick={(e) => e.stopPropagation()}>
+          {voiceNotes.map(note => (
+            <div key={note.filename} className="flex items-center gap-2 px-3 py-2 bg-secondary rounded-lg">
+              <button
+                onClick={() => handlePlayVoice(note)}
+                className="text-primary hover:text-primary/80 transition-smooth"
+              >
+                {playingVoice === note.filename ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+              </button>
+              <span className="text-xs text-muted-foreground">{formatDuration(note.duration)}</span>
+              <button
+                onClick={() => onDeleteVoiceNote(note.filename)}
+                className="text-muted-foreground hover:text-destructive transition-smooth"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Recording Indicator */}
+      {isRecording && (
+        <div className="flex items-center gap-3 mb-3 p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+          <div className="w-3 h-3 bg-destructive rounded-full animate-pulse" />
+          <span className="text-sm text-destructive font-medium">Recording... {formatDuration(duration)}</span>
+          <div className="flex-1" />
+          <button
+            onClick={cancelRecording}
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleVoiceRecord}
+            className="px-3 py-1 bg-destructive text-destructive-foreground text-xs rounded-full"
+          >
+            Stop
+          </button>
+        </div>
+      )}
+
       {/* Fullscreen editor overlay */}
       {isEditing && (
         <div className="fixed inset-0 z-50 bg-background flex flex-col">
-          {/* Header with save button */}
           <div className="flex items-center justify-between p-4 border-b border-border">
             <span className="text-sm text-muted-foreground">Editing</span>
             <button
@@ -237,7 +409,6 @@ const DailyContent = ({
             </button>
           </div>
           
-          {/* Textarea */}
           <div className="flex-1 p-4 overflow-hidden">
             <textarea
               ref={textareaRef}
@@ -255,7 +426,6 @@ const DailyContent = ({
             />
           </div>
           
-          {/* Bottom toolbar */}
           <div className="flex items-center gap-1 p-4 border-t border-border">
             <button
               onClick={handlePhotoCapture}
@@ -271,6 +441,14 @@ const DailyContent = ({
               className="p-1.5 text-muted-foreground hover:text-primary transition-smooth tap-highlight-none"
             >
               <Clock className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={handleVoiceRecord}
+              title="Record voice note"
+              className={`p-1.5 transition-smooth tap-highlight-none ${isRecording ? 'text-destructive' : 'text-muted-foreground hover:text-primary'}`}
+            >
+              {isRecording ? <Square className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
             </button>
             
             <input
