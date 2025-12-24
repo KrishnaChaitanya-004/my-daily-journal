@@ -155,6 +155,9 @@ const Index = () => {
         />
       </section>
 
+      {/* Bottom Divider */}
+      <div className="h-px bg-border mx-4 shrink-0" />
+
       {/* Safe area spacer for mobile */}
       <div className="h-4 shrink-0" />
     </main>
