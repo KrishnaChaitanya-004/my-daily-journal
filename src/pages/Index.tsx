@@ -12,6 +12,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { useAutoSave } from '@/hooks/useAutoSave';
 
 const Index = () => {
+  const [isEditing, setIsEditing] = useState(false);
   const [searchParams] = useSearchParams();
   const dateParam = searchParams.get('date');
   
@@ -194,6 +195,8 @@ const Index = () => {
           location={location}
           weather={weather}
           voiceNotes={voiceNotes}
+          isEditing={isEditing}
+          onEditingChange={setIsEditing}
           onUpdateContent={saveContent}
           onAddTask={addTask}
           onToggleTask={toggleTask}
@@ -212,21 +215,19 @@ const Index = () => {
       {/* Safe area spacer for mobile */}
       <div className="h-4 shrink-0" />
 
-      {/* Quick Add FAB */}
-      <QuickAddFAB
-        onAddNote={() => {
-          // Focus on content editor
-          const contentArea = document.querySelector('[data-content-editor]');
-          if (contentArea instanceof HTMLTextAreaElement) {
-            contentArea.focus();
-          }
-        }}
-        onAddVoice={handleSaveVoiceNote}
-        onAddTask={() => {
-          const task = prompt('Add a task:');
-          if (task) addTask(task);
-        }}
-      />
+      {/* Quick Add FAB - hidden when editing */}
+      {!isEditing && (
+        <QuickAddFAB
+          onAddNote={() => {
+            setIsEditing(true);
+          }}
+          onAddVoice={handleSaveVoiceNote}
+          onAddTask={() => {
+            const task = prompt('Add a task:');
+            if (task) addTask(task);
+          }}
+        />
+      )}
     </main>
   );
 };

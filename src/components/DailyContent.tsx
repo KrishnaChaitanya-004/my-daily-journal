@@ -24,6 +24,8 @@ interface DailyContentProps {
   location?: LocationData;
   weather?: WeatherData;
   voiceNotes: VoiceNoteData[];
+  isEditing: boolean;
+  onEditingChange: (editing: boolean) => void;
   onUpdateContent: (content: string) => void;
   onAddTask: (taskText: string) => void;
   onToggleTask: (lineIndex: number) => void;
@@ -42,6 +44,8 @@ const DailyContent = ({
   location,
   weather,
   voiceNotes,
+  isEditing,
+  onEditingChange,
   onUpdateContent, 
   onAddTask,
   onToggleTask,
@@ -53,7 +57,6 @@ const DailyContent = ({
   getPhotoUrl
 }: DailyContentProps) => {
   const [taskText, setTaskText] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
   const [localContent, setLocalContent] = useState(content);
   const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState('');
@@ -78,7 +81,7 @@ const DailyContent = ({
 
   const handleSave = () => {
     onUpdateContent(localContent);
-    setIsEditing(false);
+    onEditingChange(false);
   };
 
   const handleAddTask = () => {
@@ -480,7 +483,7 @@ const DailyContent = ({
       <div 
         className="flex-1 mb-4 overflow-y-auto cursor-text"
         onClick={() => {
-          setIsEditing(true);
+          onEditingChange(true);
           setTimeout(() => textareaRef.current?.focus(), 0);
         }}
       >
