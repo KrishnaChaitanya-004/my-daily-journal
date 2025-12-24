@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette, Download, Upload, Lock, Fingerprint, Trash2, Bell, Clock, Link2 } from 'lucide-react';
+import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette, Download, Upload, Lock, Fingerprint, Trash2, Bell, Clock, Link2, Lightbulb } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings, AppSettings } from '@/hooks/useSettings';
 import { useDiaryExportImport } from '@/hooks/useDiaryExportImport';
@@ -595,6 +595,39 @@ const Settings = () => {
               </div>
             </div>
           )}
+        </section>
+
+        {/* Writing Prompts */}
+        <section className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Lightbulb className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-sm font-medium text-foreground">Writing Prompts</h2>
+              <p className="text-xs text-muted-foreground">Show daily writing inspiration</p>
+            </div>
+          </div>
+          
+          <button
+            onClick={() => updateSetting('showWritingPrompts', !settings.showWritingPrompts)}
+            className={`w-full flex items-center justify-between p-3 rounded-lg border transition-smooth
+              ${settings.showWritingPrompts 
+                ? 'border-primary bg-primary/10' 
+                : 'border-border hover:border-primary/30'
+              }`}
+          >
+            <div className="flex items-center gap-2">
+              <Lightbulb className="w-4 h-4" />
+              <span className="text-sm text-foreground">Show Writing Prompts</span>
+            </div>
+            <div className={`w-10 h-6 rounded-full transition-all ${
+              settings.showWritingPrompts ? 'bg-primary' : 'bg-muted'
+            }`}>
+              <div className={`w-5 h-5 rounded-full bg-white mt-0.5 transition-all`} 
+                style={{ marginLeft: settings.showWritingPrompts ? '18px' : '2px' }} />
+            </div>
+          </button>
         </section>
 
         {/* Data Management */}

@@ -32,7 +32,7 @@ const Index = () => {
   });
 
   // Initialize settings on mount
-  useSettings();
+  const { settings } = useSettings();
 
   const {
     content,
@@ -184,7 +184,9 @@ const Index = () => {
       <div className="h-px bg-border mx-4 shrink-0" />
 
       {/* Writing Prompt Card */}
-      <WritingPromptCard onInsertPrompt={handleInsertPrompt} />
+      {settings.showWritingPrompts && (
+        <WritingPromptCard onInsertPrompt={handleInsertPrompt} />
+      )}
 
       {/* Content Section - takes remaining space */}
       <section key={selectedDate.toISOString()} className="flex-1 flex flex-col min-h-0 overflow-hidden">
