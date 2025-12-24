@@ -4,6 +4,8 @@ export interface AppSettings {
   fontFamily: 'inter' | 'delius' | 'georgia' | 'courier';
   fontSize: 'small' | 'medium' | 'large';
   themeColor: 'red' | 'blue' | 'green' | 'purple' | 'orange' | 'pink';
+  backgroundColor: string;
+  fontColor: string;
 }
 
 const SETTINGS_KEY = 'diary-settings';
@@ -11,7 +13,9 @@ const SETTINGS_KEY = 'diary-settings';
 const defaultSettings: AppSettings = {
   fontFamily: 'inter',
   fontSize: 'medium',
-  themeColor: 'red'
+  themeColor: 'red',
+  backgroundColor: '#0a0a0a',
+  fontColor: '#ededed'
 };
 
 const themeColors: Record<string, { primary: string; ring: string }> = {
@@ -28,6 +32,31 @@ const fontFamilies: Record<string, string> = {
   delius: "'Delius', cursive",
   georgia: "'Georgia', serif",
   courier: "'Courier New', monospace"
+};
+
+// Convert hex to HSL string for CSS variables
+const hexToHsl = (hex: string): string => {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+      case g: h = ((b - r) / d + 2) / 6; break;
+      case b: h = ((r - g) / d + 4) / 6; break;
+    }
+  }
+
+  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 };
 
 export const useSettings = () => {
@@ -50,6 +79,12 @@ export const useSettings = () => {
     root.style.setProperty('--ring', colors.ring);
     root.style.setProperty('--today', colors.primary);
     root.style.setProperty('--has-content', colors.primary);
+    
+    // Apply background color
+    root.style.setProperty('--background', hexToHsl(settings.backgroundColor));
+    
+    // Apply font color
+    root.style.setProperty('--foreground', hexToHsl(settings.fontColor));
     
     // Apply font family
     document.body.style.fontFamily = fontFamilies[settings.fontFamily];
