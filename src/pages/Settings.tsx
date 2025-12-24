@@ -1,4 +1,4 @@
-import { ArrowLeft, Type, Palette, TextCursor, PaintBucket } from 'lucide-react';
+import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings, AppSettings } from '@/hooks/useSettings';
 
@@ -15,13 +15,13 @@ const fontSizeOptions: { value: AppSettings['fontSize']; label: string }[] = [
   { value: 'large', label: 'Large' }
 ];
 
-const colorOptions: { value: AppSettings['themeColor']; color: string }[] = [
-  { value: 'red', color: 'bg-red-500' },
-  { value: 'blue', color: 'bg-blue-500' },
-  { value: 'green', color: 'bg-green-500' },
-  { value: 'purple', color: 'bg-purple-500' },
-  { value: 'orange', color: 'bg-orange-500' },
-  { value: 'pink', color: 'bg-pink-500' }
+const colorOptions: { value: AppSettings['themeColor']; color: string; hex: string }[] = [
+  { value: 'red', color: 'bg-red-500', hex: '#ef4444' },
+  { value: 'blue', color: 'bg-blue-500', hex: '#3b82f6' },
+  { value: 'green', color: 'bg-green-500', hex: '#22c55e' },
+  { value: 'purple', color: 'bg-purple-500', hex: '#a855f7' },
+  { value: 'orange', color: 'bg-orange-500', hex: '#f97316' },
+  { value: 'pink', color: 'bg-pink-500', hex: '#ec4899' }
 ];
 
 const backgroundColorOptions = [
@@ -45,6 +45,23 @@ const fontColorOptions = [
   { value: '#2c5530', label: 'Forest' },
   { value: '#1e3a5f', label: 'Navy' }
 ];
+
+// Custom color picker component
+const CustomColorPicker = ({ value, onChange }: { value: string; onChange: (color: string) => void }) => (
+  <label
+    className="w-10 h-10 rounded-full transition-smooth tap-highlight-none border-2 border-dashed border-muted-foreground 
+      flex items-center justify-center cursor-pointer hover:border-primary relative"
+    title="Custom color"
+  >
+    <Pipette className="w-4 h-4 text-muted-foreground pointer-events-none z-10" />
+    <input
+      type="color"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+    />
+  </label>
+);
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -76,7 +93,7 @@ const Settings = () => {
               <p className="text-xs text-muted-foreground">Choose your accent color</p>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             {colorOptions.map((option) => (
               <button
                 key={option.value}
@@ -90,6 +107,13 @@ const Settings = () => {
                 `}
               />
             ))}
+            <CustomColorPicker 
+              value={settings.themeColor === 'custom' ? (settings.customThemeColor || '#ef4444') : '#888888'} 
+              onChange={(color) => {
+                updateSetting('customThemeColor', color);
+                updateSetting('themeColor', 'custom');
+              }} 
+            />
           </div>
         </section>
 
@@ -120,21 +144,10 @@ const Settings = () => {
                 style={{ backgroundColor: option.value }}
               />
             ))}
-            {/* Custom color picker */}
-            <label
-              className={`
-                w-10 h-10 rounded-full transition-smooth tap-highlight-none border-2 border-dashed border-muted-foreground 
-                flex items-center justify-center cursor-pointer hover:border-primary overflow-hidden
-              `}
-              title="Custom color"
-            >
-              <input
-                type="color"
-                value={settings.backgroundColor}
-                onChange={(e) => updateSetting('backgroundColor', e.target.value)}
-                className="w-12 h-12 cursor-pointer border-none"
-              />
-            </label>
+            <CustomColorPicker 
+              value={settings.backgroundColor || '#0a0a0a'} 
+              onChange={(color) => updateSetting('backgroundColor', color)} 
+            />
           </div>
         </section>
 
@@ -165,21 +178,10 @@ const Settings = () => {
                 style={{ backgroundColor: option.value }}
               />
             ))}
-            {/* Custom color picker */}
-            <label
-              className={`
-                w-10 h-10 rounded-full transition-smooth tap-highlight-none border-2 border-dashed border-muted-foreground 
-                flex items-center justify-center cursor-pointer hover:border-primary overflow-hidden
-              `}
-              title="Custom color"
-            >
-              <input
-                type="color"
-                value={settings.fontColor}
-                onChange={(e) => updateSetting('fontColor', e.target.value)}
-                className="w-12 h-12 cursor-pointer border-none"
-              />
-            </label>
+            <CustomColorPicker 
+              value={settings.fontColor || '#ededed'} 
+              onChange={(color) => updateSetting('fontColor', color)} 
+            />
           </div>
         </section>
 

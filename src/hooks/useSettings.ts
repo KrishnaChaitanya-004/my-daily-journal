@@ -3,7 +3,8 @@ import { useState, useCallback, useEffect } from 'react';
 export interface AppSettings {
   fontFamily: 'inter' | 'delius' | 'georgia' | 'courier';
   fontSize: 'small' | 'medium' | 'large';
-  themeColor: 'red' | 'blue' | 'green' | 'purple' | 'orange' | 'pink';
+  themeColor: 'red' | 'blue' | 'green' | 'purple' | 'orange' | 'pink' | 'custom';
+  customThemeColor: string;
   backgroundColor: string;
   fontColor: string;
 }
@@ -14,6 +15,7 @@ const defaultSettings: AppSettings = {
   fontFamily: 'inter',
   fontSize: 'medium',
   themeColor: 'red',
+  customThemeColor: '#ef4444',
   backgroundColor: '#0a0a0a',
   fontColor: '#ededed'
 };
@@ -79,11 +81,19 @@ export const useSettings = () => {
     
     // Apply theme color
     const root = document.documentElement;
-    const colors = themeColors[settings.themeColor];
-    root.style.setProperty('--primary', colors.primary);
-    root.style.setProperty('--ring', colors.ring);
-    root.style.setProperty('--today', colors.primary);
-    root.style.setProperty('--has-content', colors.primary);
+    let primaryHsl: string;
+    
+    if (settings.themeColor === 'custom' && settings.customThemeColor) {
+      primaryHsl = hexToHsl(settings.customThemeColor);
+    } else {
+      const colors = themeColors[settings.themeColor] || themeColors.red;
+      primaryHsl = colors.primary;
+    }
+    
+    root.style.setProperty('--primary', primaryHsl);
+    root.style.setProperty('--ring', primaryHsl);
+    root.style.setProperty('--today', primaryHsl);
+    root.style.setProperty('--has-content', primaryHsl);
     
     // Apply background color
     const bgColor = settings.backgroundColor || defaultSettings.backgroundColor;
