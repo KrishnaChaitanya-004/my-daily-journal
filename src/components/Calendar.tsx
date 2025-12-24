@@ -87,14 +87,14 @@ const Calendar = ({
   };
 
   return (
-    <div className="w-full px-2">
+    <div className="w-full px-3">
       {/* Header */}
-      <div className="flex items-center justify-between mb-2 px-1">
+      <div className="flex items-center justify-between mb-3 px-1">
         <button
           onClick={goToPrevMonth}
           className="p-1 text-muted-foreground hover:text-foreground transition-smooth tap-highlight-none"
         >
-          <ChevronLeft className="w-3.5 h-3.5" />
+          <ChevronLeft className="w-4 h-4" />
         </button>
         <span className="text-xs text-muted-foreground font-normal tracking-wide">
           {formatMonthYear(selectedDate)}
@@ -103,7 +103,7 @@ const Calendar = ({
           onClick={goToNextMonth}
           className="p-1 text-muted-foreground hover:text-foreground transition-smooth tap-highlight-none"
         >
-          <ChevronRight className="w-3.5 h-3.5" />
+          <ChevronRight className="w-4 h-4" />
         </button>
       </div>
 
@@ -112,7 +112,7 @@ const Calendar = ({
         {DAYS.map((day) => (
           <div
             key={day}
-            className="text-center text-[10px] text-muted-foreground font-normal py-0.5"
+            className="text-center text-[11px] text-muted-foreground font-normal py-0.5"
           >
             {day}
           </div>
@@ -134,7 +134,7 @@ const Calendar = ({
               key={index}
               onClick={() => onDateSelect(date)}
               className={`
-                relative flex items-center justify-center py-1 text-xs font-normal
+                relative flex items-center justify-center py-1.5 text-xs font-normal
                 transition-smooth tap-highlight-none
                 ${!dateInCurrentMonth ? 'text-muted-foreground/40' : 'text-foreground'}
                 ${dateIsSelected && !dateIsToday ? 'text-foreground' : ''}
@@ -142,9 +142,9 @@ const Calendar = ({
             >
               <span
                 className={`
-                  relative z-10 w-6 h-6 flex items-center justify-center rounded-full
+                  relative z-10 w-7 h-7 flex items-center justify-center rounded-full
                   transition-smooth
-                  ${dateIsToday ? 'ring-1.5 ring-primary text-primary' : ''}
+                  ${dateIsToday ? 'ring-2 ring-primary text-primary' : ''}
                   ${dateIsSelected && !dateIsToday ? 'bg-secondary' : ''}
                 `}
               >
@@ -153,7 +153,7 @@ const Calendar = ({
               
               {/* Content indicator dot */}
               {dateHasContent && (
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0.5 h-0.5 rounded-full bg-primary" />
+                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
               )}
             </button>
           );
