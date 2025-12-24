@@ -176,7 +176,7 @@ const Statistics = () => {
             </div>
             <div className="h-32">
               <ChartContainer config={chartConfig}>
-                <AreaChart data={habitsConsistencyData} margin={{ left: 0, right: 0, top: 0, bottom: 0 }}>
+                <AreaChart data={habitsConsistencyData} margin={{ left: 0, right: 0, top: 0, bottom: 20 }}>
                   <defs>
                     <linearGradient id="habitGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.3}/>
