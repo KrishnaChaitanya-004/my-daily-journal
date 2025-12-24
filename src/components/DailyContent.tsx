@@ -175,7 +175,7 @@ const DailyContent = ({
                     onToggleTask(index);
                   }}
                   className={`
-                    text-[200px] leading-none transition-smooth tap-highlight-none flex-shrink-0
+                    text-[20px] leading-none transition-smooth tap-highlight-none flex-shrink-0
                     ${isCheckedTask ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}
                   `}
                 >
