@@ -1,6 +1,18 @@
-import { useMemo } from 'react';
-import { getAllDiaryData, DayFileData } from './useFileStorage';
+import { useMemo, useState, useEffect } from 'react';
+import { DayFileData } from './useFileStorage';
 import { startOfWeek, endOfWeek, eachDayOfInterval, format, subDays, differenceInDays, parseISO } from 'date-fns';
+
+const STORAGE_KEY = 'diary-app-data';
+
+// Helper to load data from localStorage (reactive version)
+const loadDiaryData = (): Record<string, DayFileData> => {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    return data ? JSON.parse(data) : {};
+  } catch {
+    return {};
+  }
+};
 
 export interface DailyStats {
   date: string;
@@ -58,7 +70,25 @@ const countTasks = (content: string): { total: number; completed: number } => {
 };
 
 export const useStatistics = () => {
-  const allData = getAllDiaryData();
+  // Use state to make data reactive after import
+  const [allData, setAllData] = useState<Record<string, DayFileData>>(loadDiaryData);
+  
+  // Listen for storage changes (e.g., after import)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setAllData(loadDiaryData());
+    };
+    
+    // Listen for storage events from other tabs
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also reload on mount in case data changed
+    setAllData(loadDiaryData());
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   const dailyStats = useMemo<DailyStats[]>(() => {
     const stats: DailyStats[] = [];
