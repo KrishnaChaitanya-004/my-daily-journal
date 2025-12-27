@@ -23,20 +23,38 @@ export const useNotificationSettings = () => {
     const stored = localStorage.getItem(KEY);
     return stored ? { ...defaultSettings, ...JSON.parse(stored) } : defaultSettings;
   });
+  const [permissionGranted, setPermissionGranted] = useState<boolean>(false);
 
   useEffect(() => {
     localStorage.setItem(KEY, JSON.stringify(settings));
   }, [settings]);
 
+  // Check permission on mount
+  useEffect(() => {
+    const checkPermission = async () => {
+      if (isNative) {
+        const perm = await LocalNotifications.checkPermissions();
+        setPermissionGranted(perm.display === 'granted');
+      } else if ('Notification' in window) {
+        setPermissionGranted(Notification.permission === 'granted');
+      }
+    };
+    checkPermission();
+  }, []);
+
   // 🔐 Request permission
   const requestPermission = useCallback(async (): Promise<boolean> => {
     if (!isNative) {
       const res = await Notification.requestPermission();
-      return res === 'granted';
+      const granted = res === 'granted';
+      setPermissionGranted(granted);
+      return granted;
     }
 
     const perm = await LocalNotifications.requestPermissions();
-    return perm.display === 'granted';
+    const granted = perm.display === 'granted';
+    setPermissionGranted(granted);
+    return granted;
   }, []);
 
   // ⏰ Schedule notification
@@ -102,6 +120,7 @@ export const useNotificationSettings = () => {
 
   return {
     settings,
+    permissionGranted,
     enableNotifications,
     disableNotifications,
     updateSettings,
