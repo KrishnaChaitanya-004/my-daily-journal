@@ -1,7 +1,8 @@
 import { useCallback, useRef } from 'react';
 import JSZip from 'jszip';
-import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import { Capacitor } from '@capacitor/core';
 import { toast } from '@/hooks/use-toast';
 import { DayFileData } from './useFileStorage';
 
@@ -9,6 +10,8 @@ const STORAGE_KEY = 'diary-app-data';
 const SETTINGS_KEY = 'diary-settings';
 const BOOKMARKS_KEY = 'diary-bookmarks';
 const HABITS_KEY = 'diary-habits-list';
+
+const isNative = Capacitor.isNativePlatform();
 
 export const useDiaryExportImport = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -62,7 +65,7 @@ export const useDiaryExportImport = () => {
 
           for (const p of day.photos) {
             if (!p.base64) continue;
-            const cleanBase64 = p.base64.split(',').pop()!;
+            const cleanBase64 = p.base64.includes(',') ? p.base64.split(',')[1] : p.base64;
             dateFolder.file(p.filename, cleanBase64, { base64: true });
           }
         }
@@ -84,7 +87,7 @@ export const useDiaryExportImport = () => {
 
           for (const v of day.voiceNotes) {
             if (!v.base64) continue;
-            const cleanBase64 = v.base64.split(',').pop()!;
+            const cleanBase64 = v.base64.includes(',') ? v.base64.split(',')[1] : v.base64;
             dateFolder.file(v.filename, cleanBase64, { base64: true });
           }
         }
@@ -100,29 +103,42 @@ export const useDiaryExportImport = () => {
       const habits = localStorage.getItem(HABITS_KEY);
       if (habits) diaryFolder.file('habits.json', habits);
 
-      /* ---- write ZIP to device ---- */
-      const base64Zip = await zip.generateAsync({ type: 'base64' });
+      /* ---- generate and share ZIP ---- */
       const fileName = `kcs-diary-backup-${Date.now()}.zip`;
 
-      await Filesystem.writeFile({
-        path: fileName,
-        data: base64Zip,
-        directory: Directory.Documents,
-       
-      });
+      if (isNative) {
+        // Native: write to cache and share via native share sheet
+        const base64Zip = await zip.generateAsync({ type: 'base64' });
+        
+        const result = await Filesystem.writeFile({
+          path: fileName,
+          data: base64Zip,
+          directory: Directory.Cache,
+        });
 
-      await Share.share({
-        title: "KC's Diary Backup",
-        text: 'Diary backup file',
-        url: `file://${Directory.Documents}/${fileName}`,
-      });
+        await Share.share({
+          title: "KC's Diary Backup",
+          files: [result.uri],
+        });
+      } else {
+        // Web: trigger download
+        const blob = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
 
       toast({
         title: 'Export successful',
         description: 'Backup file created successfully',
       });
     } catch (err) {
-      console.error(err);
+      console.error('Export error:', err);
       toast({
         title: 'Export failed',
         description: 'Could not create backup',
