@@ -242,10 +242,16 @@ const savePhoto = useCallback(
     const timestamp = Date.now();
     const filename = `photo_${timestamp}.jpg`;
 
+    // Clean base64 (remove data URL prefix if present)
+    const pureBase64 = base64Data.includes(',')
+      ? base64Data.split(',')[1]
+      : base64Data;
+
     const photo: PhotoData = {
       filename,
       path: `${APP_FOLDER}/${dateFolder}/${filename}`,
       timestamp,
+      base64: pureBase64, // Always store base64 for reliable display
     };
 
     let updatedContent = '';
@@ -274,20 +280,16 @@ const savePhoto = useCallback(
       return merged;
     });
 
-    // Native persistence
+    // Native persistence (also save to filesystem for backup/export)
     if (isNativePlatform()) {
       try {
         await ensureFolder();
 
-      const pureBase64 = base64Data.includes(',')
-  ? base64Data.split(',')[1]
-  : base64Data;
-
-await Filesystem.writeFile({
-  path: `${APP_FOLDER}/${dateFolder}/${filename}`,
-  data: pureBase64,
-  directory: Directory.Documents,
-});
+        await Filesystem.writeFile({
+          path: `${APP_FOLDER}/${dateFolder}/${filename}`,
+          data: pureBase64,
+          directory: Directory.Documents,
+        });
 
         await Filesystem.writeFile({
           path: `${APP_FOLDER}/${dateFolder}/content.txt`,
@@ -296,15 +298,21 @@ await Filesystem.writeFile({
           encoding: Encoding.UTF8,
         });
 
+        // Save photos metadata (without base64 to save space in file)
+        const photosForFile = updatedPhotos.map(p => ({
+          filename: p.filename,
+          path: p.path,
+          timestamp: p.timestamp,
+        }));
+
         await Filesystem.writeFile({
           path: `${APP_FOLDER}/${dateFolder}/photos.json`,
-          data: JSON.stringify(updatedPhotos),
+          data: JSON.stringify(photosForFile),
           directory: Directory.Documents,
           encoding: Encoding.UTF8,
         });
       } catch (e) {
-        console.error('Failed to save photo:', e);
-        return null;
+        console.error('Failed to save photo to filesystem:', e);
       }
     }
 
@@ -513,19 +521,14 @@ setAllData(prev => {
   }, [dateFolder, dateKey]);
 
   // Get photo URL (for display)
- const getPhotoUrl = useCallback((photo: PhotoData): string => {
-  // Web (base64)
-  if (photo.base64) {
-    return `data:image/jpeg;base64,${photo.base64}`;
-  }
+  const getPhotoUrl = useCallback((photo: PhotoData): string => {
+    // Always prefer base64 - works on both web and native
+    if (photo.base64) {
+      return `data:image/jpeg;base64,${photo.base64}`;
+    }
 
-  // Native Android / iOS
-  if (isNativePlatform()) {
-    return Capacitor.convertFileSrc(photo.path);
-  }
-
-  return '';
-}, []);
+    return '';
+  }, []);
 
 
   // Check if date has content

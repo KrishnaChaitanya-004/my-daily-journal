@@ -36,14 +36,9 @@ export const useAllPhotos = () => {
   }, []);
 
   const getPhotoUrl = (photo: PhotoData): string => {
-    // Web
+    // Always prefer base64 - works on both web and native
     if (photo.base64) {
       return `data:image/jpeg;base64,${photo.base64}`;
-    }
-
-    // Android / iOS
-    if (photo.path && Capacitor.isNativePlatform()) {
-      return Capacitor.convertFileSrc(photo.path);
     }
 
     return '';
