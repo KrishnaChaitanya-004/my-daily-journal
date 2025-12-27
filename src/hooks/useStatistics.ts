@@ -92,7 +92,7 @@ export const useStatistics = () => {
     Object.entries(allData).forEach(([dateKey, dayData]) => {
       const data = dayData as DayFileData;
       if (data?.content?.trim() || data?.photos?.length) {
-        const date = parseISO(dateKey);
+        const date = new Date(dateKey);
         counts[date.getDay()]++;
       }
     });
@@ -108,7 +108,8 @@ export const useStatistics = () => {
     
     Object.entries(allData).forEach(([dateKey, dayData]) => {
       const data = dayData as DayFileData;
-      const monthKey = dateKey.substring(0, 7); // YYYY-MM
+      const monthKey = dateKey.slice(0, 7);
+
       
       if (!stats[monthKey]) {
         stats[monthKey] = {
@@ -158,8 +159,9 @@ export const useStatistics = () => {
     let longestStreak = 0;
     let tempStreak = 0;
     
-    const today = new Date().toISOString().split('T')[0];
-    const yesterday = subDays(new Date(), 1).toISOString().split('T')[0];
+    const today = new Intl.DateTimeFormat('en-CA').format(new Date());
+const yesterday = new Intl.DateTimeFormat('en-CA').format(subDays(new Date(), 1));
+
     
     // Check if there's an entry today or yesterday for current streak
     const hasRecentEntry = entryDates.includes(today) || entryDates.includes(yesterday);
@@ -178,8 +180,9 @@ export const useStatistics = () => {
       if (i === 0) {
         tempStreak = 1;
       } else {
-        const prevDate = parseISO(entryDates[i - 1]);
-        const currDate = parseISO(entryDates[i]);
+      const prevDate = new Date(entryDates[i - 1]);
+const currDate = new Date(entryDates[i]);
+
         const diff = differenceInDays(currDate, prevDate);
         
         if (diff === 1) {

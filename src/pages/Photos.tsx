@@ -7,7 +7,8 @@ const Photos = () => {
   const navigate = useNavigate();
   const { allPhotos, getPhotoUrl } = useAllPhotos();
 
-  const formatDate = (dateKey: string) => {
+  const formatDate = (dateKey?: string) => {
+    if (!dateKey) return '';
     try {
       return format(new Date(dateKey), 'MMM d, yyyy');
     } catch {
@@ -15,7 +16,7 @@ const Photos = () => {
     }
   };
 
-  const handlePhotoClick = (dateKey: string | undefined) => {
+  const handlePhotoClick = (dateKey?: string) => {
     if (dateKey) {
       navigate(`/?date=${dateKey}`);
     }
@@ -27,7 +28,7 @@ const Photos = () => {
       <header className="flex items-center gap-3 p-4 border-b border-border shrink-0">
         <button
           onClick={() => navigate('/')}
-          className="p-2 text-muted-foreground hover:text-foreground transition-smooth tap-highlight-none"
+          className="p-2 text-muted-foreground hover:text-foreground transition-smooth"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -50,20 +51,26 @@ const Photos = () => {
           <div className="grid grid-cols-3 gap-2">
             {allPhotos.map((photo, index) => {
               const photoUrl = getPhotoUrl(photo);
+
+              // 🚨 SAFETY CHECK (prevents broken images)
+              if (!photoUrl) return null;
+
               return (
                 <button
                   key={`${photo.filename}-${index}`}
                   onClick={() => handlePhotoClick(photo.dateKey)}
-                  className="aspect-square rounded-lg overflow-hidden bg-secondary relative group"
+                  className="aspect-square rounded-lg overflow-hidden bg-secondary relative"
                 >
                   <img
                     src={photoUrl}
-                    alt=""
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    alt="Diary photo"
+                    className="w-full h-full object-cover"
+                    loading="lazy"
                   />
+
                   {photo.dateKey && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-                      <span className="text-[10px] text-white/90">
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-1">
+                      <span className="text-[10px] text-white">
                         {formatDate(photo.dateKey)}
                       </span>
                     </div>

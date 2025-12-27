@@ -117,13 +117,30 @@ export const useAppLock = () => {
     }
   }, [lockSettings.isEnabled]);
 
+const enableBiometricWithVerification = useCallback(async () => {
+  try {
+    await BiometricAuth.authenticate({
+      reason: 'Enable fingerprint unlock',
+      cancelTitle: 'Cancel',
+      allowDeviceCredential: true,
+    });
+
+    // ✅ Only enable if verification succeeds
+    updateLockSettings({ useBiometric: true });
+    return true;
+  } catch {
+    return false;
+  }
+}, [updateLockSettings]);
+
   return {
     lockSettings,
     isLocked,
-    biometricAvailable: lockSettings.useBiometric, // UI-only flag
+    biometricAvailable: lockSettings.useBiometric,
     setPassword,
     removePassword,
     toggleBiometric,
+    enableBiometricWithVerification, 
     unlock,
     unlockWithBiometric,
     lockApp,

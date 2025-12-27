@@ -11,7 +11,7 @@ export const useLocation = () => {
     setError(null);
 
     try {
-      // 🔐 THIS triggers Android permission dialog
+      // 🔐 Triggers Android / iOS permission dialog
       const position = await Geolocation.getCurrentPosition({
         enableHighAccuracy: true,
         timeout: 10000,
@@ -19,11 +19,22 @@ export const useLocation = () => {
 
       const { latitude, longitude } = position.coords;
 
+      // ✅ FIX: createdAt declared ONCE in parent scope
+      const createdAt = Date.now();
+
       try {
-        // Reverse geocoding (your existing logic)
+        // 🌍 Reverse geocoding
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=14`
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=14`,
+          {
+            headers: {
+              'User-Agent': 'KC-Diary-App',
+            },
+          }
         );
+
+        if (!response.ok) throw new Error('Reverse geocoding failed');
+
         const data = await response.json();
 
         const name =
@@ -38,16 +49,19 @@ export const useLocation = () => {
           name,
           lat: latitude,
           lng: longitude,
+          createdAt,
         };
       } catch {
-        // fallback if API fails
+        // 🧯 Fallback if API fails
         return {
           name: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
           lat: latitude,
           lng: longitude,
+          createdAt,
         };
       }
     } catch (err: any) {
+      console.error('Location error:', err);
       setError(err?.message || 'Location permission denied');
       return null;
     } finally {

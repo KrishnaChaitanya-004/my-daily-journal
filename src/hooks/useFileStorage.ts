@@ -20,6 +20,7 @@ export interface LocationData {
   name: string;
   lat?: number;
   lng?: number;
+  createdAt: number;
 }
 
 export interface WeatherData {
@@ -109,12 +110,14 @@ export const getAllDiaryData = (): Record<string, DayFileData> => {
   return loadFromLocalStorage();
 };
 
+
 export const useFileStorage = (selectedDate: Date) => {
   const [allData, setAllData] = useState<Record<string, DayFileData>>(loadFromLocalStorage);
   const [isLoading, setIsLoading] = useState(false);
   
   const dateFolder = formatDateFolder(selectedDate);
-  const dateKey = selectedDate.toISOString().split('T')[0];
+ const dateKey = new Intl.DateTimeFormat('en-CA').format(selectedDate);
+// yyyy-MM-dd
   const dayData = allData[dateKey] || { content: '', photos: [] };
 
   // Create folder structure on native
@@ -131,191 +134,313 @@ export const useFileStorage = (selectedDate: Date) => {
       // Folder might already exist
     }
   }, [dateFolder]);
+const writeMetaFile = async (data: Partial<DayFileData>) => {
+  if (!isNativePlatform()) return;
+
+  await ensureFolder();
+
+  const meta = {
+    tags: data.tags,
+    mood: data.mood,
+    location: data.location,
+    weather: data.weather,
+    habits: data.habits,
+  };
+
+  await Filesystem.writeFile({
+    path: `${APP_FOLDER}/${dateFolder}/meta.json`,
+    data: JSON.stringify(meta),
+    directory: Directory.Documents,
+    encoding: Encoding.UTF8,
+  });
+};
 
   // Save content to file (native) or localStorage (web)
-  const saveContent = useCallback(async (content: string) => {
-    const newData = { 
-      ...allData, 
-      [dateKey]: { ...dayData, content } 
+ const saveContent = useCallback(async (content: string) => {
+  setAllData(prev => {
+    const merged = {
+      ...prev,
+      [dateKey]: {
+        ...(prev[dateKey] || { content: '', photos: [] }),
+        content,
+      },
     };
-    setAllData(newData);
-    
-    if (isNativePlatform()) {
-      await ensureFolder();
-      try {
-        await Filesystem.writeFile({
-          path: `${APP_FOLDER}/${dateFolder}/content.txt`,
-          data: content,
-          directory: Directory.Documents,
-          encoding: Encoding.UTF8
-        });
-      } catch (e) {
-        console.error('Failed to save content:', e);
-      }
-    } else {
-      saveToLocalStorage(newData);
+
+    saveToLocalStorage(merged);
+    return merged;
+  });
+
+  if (isNativePlatform()) {
+    await ensureFolder();
+    try {
+      await Filesystem.writeFile({
+        path: `${APP_FOLDER}/${dateFolder}/content.txt`,
+        data: content,
+        directory: Directory.Documents,
+        encoding: Encoding.UTF8,
+      });
+    } catch (e) {
+      console.error('Failed to save content:', e);
     }
-  }, [allData, dateKey, dayData, dateFolder, ensureFolder]);
+  }
+}, [dateKey, dateFolder, ensureFolder]);
+
 
   // Save day metadata (tags, location, weather, habits, mood)
-  const saveDayMeta = useCallback(async (meta: Partial<DayFileData>) => {
-    const newDayData = { ...dayData, ...meta };
-    const newData = { 
-      ...allData, 
-      [dateKey]: newDayData
-    };
-    setAllData(newData);
-    saveToLocalStorage(newData);
-  }, [allData, dateKey, dayData]);
+const saveDayMeta = useCallback(
+  async (meta: Partial<DayFileData>) => {
+    setAllData(prev => {
+      const current = prev[dateKey] || { content: '', photos: [] };
 
-  // Save photo and insert marker into content
-  const savePhoto = useCallback(async (base64Data: string): Promise<PhotoData | null> => {
-    const timestamp = Date.now();
-    const filename = `photo_${timestamp}.jpg`;
-    
-    const photoData: PhotoData = {
-      filename,
-      path: `${APP_FOLDER}/${dateFolder}/${filename}`,
-      timestamp
-    };
-    
-    const newPhotos = [...dayData.photos, photoData];
-    // Insert photo marker at end of content
-    const photoMarker = `[photo:${filename}]`;
-    const newContent = dayData.content 
-      ? `${dayData.content}\n${photoMarker}` 
-      : photoMarker;
-    
-    const newData = { 
-      ...allData, 
-      [dateKey]: { ...dayData, content: newContent, photos: newPhotos } 
-    };
-    setAllData(newData);
-    
+      const mergedDay: DayFileData = {
+        ...current,
+        ...meta, // only updates location / weather / tags / habits / mood
+      };
+
+      const mergedAll = {
+        ...prev,
+        [dateKey]: mergedDay,
+      };
+
+      saveToLocalStorage(mergedAll);
+      return mergedAll;
+    });
+
+    // Native: persist meta.json
     if (isNativePlatform()) {
       await ensureFolder();
+
+      const metaOnly = {
+        tags: meta.tags,
+        mood: meta.mood,
+        location: meta.location,
+        weather: meta.weather,
+        habits: meta.habits,
+      };
+
       try {
         await Filesystem.writeFile({
-          path: `${APP_FOLDER}/${dateFolder}/${filename}`,
-          data: base64Data,
-          directory: Directory.Documents
+          path: `${APP_FOLDER}/${dateFolder}/meta.json`,
+          data: JSON.stringify(metaOnly),
+          directory: Directory.Documents,
+          encoding: Encoding.UTF8,
         });
-        
-        // Save content with photo marker
+      } catch (e) {
+        console.error('Failed to save meta:', e);
+      }
+    }
+  },
+  [dateKey, dateFolder, ensureFolder]
+);
+
+
+
+
+  // Save photo and insert marker into content
+const savePhoto = useCallback(
+  async (base64Data: string): Promise<PhotoData | null> => {
+    const timestamp = Date.now();
+    const filename = `photo_${timestamp}.jpg`;
+
+    const photo: PhotoData = {
+      filename,
+      path: `${APP_FOLDER}/${dateFolder}/${filename}`,
+      timestamp,
+    };
+
+    let updatedContent = '';
+    let updatedPhotos: PhotoData[] = [];
+
+    // ✅ SINGLE state update
+    setAllData(prev => {
+      const current = prev[dateKey] || { content: '', photos: [] };
+
+      updatedContent = current.content
+        ? `${current.content}\n[photo:${filename}]`
+        : `[photo:${filename}]`;
+
+      updatedPhotos = [...current.photos, photo];
+
+      const merged: Record<string, DayFileData> = {
+        ...prev,
+        [dateKey]: {
+          ...current,
+          content: updatedContent,
+          photos: updatedPhotos,
+        },
+      };
+
+      saveToLocalStorage(merged);
+      return merged;
+    });
+
+    // Native persistence
+    if (isNativePlatform()) {
+      try {
+        await ensureFolder();
+
+      const pureBase64 = base64Data.includes(',')
+  ? base64Data.split(',')[1]
+  : base64Data;
+
+await Filesystem.writeFile({
+  path: `${APP_FOLDER}/${dateFolder}/${filename}`,
+  data: pureBase64,
+  directory: Directory.Documents,
+});
+
         await Filesystem.writeFile({
           path: `${APP_FOLDER}/${dateFolder}/content.txt`,
-          data: newContent,
+          data: updatedContent,
           directory: Directory.Documents,
-          encoding: Encoding.UTF8
+          encoding: Encoding.UTF8,
         });
-        
-        // Also save metadata
+
         await Filesystem.writeFile({
           path: `${APP_FOLDER}/${dateFolder}/photos.json`,
-          data: JSON.stringify(newPhotos),
+          data: JSON.stringify(updatedPhotos),
           directory: Directory.Documents,
-          encoding: Encoding.UTF8
+          encoding: Encoding.UTF8,
         });
       } catch (e) {
         console.error('Failed to save photo:', e);
         return null;
       }
-    } else {
-      // For web, store base64 in localStorage
-      const webPhotoData = { ...photoData, base64: base64Data };
-      const webData = { 
-        ...allData, 
-        [dateKey]: { 
-          ...dayData,
-          content: newContent,
-          photos: [...dayData.photos, webPhotoData] 
-        } 
-      };
-      saveToLocalStorage(webData);
-      setAllData(webData);
     }
-    
-    return photoData;
-  }, [allData, dateKey, dayData, dateFolder, ensureFolder]);
+
+    return photo;
+  },
+  [dateKey, dateFolder, ensureFolder]
+);
+
 
   // Save voice note
-  const saveVoiceNote = useCallback(async (base64Data: string, duration: number): Promise<VoiceNoteData | null> => {
+const saveVoiceNote = useCallback(
+  async (base64Data: string, duration: number): Promise<VoiceNoteData | null> => {
     const timestamp = Date.now();
     const filename = `voice_${timestamp}.webm`;
-    
-    const voiceData: VoiceNoteData = {
+
+    const voice: VoiceNoteData = {
       filename,
       duration,
       timestamp,
-      base64: base64Data
+      base64: base64Data,
     };
-    
-    const newVoiceNotes = [...(dayData.voiceNotes || []), voiceData];
-    const newData = { 
-      ...allData, 
-      [dateKey]: { ...dayData, voiceNotes: newVoiceNotes } 
-    };
-    setAllData(newData);
-    saveToLocalStorage(newData);
-    
-    return voiceData;
-  }, [allData, dateKey, dayData]);
+
+    let updatedVoiceNotes: VoiceNoteData[] = [];
+
+    setAllData(prev => {
+      const current = prev[dateKey] || { content: '', photos: [] };
+
+      updatedVoiceNotes = [...(current.voiceNotes || []), voice];
+
+      const merged: Record<string, DayFileData> = {
+        ...prev,
+        [dateKey]: {
+          ...current,
+          voiceNotes: updatedVoiceNotes,
+        },
+      };
+
+      saveToLocalStorage(merged);
+      return merged;
+    });
+
+    return voice;
+  },
+  [dateKey]
+);
+
 
   // Delete voice note
-  const deleteVoiceNote = useCallback(async (filename: string) => {
-    const newVoiceNotes = (dayData.voiceNotes || []).filter(v => v.filename !== filename);
-    const newData = { 
-      ...allData, 
-      [dateKey]: { ...dayData, voiceNotes: newVoiceNotes } 
-    };
-    setAllData(newData);
-    saveToLocalStorage(newData);
-  }, [allData, dateKey, dayData]);
+const deleteVoiceNote = useCallback(
+  async (filename: string) => {
+    setAllData(prev => {
+      const current = prev[dateKey];
+      if (!current) return prev;
+
+      const updatedVoiceNotes = (current.voiceNotes || []).filter(
+        v => v.filename !== filename
+      );
+
+      const merged: Record<string, DayFileData> = {
+        ...prev,
+        [dateKey]: {
+          ...current,
+          voiceNotes: updatedVoiceNotes,
+        },
+      };
+
+      saveToLocalStorage(merged);
+      return merged;
+    });
+  },
+  [dateKey]
+);
+
 
   // Delete photo and remove marker from content
-  const deletePhoto = useCallback(async (filename: string) => {
-    const newPhotos = dayData.photos.filter(p => p.filename !== filename);
-    // Remove photo marker from content
-    const photoMarker = `[photo:${filename}]`;
-    const newContent = dayData.content
-      .split('\n')
-      .filter(line => line !== photoMarker)
-      .join('\n');
-    
-    const newData = { 
-      ...allData, 
-      [dateKey]: { ...dayData, content: newContent, photos: newPhotos } 
-    };
-    setAllData(newData);
-    
+  const deletePhoto = useCallback(
+  async (filename: string) => {
+    setAllData(prev => {
+      const current = prev[dateKey];
+      if (!current) return prev;
+
+      const updatedPhotos = current.photos.filter(
+        p => p.filename !== filename
+      );
+
+      const photoMarker = `[photo:${filename}]`;
+      const updatedContent = current.content
+        .split('\n')
+        .filter(line => line !== photoMarker)
+        .join('\n');
+
+      const merged: Record<string, DayFileData> = {
+        ...prev,
+        [dateKey]: {
+          ...current,
+          content: updatedContent,
+          photos: updatedPhotos,
+        },
+      };
+
+      saveToLocalStorage(merged);
+      return merged;
+    });
+
     if (isNativePlatform()) {
       try {
         await Filesystem.deleteFile({
           path: `${APP_FOLDER}/${dateFolder}/${filename}`,
-          directory: Directory.Documents
+          directory: Directory.Documents,
         });
-        
-        // Update content file
+
         await Filesystem.writeFile({
           path: `${APP_FOLDER}/${dateFolder}/content.txt`,
-          data: newContent,
+          data: dayData.content
+            .split('\n')
+            .filter(line => line !== `[photo:${filename}]`)
+            .join('\n'),
           directory: Directory.Documents,
-          encoding: Encoding.UTF8
+          encoding: Encoding.UTF8,
         });
-        
+
         await Filesystem.writeFile({
           path: `${APP_FOLDER}/${dateFolder}/photos.json`,
-          data: JSON.stringify(newPhotos),
+          data: JSON.stringify(
+            dayData.photos.filter(p => p.filename !== filename)
+          ),
           directory: Directory.Documents,
-          encoding: Encoding.UTF8
+          encoding: Encoding.UTF8,
         });
       } catch (e) {
         console.error('Failed to delete photo:', e);
       }
-    } else {
-      saveToLocalStorage(newData);
     }
-  }, [allData, dateKey, dayData, dateFolder]);
+  },
+  [dateKey, dateFolder, dayData]
+);
 
   // Load data from file system on native
   useEffect(() => {
@@ -339,18 +464,45 @@ export const useFileStorage = (selectedDate: Date) => {
             directory: Directory.Documents,
             encoding: Encoding.UTF8
           });
-          photos = JSON.parse(photosResult.data as string);
+          const parsed: PhotoData[] = JSON.parse(photosResult.data as string);
+
+photos = parsed.map(p => ({
+  ...p,
+  path: `${APP_FOLDER}/${dateFolder}/${p.filename}`,
+}));
+
         } catch {
           // No photos file yet
         }
         
-        setAllData(prev => ({
-          ...prev,
-          [dateKey]: { 
-            content: contentResult.data as string, 
-            photos 
-          }
-        }));
+       let meta: Partial<DayFileData> = {};
+
+try {
+  const metaResult = await Filesystem.readFile({
+    path: `${APP_FOLDER}/${dateFolder}/meta.json`,
+    directory: Directory.Documents,
+    encoding: Encoding.UTF8,
+  });
+  meta = JSON.parse(metaResult.data as string);
+} catch {
+  // no meta yet
+}
+
+setAllData(prev => {
+  const current = prev[dateKey] || { content: '', photos: [] };
+
+  return {
+    ...prev,
+    [dateKey]: {
+      ...current,           // 👈 keep everything
+      content: contentResult.data as string,
+      photos,
+      ...meta,              // 👈 overwrite only known meta
+    },
+  };
+});
+
+
       } catch {
         // No data for this date yet
       }
@@ -361,17 +513,24 @@ export const useFileStorage = (selectedDate: Date) => {
   }, [dateFolder, dateKey]);
 
   // Get photo URL (for display)
-  const getPhotoUrl = useCallback((photo: PhotoData & { base64?: string }): string => {
-    if (photo.base64) {
-      return `data:image/jpeg;base64,${photo.base64}`;
-    }
-    // For native, we'll need to read the file
-    return '';
-  }, []);
+ const getPhotoUrl = useCallback((photo: PhotoData): string => {
+  // Web (base64)
+  if (photo.base64) {
+    return `data:image/jpeg;base64,${photo.base64}`;
+  }
+
+  // Native Android / iOS
+  if (isNativePlatform()) {
+    return Capacitor.convertFileSrc(photo.path);
+  }
+
+  return '';
+}, []);
+
 
   // Check if date has content
   const hasContent = useCallback((date: Date): boolean => {
-    const key = date.toISOString().split('T')[0];
+    const key = new Intl.DateTimeFormat('en-CA').format(date);
     const data = allData[key];
     return (data?.content?.trim().length > 0) || (data?.photos?.length > 0);
   }, [allData]);

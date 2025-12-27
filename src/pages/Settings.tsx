@@ -73,7 +73,8 @@ const Settings = () => {
   const navigate = useNavigate();
   const { settings, updateSetting } = useSettings();
   const { exportData, triggerImport, handleFileChange, fileInputRef } = useDiaryExportImport();
-  const { lockSettings, biometricAvailable, setPassword, removePassword, toggleBiometric } = useAppLock();
+ const { lockSettings, setPassword, removePassword, toggleBiometric,enableBiometricWithVerification, } = useAppLock();
+
   const { 
     settings: notificationSettings, 
     permissionGranted, 
@@ -429,9 +430,24 @@ const Settings = () => {
                 </button>
               </div>
               
-              {biometricAvailable && (
-                <button
-                  onClick={() => toggleBiometric(!lockSettings.useBiometric)}
+              <button
+                 onClick={async () => {
+                      if (lockSettings.useBiometric) {
+                        // Turning OFF → no auth needed
+                        toggleBiometric(false);
+                      } else {
+                        // Turning ON → require fingerprint
+                        const ok = await enableBiometricWithVerification();
+                        if (!ok) {
+                          toast({
+                            title: 'Fingerprint failed',
+                            description: 'Biometric authentication was cancelled or failed',
+                            variant: 'destructive',
+                          });
+                        }
+                      }
+                    }}
+
                   className={`w-full flex items-center justify-between p-3 rounded-lg border transition-smooth
                     ${lockSettings.useBiometric 
                       ? 'border-primary bg-primary/10' 
@@ -442,15 +458,17 @@ const Settings = () => {
                     <Fingerprint className="w-4 h-4" />
                     <span className="text-sm text-foreground">Fingerprint Unlock</span>
                   </div>
-                  <div className={`w-10 h-6 rounded-full transition-all ${
+
+                  <div className={`w-10 h-6 rounded-full ${
                     lockSettings.useBiometric ? 'bg-primary' : 'bg-muted'
                   }`}>
-                    <div className={`w-5 h-5 rounded-full bg-white mt-0.5 transition-all ${
-                      lockSettings.useBiometric ? 'ml-4.5' : 'ml-0.5'
-                    }`} style={{ marginLeft: lockSettings.useBiometric ? '18px' : '2px' }} />
+                    <div
+                      className="w-5 h-5 bg-white rounded-full mt-0.5 transition-all"
+                      style={{ marginLeft: lockSettings.useBiometric ? '18px' : '2px' }}
+                    />
                   </div>
-                </button>
-              )}
+              </button>
+
             </div>
           ) : showPinSetup ? (
             <div className="space-y-3">

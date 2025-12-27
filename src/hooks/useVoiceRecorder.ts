@@ -62,7 +62,7 @@ export const useVoiceRecorder = () => {
       const result = await VoiceRecorder.stopRecording();
 
       const finalDuration =
-        result.value.duration ??
+        Math.floor(result.value.msDuration / 1000) ??
         Math.floor((Date.now() - startTimeRef.current) / 1000);
 
       setState({
