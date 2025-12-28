@@ -130,10 +130,10 @@ const AppMenu = () => {
           <div className="flex items-center gap-3">
             <img 
               src={appLogo} 
-              alt="KC's Dairy" 
+              alt="KC's Diary" 
               className="w-10 h-10 rounded-full object-cover border-2 border-primary"
             />
-            <span className="text-lg font-medium text-foreground">KC's Dairy</span>
+            <span className="text-lg font-medium text-foreground">KC's Diary</span>
           </div>
           <button
             onClick={() => {
@@ -230,7 +230,7 @@ const AppMenu = () => {
         {/* Footer */}
         <div className="p-4 border-t border-border shrink-0">
           <p className="text-xs text-muted-foreground text-center">
-            KC's Dairy
+            KC's Diary
           </p>
         </div>
       </div>

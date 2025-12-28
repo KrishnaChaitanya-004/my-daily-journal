@@ -22,7 +22,7 @@ export const useDiaryExportImport = () => {
   const exportData = useCallback(async () => {
     try {
       const zip = new JSZip();
-      const diaryFolder = zip.folder('mydairy');
+      const diaryFolder = zip.folder('mydiary');
       if (!diaryFolder) throw new Error('ZIP folder creation failed');
 
       /* ---- diary data ---- */
@@ -153,7 +153,7 @@ export const useDiaryExportImport = () => {
   const importData = useCallback(async (file: File) => {
     try {
       const zip = await JSZip.loadAsync(file);
-      const diaryFolder = zip.folder('mydairy');
+      const diaryFolder = zip.folder('mydiary') || zip.folder('mydairy');
       if (!diaryFolder) throw new Error('Invalid backup file');
 
       const existing =
@@ -197,7 +197,7 @@ export const useDiaryExportImport = () => {
             const base64 = await f.async('base64');
             day.photos!.push({
               ...p,
-              base64: `data:image/jpeg;base64,${base64}`,
+              base64, // store raw base64 (renderer adds the data: prefix)
             });
           }
         }
@@ -212,7 +212,7 @@ export const useDiaryExportImport = () => {
             const base64 = await f.async('base64');
             day.voiceNotes!.push({
               ...v,
-              base64: `data:audio/mpeg;base64,${base64}`,
+              base64, // store raw base64 (player adds the data: prefix)
             });
           }
         }
