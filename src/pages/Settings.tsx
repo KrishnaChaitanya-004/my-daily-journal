@@ -78,9 +78,11 @@ const Settings = () => {
   const { 
     settings: notificationSettings, 
     permissionGranted, 
+    exactAlarmGranted,
     updateSettings: updateNotificationSettings, 
     enableNotifications, 
-    disableNotifications 
+    disableNotifications,
+    requestExactAlarm
   } = useNotificationSettings();
   
   const [showPinSetup, setShowPinSetup] = useState(false);
@@ -580,6 +582,19 @@ const Settings = () => {
           
           {notificationSettings.enabled && (
             <div className="space-y-3">
+              {/* Exact alarm warning for Android 12+ */}
+              {!exactAlarmGranted && (
+                <button
+                  onClick={requestExactAlarm}
+                  className="w-full p-3 rounded-lg bg-orange-500/10 border border-orange-500/30 text-left"
+                >
+                  <p className="text-xs text-orange-400 font-medium">Exact alarms not allowed</p>
+                  <p className="text-[10px] text-orange-400/80 mt-1">
+                    Tap to allow exact alarms for reliable notifications even in battery saver mode.
+                  </p>
+                </button>
+              )}
+
               {/* Time Picker */}
               <div>
                 <label className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
@@ -604,13 +619,19 @@ const Settings = () => {
                   type="text"
                   value={notificationSettings.message}
                   onChange={(e) => updateNotificationSettings({ message: e.target.value })}
-                  placeholder="boss! its diary time ✨"
+                  placeholder="Boss! It's diary time."
                   maxLength={100}
                   className="w-full px-4 py-3 rounded-lg bg-secondary border border-border text-foreground 
                     placeholder:text-muted-foreground
                     focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
+
+              {/* Battery optimization tip */}
+              <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
+                If notifications don't appear, check your device's battery optimization settings and allow 
+                KC's Diary to run in the background.
+              </p>
             </div>
           )}
         </section>

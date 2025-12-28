@@ -24,17 +24,24 @@ export const useNotificationSettings = () => {
     return stored ? { ...defaultSettings, ...JSON.parse(stored) } : defaultSettings;
   });
   const [permissionGranted, setPermissionGranted] = useState<boolean>(false);
+  const [exactAlarmGranted, setExactAlarmGranted] = useState<boolean>(true);
 
   useEffect(() => {
     localStorage.setItem(KEY, JSON.stringify(settings));
   }, [settings]);
 
-  // Ensure Android notification channel exists (required on many devices)
+  // Ensure Android notification channel exists and check permissions
   useEffect(() => {
     const setup = async () => {
-      if (!isNative) return;
+      if (!isNative) {
+        if ('Notification' in window) {
+          setPermissionGranted(Notification.permission === 'granted');
+        }
+        return;
+      }
+
       try {
-        await (LocalNotifications as any).createChannel?.({
+        await LocalNotifications.createChannel({
           id: 'daily-reminder',
           name: 'Daily reminders',
           description: 'Daily diary reminder notifications',
@@ -48,12 +55,21 @@ export const useNotificationSettings = () => {
 
       const perm = await LocalNotifications.checkPermissions();
       setPermissionGranted(perm.display === 'granted');
+
+      // Check exact alarm permission (Android 12+)
+      try {
+        const exactPerm = await LocalNotifications.checkExactNotificationSetting();
+        setExactAlarmGranted(exactPerm.exact_alarm === 'granted');
+      } catch {
+        // Older devices don't need this permission
+        setExactAlarmGranted(true);
+      }
     };
 
     setup();
   }, []);
 
-  // 🔐 Request permission
+  // Request notification permission
   const requestPermission = useCallback(async (): Promise<boolean> => {
     if (!isNative) {
       const res = await Notification.requestPermission();
@@ -68,7 +84,20 @@ export const useNotificationSettings = () => {
     return granted;
   }, []);
 
-  // ⏰ Schedule notification
+  // Request exact alarm permission (Android 12+)
+  const requestExactAlarm = useCallback(async (): Promise<boolean> => {
+    if (!isNative) return true;
+    try {
+      const result = await LocalNotifications.changeExactNotificationSetting();
+      const granted = result.exact_alarm === 'granted';
+      setExactAlarmGranted(granted);
+      return granted;
+    } catch {
+      return true; // Assume allowed on older devices
+    }
+  }, []);
+
+  // Schedule notification with battery-saver-friendly options
   const scheduleNotification = useCallback(async () => {
     const [hour, minute] = settings.time.split(':').map(Number);
     const now = new Date();
@@ -83,22 +112,22 @@ export const useNotificationSettings = () => {
     if (isNative) {
       await LocalNotifications.cancel({ notifications: [{ id: 1 }] });
 
-      // Use a repeating daily schedule so it can fire even when the app is closed
-      const nativeSchedule: any = {
-        on: { hour, minute },
-        repeats: true,
-        every: 'day',
-      };
-
+      // Use 'on' schedule with allowWhileIdle for reliable delivery in Doze/battery saver
       await LocalNotifications.schedule({
         notifications: [
           {
             id: 1,
             title: "KC's Diary",
             body: settings.message,
-            schedule: nativeSchedule,
+            schedule: {
+              on: { hour, minute },
+              repeats: true,
+              allowWhileIdle: true, // Fires even in Doze/battery saver mode
+            },
             sound: 'default',
             channelId: 'daily-reminder',
+            smallIcon: 'ic_stat_icon', // Uses custom notification icon if available
+            autoCancel: true,
           },
         ],
       });
@@ -113,10 +142,15 @@ export const useNotificationSettings = () => {
     const granted = await requestPermission();
     if (!granted) return false;
 
+    // Request exact alarm permission on Android 12+ for reliable timing
+    if (isNative && !exactAlarmGranted) {
+      await requestExactAlarm();
+    }
+
     setSettings(prev => ({ ...prev, enabled: true }));
     await scheduleNotification();
     return true;
-  }, [requestPermission, scheduleNotification]);
+  }, [requestPermission, requestExactAlarm, scheduleNotification, exactAlarmGranted]);
 
   const disableNotifications = useCallback(async () => {
     setSettings(prev => ({ ...prev, enabled: false }));
@@ -130,18 +164,20 @@ export const useNotificationSettings = () => {
     setSettings(prev => ({ ...prev, ...updates }));
   }, []);
 
-  // 🔁 Reschedule when time/message changes
+  // Reschedule when time/message changes
   useEffect(() => {
-    if (settings.enabled) {
+    if (settings.enabled && isNative) {
       scheduleNotification();
     }
-  }, [settings.time, settings.message]);
+  }, [settings.time, settings.message, settings.enabled, scheduleNotification]);
 
   return {
     settings,
     permissionGranted,
+    exactAlarmGranted,
     enableNotifications,
     disableNotifications,
     updateSettings,
+    requestExactAlarm,
   };
 };
