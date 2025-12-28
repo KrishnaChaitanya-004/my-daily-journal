@@ -44,7 +44,7 @@ const Index = () => {
 
   // Initialize settings on mount
   const { settings, updateSetting } = useSettings();
-
+const isCalendarVisible = settings.showCalendar !== false;
   const {
     content,
     photos,
@@ -186,9 +186,12 @@ const Index = () => {
           onMonthChange={handleMonthChange}
           hasContent={hasContent}
           isBookmarked={isBookmarked}
-          collapsed={settings.showCalendar === false}
-          onToggleCollapsed={() => updateSetting('showCalendar', !(settings.showCalendar === false))}
+          collapsed={!isCalendarVisible}
+          onToggleCollapsed={() =>
+            updateSetting('showCalendar', !isCalendarVisible)
+          }
         />
+
       </section>
 
       {/* Divider */}
