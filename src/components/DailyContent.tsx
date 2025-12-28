@@ -84,12 +84,18 @@ const DailyContent = ({
     onEditingChange(false);
   };
 
-  const handleAddTask = () => {
-    if (taskText.trim()) {
-      onAddTask(taskText.trim());
-      setTaskText('');
-    }
-  };
+const handleAddTask = () => {
+  if (!taskText.trim()) return;
+
+  const taskLine = `□ ${taskText.trim()}`;
+  const newContent = localContent
+    ? `${localContent}\n${taskLine}`
+    : taskLine;
+
+  setLocalContent(newContent);
+  onUpdateContent(newContent); // 🔥 important
+  setTaskText('');
+};
 
   const handleInsertTime = () => {
     const currentTime = format(new Date(), 'hh:mm a').toLowerCase();
