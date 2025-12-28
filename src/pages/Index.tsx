@@ -15,24 +15,35 @@ const Index = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [searchParams] = useSearchParams();
   const dateParam = searchParams.get('date');
-  
-  const [selectedDate, setSelectedDate] = useState(() => {
-    if (dateParam) {
-      const parsed = new Date(dateParam);
-      if (!isNaN(parsed.getTime())) return parsed;
+
+  const parseDateParam = (value: string | null): Date | null => {
+    if (!value) return null;
+
+    // Expect yyyy-MM-dd; parse as *local* date to avoid timezone shifting on Android
+    const m = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) {
+      const y = Number(m[1]);
+      const mo = Number(m[2]) - 1;
+      const d = Number(m[3]);
+      const local = new Date(y, mo, d);
+      if (!isNaN(local.getTime())) return local;
+      return null;
     }
-    return new Date();
-  });
-  const [currentMonth, setCurrentMonth] = useState(() => {
-    if (dateParam) {
-      const parsed = new Date(dateParam);
-      if (!isNaN(parsed.getTime())) return new Date(parsed.getFullYear(), parsed.getMonth(), 1);
-    }
-    return new Date();
-  });
+
+    const parsed = new Date(value);
+    if (!isNaN(parsed.getTime())) return parsed;
+    return null;
+  };
+
+  const initialDate = parseDateParam(dateParam) ?? new Date();
+
+  const [selectedDate, setSelectedDate] = useState(() => initialDate);
+  const [currentMonth, setCurrentMonth] = useState(
+    () => new Date(initialDate.getFullYear(), initialDate.getMonth(), 1)
+  );
 
   // Initialize settings on mount
-  const { settings } = useSettings();
+  const { settings, updateSetting } = useSettings();
 
   const {
     content,
@@ -73,12 +84,10 @@ const Index = () => {
 
   // Update date from URL param
   useEffect(() => {
-    if (dateParam) {
-      const parsed = new Date(dateParam);
-      if (!isNaN(parsed.getTime())) {
-        setSelectedDate(parsed);
-        setCurrentMonth(new Date(parsed.getFullYear(), parsed.getMonth(), 1));
-      }
+    const parsed = parseDateParam(dateParam);
+    if (parsed) {
+      setSelectedDate(parsed);
+      setCurrentMonth(new Date(parsed.getFullYear(), parsed.getMonth(), 1));
     }
   }, [dateParam]);
 
@@ -150,7 +159,7 @@ const Index = () => {
       {/* Top bar with hamburger, app name, and bookmark */}
       <header className="flex items-center justify-between px-2 pt-3 pb-1 shrink-0">
         <AppMenu />
-        <h1 className="text-lg text-foreground">KC's Dairy</h1>
+        <h1 className="text-lg text-foreground">KC's Diary</h1>
         <button
           onClick={() => toggleBookmark(selectedDate)}
           className={`
@@ -177,6 +186,8 @@ const Index = () => {
           onMonthChange={handleMonthChange}
           hasContent={hasContent}
           isBookmarked={isBookmarked}
+          collapsed={settings.showCalendar === false}
+          onToggleCollapsed={() => updateSetting('showCalendar', !(settings.showCalendar === false))}
         />
       </section>
 
