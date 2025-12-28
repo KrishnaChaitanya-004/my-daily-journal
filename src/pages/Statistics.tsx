@@ -24,12 +24,21 @@ const Statistics = () => {
   const allData = getAllDiaryData();
 
   // Format daily stats for chart
-  const chartData = dailyStats.map(stat => ({
-    date: format(parseISO(stat.date), 'MMM d'),
-    words: stat.wordCount,
-    photos: stat.photoCount,
-    hasEntry: stat.hasEntry ? 1 : 0
-  }));
+  const chartData = dailyStats.map(stat => {
+    let label = stat.date;
+    try {
+      label = format(parseISO(stat.date), 'MMM d');
+    } catch {
+      // ignore
+    }
+
+    return {
+      date: label,
+      words: stat.wordCount,
+      photos: stat.photoCount,
+      hasEntry: stat.hasEntry ? 1 : 0,
+    };
+  });
 
   // Habits consistency data (last 30 days)
   const habitsConsistencyData = (() => {

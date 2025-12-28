@@ -13,6 +13,7 @@ interface AppSettings {
   customFontUrl: string;
   customFontName: string;
   showWritingPrompts: boolean;
+  showCalendar: boolean;
 }
 
 const defaultSettings: AppSettings = {
@@ -24,7 +25,8 @@ const defaultSettings: AppSettings = {
   fontColor: '#ededed',
   customFontUrl: '',
   customFontName: '',
-  showWritingPrompts: true
+  showWritingPrompts: true,
+  showCalendar: true,
 };
 
 const themeColors: Record<string, { primary: string; ring: string }> = {

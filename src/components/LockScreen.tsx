@@ -75,10 +75,10 @@ const LockScreen = ({
       <div className="flex flex-col items-center mb-8">
         <img 
           src={appLogo} 
-          alt="KC's Dairy" 
+          alt="KC's Diary" 
           className="w-20 h-20 rounded-full object-cover border-4 border-primary mb-4"
         />
-        <h1 className="text-xl text-foreground mb-2">KC's Dairy</h1>
+        <h1 className="text-xl text-foreground mb-2">KC's Diary</h1>
         <div className="flex items-center gap-2 text-muted-foreground">
           <Lock className="w-4 h-4" />
           <span className="text-sm">Enter your PIN</span>

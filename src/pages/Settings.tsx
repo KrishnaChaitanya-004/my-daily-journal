@@ -693,7 +693,7 @@ const Settings = () => {
         <section className="bg-card rounded-xl border border-border p-4">
           <h2 className="text-sm font-medium text-foreground mb-2">About</h2>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            KC's Dairy helps you capture your daily thoughts, tasks, and moments. 
+            KC's Diary helps you capture your daily thoughts, tasks, and moments.
             Your data is stored locally on your device.
           </p>
           <p className="text-xs text-muted-foreground/60 mt-3">

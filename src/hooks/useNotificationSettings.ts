@@ -13,7 +13,7 @@ const KEY = 'diary-notification-settings';
 const defaultSettings: NotificationSettings = {
   enabled: false,
   time: '20:00',
-  message: "boss! it's diary time ✨",
+  message: "Boss! It's diary time.",
 };
 
 const isNative = Capacitor.isNativePlatform();
@@ -29,17 +29,28 @@ export const useNotificationSettings = () => {
     localStorage.setItem(KEY, JSON.stringify(settings));
   }, [settings]);
 
-  // Check permission on mount
+  // Ensure Android notification channel exists (required on many devices)
   useEffect(() => {
-    const checkPermission = async () => {
-      if (isNative) {
-        const perm = await LocalNotifications.checkPermissions();
-        setPermissionGranted(perm.display === 'granted');
-      } else if ('Notification' in window) {
-        setPermissionGranted(Notification.permission === 'granted');
+    const setup = async () => {
+      if (!isNative) return;
+      try {
+        await (LocalNotifications as any).createChannel?.({
+          id: 'daily-reminder',
+          name: 'Daily reminders',
+          description: 'Daily diary reminder notifications',
+          importance: 5,
+          visibility: 1,
+          sound: 'default',
+        });
+      } catch {
+        // ignore
       }
+
+      const perm = await LocalNotifications.checkPermissions();
+      setPermissionGranted(perm.display === 'granted');
     };
-    checkPermission();
+
+    setup();
   }, []);
 
   // 🔐 Request permission
@@ -72,14 +83,22 @@ export const useNotificationSettings = () => {
     if (isNative) {
       await LocalNotifications.cancel({ notifications: [{ id: 1 }] });
 
+      // Use a repeating daily schedule so it can fire even when the app is closed
+      const nativeSchedule: any = {
+        on: { hour, minute },
+        repeats: true,
+        every: 'day',
+      };
+
       await LocalNotifications.schedule({
         notifications: [
           {
             id: 1,
             title: "KC's Diary",
             body: settings.message,
-            schedule: { at: scheduleAt },
+            schedule: nativeSchedule,
             sound: 'default',
+            channelId: 'daily-reminder',
           },
         ],
       });
