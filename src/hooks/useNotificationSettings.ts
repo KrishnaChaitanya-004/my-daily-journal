@@ -8,176 +8,138 @@ export interface NotificationSettings {
   message: string;
 }
 
-const KEY = 'diary-notification-settings';
+const STORAGE_KEY = 'diary-notification-settings';
 
-const defaultSettings: NotificationSettings = {
+const DEFAULT_SETTINGS: NotificationSettings = {
   enabled: false,
   time: '20:00',
-  message: "Boss! It's diary time.",
+  message: "Boss! It's diary time ✨",
 };
 
 const isNative = Capacitor.isNativePlatform();
 
 export const useNotificationSettings = () => {
   const [settings, setSettings] = useState<NotificationSettings>(() => {
-    const stored = localStorage.getItem(KEY);
-    return stored ? { ...defaultSettings, ...JSON.parse(stored) } : defaultSettings;
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored
+      ? { ...DEFAULT_SETTINGS, ...JSON.parse(stored) }
+      : DEFAULT_SETTINGS;
   });
-  const [permissionGranted, setPermissionGranted] = useState<boolean>(false);
-  const [exactAlarmGranted, setExactAlarmGranted] = useState<boolean>(true);
 
+  /* ---------------------------------- */
+  /* Persist settings                   */
+  /* ---------------------------------- */
   useEffect(() => {
-    localStorage.setItem(KEY, JSON.stringify(settings));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   }, [settings]);
 
-  // Ensure Android notification channel exists and check permissions
+  /* ---------------------------------- */
+  /* Setup notification channel (Android) */
+  /* ---------------------------------- */
   useEffect(() => {
-    const setup = async () => {
-      if (!isNative) {
-        if ('Notification' in window) {
-          setPermissionGranted(Notification.permission === 'granted');
-        }
-        return;
-      }
+    if (!isNative) return;
 
+    const setupChannel = async () => {
       try {
         await LocalNotifications.createChannel({
-          id: 'daily-reminder',
-          name: 'Daily reminders',
-          description: 'Daily diary reminder notifications',
-          importance: 5,
-          visibility: 1,
+          id: 'diary-reminder',
+          name: 'Diary Reminders',
+          description: 'Daily diary reminder',
+          importance: 5, // HIGH
           sound: 'default',
+          vibration: true,
         });
       } catch {
-        // ignore
-      }
-
-      const perm = await LocalNotifications.checkPermissions();
-      setPermissionGranted(perm.display === 'granted');
-
-      // Check exact alarm permission (Android 12+)
-      try {
-        const exactPerm = await LocalNotifications.checkExactNotificationSetting();
-        setExactAlarmGranted(exactPerm.exact_alarm === 'granted');
-      } catch {
-        // Older devices don't need this permission
-        setExactAlarmGranted(true);
+        // channel already exists
       }
     };
 
-    setup();
+    setupChannel();
   }, []);
 
-  // Request notification permission
+  /* ---------------------------------- */
+  /* Permission                         */
+  /* ---------------------------------- */
   const requestPermission = useCallback(async (): Promise<boolean> => {
-    if (!isNative) {
-      const res = await Notification.requestPermission();
-      const granted = res === 'granted';
-      setPermissionGranted(granted);
-      return granted;
-    }
+    if (!isNative) return false;
 
     const perm = await LocalNotifications.requestPermissions();
-    const granted = perm.display === 'granted';
-    setPermissionGranted(granted);
-    return granted;
+    return perm.display === 'granted';
   }, []);
 
-  // Request exact alarm permission (Android 12+)
-  const requestExactAlarm = useCallback(async (): Promise<boolean> => {
-    if (!isNative) return true;
-    try {
-      const result = await LocalNotifications.changeExactNotificationSetting();
-      const granted = result.exact_alarm === 'granted';
-      setExactAlarmGranted(granted);
-      return granted;
-    } catch {
-      return true; // Assume allowed on older devices
-    }
-  }, []);
-
-  // Schedule notification with battery-saver-friendly options
+  /* ---------------------------------- */
+  /* Schedule notification              */
+  /* ---------------------------------- */
   const scheduleNotification = useCallback(async () => {
+    if (!isNative) return;
+
     const [hour, minute] = settings.time.split(':').map(Number);
-    const now = new Date();
 
-    const scheduleAt = new Date();
-    scheduleAt.setHours(hour, minute, 0, 0);
+    // Clear old reminder
+    await LocalNotifications.cancel({
+      notifications: [{ id: 1 }],
+    });
 
-    if (scheduleAt <= now) {
-      scheduleAt.setDate(scheduleAt.getDate() + 1);
-    }
-
-    if (isNative) {
-      await LocalNotifications.cancel({ notifications: [{ id: 1 }] });
-
-      // Use 'on' schedule with allowWhileIdle for reliable delivery in Doze/battery saver
-      await LocalNotifications.schedule({
-        notifications: [
-          {
-            id: 1,
-            title: "KC's Diary",
-            body: settings.message,
-            schedule: {
-              on: { hour, minute },
-              repeats: true,
-              allowWhileIdle: true, // Fires even in Doze/battery saver mode
-            },
-            sound: 'default',
-            channelId: 'daily-reminder',
-            smallIcon: 'ic_stat_icon', // Uses custom notification icon if available
-            autoCancel: true,
+    await LocalNotifications.schedule({
+      notifications: [
+        {
+          id: 1,
+          title: "KC's Diary",
+          body: settings.message,
+          channelId: 'diary-reminder',
+          schedule: {
+            on: { hour, minute },
+            repeats: true,
           },
-        ],
-      });
-    } else {
-      setTimeout(() => {
-        new Notification("KC's Diary", { body: settings.message });
-      }, scheduleAt.getTime() - now.getTime());
-    }
-  }, [settings]);
+        },
+      ],
+    });
+  }, [settings.time, settings.message]);
 
-  const enableNotifications = useCallback(async () => {
+  /* ---------------------------------- */
+  /* Enable                             */
+  /* ---------------------------------- */
+  const enableNotifications = useCallback(async (): Promise<boolean> => {
     const granted = await requestPermission();
     if (!granted) return false;
 
-    // Request exact alarm permission on Android 12+ for reliable timing
-    if (isNative && !exactAlarmGranted) {
-      await requestExactAlarm();
-    }
-
-    setSettings(prev => ({ ...prev, enabled: true }));
     await scheduleNotification();
+    setSettings(prev => ({ ...prev, enabled: true }));
     return true;
-  }, [requestPermission, requestExactAlarm, scheduleNotification, exactAlarmGranted]);
+  }, [requestPermission, scheduleNotification]);
 
+  /* ---------------------------------- */
+  /* Disable                            */
+  /* ---------------------------------- */
   const disableNotifications = useCallback(async () => {
-    setSettings(prev => ({ ...prev, enabled: false }));
-
     if (isNative) {
-      await LocalNotifications.cancel({ notifications: [{ id: 1 }] });
+      await LocalNotifications.cancel({
+        notifications: [{ id: 1 }],
+      });
     }
+    setSettings(prev => ({ ...prev, enabled: false }));
   }, []);
 
+  /* ---------------------------------- */
+  /* Update settings                    */
+  /* ---------------------------------- */
   const updateSettings = useCallback((updates: Partial<NotificationSettings>) => {
     setSettings(prev => ({ ...prev, ...updates }));
   }, []);
 
-  // Reschedule when time/message changes
+  /* ---------------------------------- */
+  /* Reschedule if time/message changes */
+  /* ---------------------------------- */
   useEffect(() => {
     if (settings.enabled && isNative) {
       scheduleNotification();
     }
-  }, [settings.time, settings.message, settings.enabled, scheduleNotification]);
+  }, [settings.enabled, settings.time, settings.message, scheduleNotification]);
 
   return {
     settings,
-    permissionGranted,
-    exactAlarmGranted,
     enableNotifications,
     disableNotifications,
     updateSettings,
-    requestExactAlarm,
   };
 };
