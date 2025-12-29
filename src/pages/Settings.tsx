@@ -717,9 +717,19 @@ const Settings = () => {
             KC's Diary helps you capture your daily thoughts, tasks, and moments.
             Your data is stored locally on your device.
           </p>
-          <p className="text-xs text-muted-foreground/60 mt-3">
-            Version 1.0.0
-          </p>
+          <div className="flex items-center gap-4 mt-3">
+            <a 
+              href="/privacy-policy.html" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-xs text-primary hover:underline"
+            >
+              Privacy Policy
+            </a>
+            <span className="text-xs text-muted-foreground/60">
+              Version 1.0.0
+            </span>
+          </div>
         </section>
       </div>
     </main>
