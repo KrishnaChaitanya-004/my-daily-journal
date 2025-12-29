@@ -100,7 +100,8 @@ export const useStatistics = () => {
     // Get last 30 days of stats
     for (let i = 29; i >= 0; i--) {
       const date = subDays(today, i);
-      const dateKey = date.toISOString().split('T')[0];
+      const dateKey = new Intl.DateTimeFormat('en-CA').format(date)
+
       const dayData = allData[dateKey] as DayFileData | undefined;
       
       const tasks = countTasks(dayData?.content || '');
@@ -141,7 +142,7 @@ export const useStatistics = () => {
     
     Object.entries(allData).forEach(([dateKey, dayData]) => {
       const data = dayData as DayFileData;
-      const monthKey = dateKey.slice(0, 7);
+      const monthKey = dateKey.substring(0, 7);
 
       
       if (!stats[monthKey]) {
@@ -202,7 +203,9 @@ const yesterday = new Intl.DateTimeFormat('en-CA').format(subDays(new Date(), 1)
     if (hasRecentEntry) {
       // Count backwards from today/yesterday
       let checkDate = entryDates.includes(today) ? new Date() : subDays(new Date(), 1);
-      while (entryDates.includes(checkDate.toISOString().split('T')[0])) {
+      while (entryDates.includes(
+    new Intl.DateTimeFormat('en-CA').format(checkDate)
+  )) {
         currentStreak++;
         checkDate = subDays(checkDate, 1);
       }
