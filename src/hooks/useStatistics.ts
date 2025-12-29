@@ -81,12 +81,15 @@ export const useStatistics = () => {
     
     // Listen for storage events from other tabs
     window.addEventListener('storage', handleStorageChange);
+    // Listen for custom event from import (same-tab)
+    window.addEventListener('diary-data-changed', handleStorageChange);
     
     // Also reload on mount in case data changed
     setAllData(loadDiaryData());
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('diary-data-changed', handleStorageChange);
     };
   }, []);
 
