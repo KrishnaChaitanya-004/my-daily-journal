@@ -27,7 +27,9 @@ const Statistics = () => {
   const chartData = dailyStats.map(stat => {
     let label = stat.date;
     try {
-      label = format(parseISO(stat.date), 'MMM d');
+     const d = new Date(stat.date + 'T00:00:00');
+label = isNaN(d.getTime()) ? stat.date : format(d, 'MMM d');
+
     } catch {
       // ignore
     }
@@ -47,7 +49,8 @@ const Statistics = () => {
     
     for (let i = 29; i >= 0; i--) {
       const date = subDays(today, i);
-      const dateKey = date.toISOString().split('T')[0];
+      const dateKey =  new Intl.DateTimeFormat('en-CA').format(date);
+
       const dayData = allData[dateKey] as DayFileData | undefined;
       
       const completedHabits = habits.filter(h => dayData?.habits?.[h.id]).length;
@@ -260,7 +263,13 @@ const Statistics = () => {
               {monthlyStats.slice(-4).reverse().map(month => (
                 <div key={month.month} className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">
-                    {format(parseISO(month.month + '-01'), 'MMMM yyyy')}
+                    {(() => {
+  const d = new Date(month.month + '-01T00:00:00');
+  return isNaN(d.getTime())
+    ? month.month
+    : format(d, 'MMMM yyyy');
+})()}
+
                   </span>
                   <div className="flex gap-4 text-foreground">
                     <span>{month.entries} entries</span>
