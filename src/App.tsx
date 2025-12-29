@@ -1,8 +1,11 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import { App as CapacitorApp } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 import Index from "./pages/Index";
 import Photos from "./pages/Photos";
 import VoiceNotes from "./pages/VoiceNotes";
@@ -17,6 +20,36 @@ import LockScreen from "./components/LockScreen";
 import { useAppLock } from "./hooks/useAppLock";
 
 const queryClient = new QueryClient();
+
+// Hook to handle Android back button
+const useAndroidBackButton = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const backHandler = CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+      // If on home page, exit app
+      if (location.pathname === '/') {
+        CapacitorApp.exitApp();
+      } else {
+        // Navigate to home
+        navigate('/');
+      }
+    });
+
+    return () => {
+      backHandler.then(h => h.remove());
+    };
+  }, [navigate, location.pathname]);
+};
+
+// Component wrapper to use the hook
+const BackButtonHandler = () => {
+  useAndroidBackButton();
+  return null;
+};
 
 const AppContent = () => {
   const { isLocked, lockSettings, biometricAvailable, unlock, unlockWithBiometric } = useAppLock();
@@ -34,6 +67,7 @@ const AppContent = () => {
 
   return (
     <BrowserRouter>
+      <BackButtonHandler />
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/photos" element={<Photos />} />

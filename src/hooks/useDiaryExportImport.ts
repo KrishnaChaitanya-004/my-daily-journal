@@ -225,6 +225,9 @@ export const useDiaryExportImport = () => {
         JSON.stringify({ ...existing, ...imported })
       );
 
+      // Dispatch custom event so useStatistics reloads immediately
+      window.dispatchEvent(new Event('diary-data-changed'));
+
       const settings = diaryFolder.file('settings.json');
       if (settings)
         localStorage.setItem(

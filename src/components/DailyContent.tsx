@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, ChangeEvent } from 'react';
 import { CheckSquare, Camera, Clock, Check, MapPin, Cloud, Hash, X, Mic, Square, Play, Pause, Trash2 } from 'lucide-react';
 import { Camera as CapacitorCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 import PhotoThumbnail from './PhotoThumbnail';
 import PhotoViewer from './PhotoViewer';
 import { format } from 'date-fns';
@@ -83,6 +84,21 @@ const DailyContent = ({
     onUpdateContent(localContent);
     onEditingChange(false);
   };
+
+  // Handle Android back button when editing
+  useEffect(() => {
+    if (!isEditing || !Capacitor.isNativePlatform()) return;
+
+    const backHandler = CapacitorApp.addListener('backButton', () => {
+      // Save and close editor
+      onUpdateContent(localContent);
+      onEditingChange(false);
+    });
+
+    return () => {
+      backHandler.then(h => h.remove());
+    };
+  }, [isEditing, localContent, onUpdateContent, onEditingChange]);
 
 const handleAddTask = () => {
   if (!taskText.trim()) return;
@@ -217,9 +233,10 @@ const handleAddTask = () => {
     return (
       <>
         {lines.map((line, index) => {
-          const photoMatch = line.match(/^\[photo:(.+)\]$/);
+          // More tolerant photo matching - allow whitespace around the marker
+          const photoMatch = line.trim().match(/^\[photo:(.+?)\]$/);
           if (photoMatch) {
-            const filename = photoMatch[1];
+            const filename = photoMatch[1].trim();
             const photo = getPhotoByFilename(filename);
             if (photo) {
               const photoUrl = getPhotoUrl(photo);
@@ -234,6 +251,7 @@ const handleAddTask = () => {
                 </div>
               );
             }
+            // Photo marker exists but photo not found in array - show placeholder
             return (
               <div key={index} className="text-sm text-muted-foreground py-0.5 italic">
                 [Photo not found: {filename}]
