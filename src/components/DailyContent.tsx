@@ -176,7 +176,8 @@ const handleAddTask = () => {
   };
 
   const handleAddWeather = async () => {
-    const w = await fetchWeather(location?.lat, location?.lng);
+    // Fetch weather - will get location automatically if not provided
+    const w = await fetchWeather();
     if (w) {
       onSaveMeta({ weather: w });
     }
@@ -451,6 +452,11 @@ const handleAddTask = () => {
                 leading-snug
               "
               autoFocus
+              onFocus={(e) => {
+                // Move cursor to end of content
+                const len = e.target.value.length;
+                e.target.setSelectionRange(len, len);
+              }}
             />
           </div>
           
