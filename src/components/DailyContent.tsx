@@ -11,6 +11,7 @@ import { LocationData, WeatherData, VoiceNoteData } from '@/hooks/useFileStorage
 import { useLocation } from '@/hooks/useLocation';
 import { useWeather } from '@/hooks/useWeather';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
+import { getPhotoFromIDB } from '@/lib/photoStorage';
 
 interface PhotoData {
   filename: string;
@@ -37,7 +38,56 @@ interface DailyContentProps {
   onSaveVoiceNote: (base64: string, duration: number) => Promise<void>;
   onDeleteVoiceNote: (filename: string) => void;
   getPhotoUrl: (photo: PhotoData) => string;
+  loadPhotoFromStorage?: (filename: string) => Promise<string | null>;
 }
+
+// Component for lazy-loading photo from IndexedDB
+const LazyPhoto = ({ 
+  photo, 
+  getPhotoUrl, 
+  onView, 
+  onDelete 
+}: { 
+  photo: PhotoData; 
+  getPhotoUrl: (p: PhotoData) => string; 
+  onView: (url: string) => void;
+  onDelete: () => void;
+}) => {
+  const [photoUrl, setPhotoUrl] = useState<string>(() => getPhotoUrl(photo));
+
+  useEffect(() => {
+    if (photoUrl) return;
+
+    // Load from IndexedDB if not available
+    const loadPhoto = async () => {
+      if (!Capacitor.isNativePlatform()) {
+        const base64 = await getPhotoFromIDB(photo.filename);
+        if (base64) {
+          setPhotoUrl(`data:image/jpeg;base64,${base64}`);
+        }
+      }
+    };
+
+    loadPhoto();
+  }, [photo.filename, photoUrl]);
+
+  if (!photoUrl) {
+    return (
+      <div className="w-24 h-24 bg-secondary rounded-lg animate-pulse flex items-center justify-center">
+        <span className="text-xs text-muted-foreground">Loading...</span>
+      </div>
+    );
+  }
+
+  return (
+    <PhotoThumbnail
+      src={photoUrl}
+      timestamp={photo.timestamp}
+      onView={() => onView(photoUrl)}
+      onDelete={onDelete}
+    />
+  );
+};
 
 const DailyContent = ({ 
   content, 
@@ -268,13 +318,12 @@ const handleAddTask = () => {
             const filename = photoMatch[1].trim();
             const photo = getPhotoByFilename(filename);
             if (photo) {
-              const photoUrl = getPhotoUrl(photo);
               return (
                 <div key={index} className="py-1 w-fit" onClick={(e) => e.stopPropagation()}>
-                  <PhotoThumbnail
-                    src={photoUrl}
-                    timestamp={photo.timestamp}
-                    onView={() => setViewingPhoto(photoUrl)}
+                  <LazyPhoto
+                    photo={photo}
+                    getPhotoUrl={getPhotoUrl}
+                    onView={(url) => setViewingPhoto(url)}
                     onDelete={() => onDeletePhoto(photo.filename)}
                   />
                 </div>
