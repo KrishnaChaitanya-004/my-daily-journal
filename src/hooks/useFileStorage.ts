@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
-import { savePhotoToIDB, getPhotoFromIDB, deletePhotoFromIDB, migratePhotosToIDB } from '@/lib/photoStorage';
 
 export interface PhotoData {
   filename: string;
@@ -54,7 +53,7 @@ const isNativePlatform = (): boolean => {
   return Capacitor.isNativePlatform();
 };
 
-// Fallback to localStorage for web (metadata only, photos in IndexedDB)
+// Fallback to localStorage for web
 const STORAGE_KEY = 'diary-app-data';
 
 const loadFromLocalStorage = (): Record<string, DayFileData> => {
@@ -103,27 +102,7 @@ const loadFromLocalStorage = (): Record<string, DayFileData> => {
 };
 
 const saveToLocalStorage = (data: Record<string, DayFileData>) => {
-  // Remove base64 from photos before saving to localStorage to save space
-  const dataWithoutBase64: Record<string, DayFileData> = {};
-  
-  for (const [key, value] of Object.entries(data)) {
-    dataWithoutBase64[key] = {
-      ...value,
-      photos: value.photos.map(p => ({
-        filename: p.filename,
-        path: p.path,
-        timestamp: p.timestamp,
-        // Don't save base64 to localStorage - it's in IndexedDB
-      })),
-    };
-  }
-  
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataWithoutBase64));
-  } catch (e) {
-    console.error('Failed to save to localStorage:', e);
-    // If still failing, the data might be too large even without base64
-  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 };
 
 // Export for use in other hooks
@@ -135,19 +114,11 @@ export const getAllDiaryData = (): Record<string, DayFileData> => {
 export const useFileStorage = (selectedDate: Date) => {
   const [allData, setAllData] = useState<Record<string, DayFileData>>(loadFromLocalStorage);
   const [isLoading, setIsLoading] = useState(false);
-  const [photoCache, setPhotoCache] = useState<Record<string, string>>({});
   
   const dateFolder = formatDateFolder(selectedDate);
-  const dateKey = new Intl.DateTimeFormat('en-CA').format(selectedDate);
-  // yyyy-MM-dd
+ const dateKey = new Intl.DateTimeFormat('en-CA').format(selectedDate);
+// yyyy-MM-dd
   const dayData = allData[dateKey] || { content: '', photos: [] };
-
-  // Migrate photos from localStorage to IndexedDB on first load
-  useEffect(() => {
-    if (!isNativePlatform()) {
-      migratePhotosToIDB();
-    }
-  }, []);
 
   // Create folder structure on native
   const ensureFolder = useCallback(async () => {
@@ -280,19 +251,11 @@ const savePhoto = useCallback(
       filename,
       path: `${APP_FOLDER}/${dateFolder}/${filename}`,
       timestamp,
-      base64: pureBase64, // Keep in memory for immediate display
+      base64: pureBase64, // Always store base64 for reliable display
     };
 
     let updatedContent = '';
     let updatedPhotos: PhotoData[] = [];
-
-    // Save to IndexedDB for web (not localStorage)
-    if (!isNativePlatform()) {
-      await savePhotoToIDB(filename, pureBase64, dateKey);
-    }
-
-    // Update photo cache for immediate display
-    setPhotoCache(prev => ({ ...prev, [filename]: pureBase64 }));
 
     // ✅ SINGLE state update - using new $[photo:...]$ format
     setAllData(prev => {
@@ -302,8 +265,7 @@ const savePhoto = useCallback(
         ? `${current.content}\n$[photo:${filename}]$`
         : `$[photo:${filename}]$`;
 
-      // Don't store base64 in state - it will be loaded from IndexedDB
-      updatedPhotos = [...current.photos, { ...photo, base64: undefined }];
+      updatedPhotos = [...current.photos, photo];
 
       const merged: Record<string, DayFileData> = {
         ...prev,
@@ -318,7 +280,7 @@ const savePhoto = useCallback(
       return merged;
     });
 
-    // Native persistence (save to filesystem)
+    // Native persistence (also save to filesystem for backup/export)
     if (isNativePlatform()) {
       try {
         await ensureFolder();
@@ -336,7 +298,7 @@ const savePhoto = useCallback(
           encoding: Encoding.UTF8,
         });
 
-        // Save photos metadata (without base64)
+        // Save photos metadata (without base64 to save space in file)
         const photosForFile = updatedPhotos.map(p => ({
           filename: p.filename,
           path: p.path,
@@ -356,7 +318,7 @@ const savePhoto = useCallback(
 
     return photo;
   },
-  [dateKey, dateFolder, ensureFolder, setPhotoCache]
+  [dateKey, dateFolder, ensureFolder]
 );
 
 
@@ -428,18 +390,6 @@ const deleteVoiceNote = useCallback(
   // Delete photo and remove marker from content (supports both old and new formats)
   const deletePhoto = useCallback(
   async (filename: string) => {
-    // Delete from IndexedDB on web
-    if (!isNativePlatform()) {
-      await deletePhotoFromIDB(filename);
-    }
-
-    // Remove from cache
-    setPhotoCache(prev => {
-      const newCache = { ...prev };
-      delete newCache[filename];
-      return newCache;
-    });
-
     setAllData(prev => {
       const current = prev[dateKey];
       if (!current) return prev;
@@ -577,39 +527,15 @@ setAllData(prev => {
     loadNativeData();
   }, [dateFolder, dateKey]);
 
-  // Get photo URL (for display) - check cache first, then IndexedDB
+  // Get photo URL (for display)
   const getPhotoUrl = useCallback((photo: PhotoData): string => {
-    // Check in-memory cache first
-    if (photoCache[photo.filename]) {
-      return `data:image/jpeg;base64,${photoCache[photo.filename]}`;
-    }
-    
-    // Check if photo has base64 (from recent add or native load)
+    // Always prefer base64 - works on both web and native
     if (photo.base64) {
       return `data:image/jpeg;base64,${photo.base64}`;
     }
 
     return '';
-  }, [photoCache]);
-
-  // Load photo from IndexedDB asynchronously
-  const loadPhotoFromStorage = useCallback(async (filename: string): Promise<string | null> => {
-    // Check cache first
-    if (photoCache[filename]) {
-      return `data:image/jpeg;base64,${photoCache[filename]}`;
-    }
-
-    // For web, load from IndexedDB
-    if (!isNativePlatform()) {
-      const base64 = await getPhotoFromIDB(filename);
-      if (base64) {
-        setPhotoCache(prev => ({ ...prev, [filename]: base64 }));
-        return `data:image/jpeg;base64,${base64}`;
-      }
-    }
-
-    return null;
-  }, [photoCache]);
+  }, []);
 
 
   // Check if date has content
@@ -636,7 +562,6 @@ setAllData(prev => {
     deleteVoiceNote,
     deletePhoto,
     getPhotoUrl,
-    loadPhotoFromStorage,
     hasContent,
     allData
   };
