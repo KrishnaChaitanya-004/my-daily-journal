@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAllPhotos } from '@/hooks/useAllPhotos';
@@ -14,10 +14,48 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
+interface PhotoWithUrl {
+  filename: string;
+  dateKey?: string;
+  timestamp: number;
+  url: string;
+}
+
 const Photos = () => {
   const navigate = useNavigate();
-  const { allPhotos, getPhotoUrl, deletePhoto } = useAllPhotos();
+  const { allPhotos, getPhotoUrl, loadPhotoUrl, deletePhoto } = useAllPhotos();
   const [photoToDelete, setPhotoToDelete] = useState<{ filename: string; dateKey: string } | null>(null);
+  const [loadedPhotos, setLoadedPhotos] = useState<PhotoWithUrl[]>([]);
+
+  // Load photo URLs asynchronously
+  useEffect(() => {
+    const loadPhotos = async () => {
+      const loaded: PhotoWithUrl[] = [];
+      
+      for (const photo of allPhotos) {
+        // Try sync method first
+        let url = getPhotoUrl(photo);
+        
+        // If no URL, try async load from IndexedDB
+        if (!url) {
+          url = await loadPhotoUrl(photo.filename);
+        }
+        
+        if (url) {
+          loaded.push({
+            filename: photo.filename,
+            dateKey: photo.dateKey,
+            timestamp: photo.timestamp,
+            url,
+          });
+        }
+      }
+      
+      setLoadedPhotos(loaded);
+    };
+
+    loadPhotos();
+  }, [allPhotos, getPhotoUrl, loadPhotoUrl]);
 
   const formatDate = (dateKey?: string) => {
     if (!dateKey) return '';
@@ -75,43 +113,36 @@ const Photos = () => {
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-2">
-            {allPhotos.map((photo, index) => {
-              const photoUrl = getPhotoUrl(photo);
+            {loadedPhotos.map((photo, index) => (
+              <button
+                key={`${photo.filename}-${index}`}
+                onClick={() => handlePhotoClick(photo.dateKey)}
+                className="aspect-square rounded-lg overflow-hidden bg-secondary relative group"
+              >
+                <img
+                  src={photo.url}
+                  alt="Diary photo"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
 
-              // 🚨 SAFETY CHECK (prevents broken images)
-              if (!photoUrl) return null;
-
-              return (
+                {/* Delete button overlay */}
                 <button
-                  key={`${photo.filename}-${index}`}
-                  onClick={() => handlePhotoClick(photo.dateKey)}
-                  className="aspect-square rounded-lg overflow-hidden bg-secondary relative group"
+                  onClick={(e) => handleDeleteClick(e, photo.filename, photo.dateKey)}
+                  className="absolute top-1 right-1 p-1.5 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive"
                 >
-                  <img
-                    src={photoUrl}
-                    alt="Diary photo"
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-
-                  {/* Delete button overlay */}
-                  <button
-                    onClick={(e) => handleDeleteClick(e, photo.filename, photo.dateKey)}
-                    className="absolute top-1 right-1 p-1.5 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive"
-                  >
-                    <Trash2 className="w-3 h-3 text-white" />
-                  </button>
-
-                  {photo.dateKey && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-1">
-                      <span className="text-[10px] text-white">
-                        {formatDate(photo.dateKey)}
-                      </span>
-                    </div>
-                  )}
+                  <Trash2 className="w-3 h-3 text-white" />
                 </button>
-              );
-            })}
+
+                {photo.dateKey && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-1">
+                    <span className="text-[10px] text-white">
+                      {formatDate(photo.dateKey)}
+                    </span>
+                  </div>
+                )}
+              </button>
+            ))}
           </div>
         )}
       </div>

@@ -1,5 +1,6 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
+import { getPhotoFromIDB, deletePhotoFromIDB, getAllPhotosFromIDB } from '@/lib/photoStorage';
 
 interface PhotoData {
   filename: string;
@@ -24,6 +25,25 @@ const STORAGE_KEY = 'diary-app-data';
 
 export const useAllPhotos = () => {
   const [refreshKey, setRefreshKey] = useState(0);
+  const [photoCache, setPhotoCache] = useState<Record<string, string>>({});
+
+  // Load all photos from IndexedDB on mount
+  useEffect(() => {
+    const loadPhotosFromIDB = async () => {
+      try {
+        const idbPhotos = await getAllPhotosFromIDB();
+        const cache: Record<string, string> = {};
+        for (const photo of idbPhotos) {
+          cache[photo.id] = photo.base64;
+        }
+        setPhotoCache(cache);
+      } catch (e) {
+        console.error('Failed to load photos from IndexedDB:', e);
+      }
+    };
+
+    loadPhotosFromIDB();
+  }, [refreshKey]);
 
   const allPhotos = useMemo(() => {
     try {
@@ -49,17 +69,41 @@ export const useAllPhotos = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey]);
 
-  const getPhotoUrl = (photo: PhotoData): string => {
-    // Always prefer base64 - works on both web and native
+  const getPhotoUrl = useCallback((photo: PhotoData): string => {
+    // Check cache from IndexedDB
+    if (photoCache[photo.filename]) {
+      return `data:image/jpeg;base64,${photoCache[photo.filename]}`;
+    }
+    
+    // Fallback to inline base64 if available
     if (photo.base64) {
       return `data:image/jpeg;base64,${photo.base64}`;
     }
 
     return '';
-  };
+  }, [photoCache]);
 
-  const deletePhoto = useCallback((filename: string, dateKey: string) => {
+  const loadPhotoUrl = useCallback(async (filename: string): Promise<string> => {
+    // Check cache first
+    if (photoCache[filename]) {
+      return `data:image/jpeg;base64,${photoCache[filename]}`;
+    }
+
+    // Load from IndexedDB
+    const base64 = await getPhotoFromIDB(filename);
+    if (base64) {
+      setPhotoCache(prev => ({ ...prev, [filename]: base64 }));
+      return `data:image/jpeg;base64,${base64}`;
+    }
+
+    return '';
+  }, [photoCache]);
+
+  const deletePhoto = useCallback(async (filename: string, dateKey: string) => {
     try {
+      // Delete from IndexedDB
+      await deletePhotoFromIDB(filename);
+
       const data = localStorage.getItem(STORAGE_KEY);
       if (!data) return;
 
@@ -88,6 +132,13 @@ export const useAllPhotos = () => {
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
       
+      // Remove from cache
+      setPhotoCache(prev => {
+        const newCache = { ...prev };
+        delete newCache[filename];
+        return newCache;
+      });
+      
       // Dispatch event for other components to refresh
       window.dispatchEvent(new Event('diary-data-changed'));
       
@@ -101,5 +152,5 @@ export const useAllPhotos = () => {
     }
   }, []);
 
-  return { allPhotos, getPhotoUrl, deletePhoto };
+  return { allPhotos, getPhotoUrl, loadPhotoUrl, deletePhoto };
 };
