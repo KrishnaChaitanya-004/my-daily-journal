@@ -26,33 +26,12 @@ export const useNotificationSettings = () => {
       : DEFAULT_SETTINGS;
   });
 
-  const [permissionGranted, setPermissionGranted] = useState(false);
-  const [exactAlarmGranted, setExactAlarmGranted] = useState(true); // Default true for non-Android 12+
-
   /* ---------------------------------- */
   /* Persist settings                   */
   /* ---------------------------------- */
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   }, [settings]);
-
-  /* ---------------------------------- */
-  /* Check permissions on mount         */
-  /* ---------------------------------- */
-  useEffect(() => {
-    if (!isNative) return;
-
-    const checkPermissions = async () => {
-      try {
-        const perm = await LocalNotifications.checkPermissions();
-        setPermissionGranted(perm.display === 'granted');
-      } catch {
-        // Ignore
-      }
-    };
-
-    checkPermissions();
-  }, []);
 
   /* ---------------------------------- */
   /* Setup notification channel (Android) */
@@ -85,21 +64,7 @@ export const useNotificationSettings = () => {
     if (!isNative) return false;
 
     const perm = await LocalNotifications.requestPermissions();
-    const granted = perm.display === 'granted';
-    setPermissionGranted(granted);
-    return granted;
-  }, []);
-
-  /* ---------------------------------- */
-  /* Request exact alarm (Android 12+)  */
-  /* ---------------------------------- */
-  const requestExactAlarm = useCallback(async (): Promise<boolean> => {
-    if (!isNative) return true;
-    
-    // For now, just return true - exact alarm is typically granted by default
-    // Real implementation would use AndroidExactAlarms API
-    setExactAlarmGranted(true);
-    return true;
+    return perm.display === 'granted';
   }, []);
 
   /* ---------------------------------- */
@@ -173,11 +138,8 @@ export const useNotificationSettings = () => {
 
   return {
     settings,
-    permissionGranted,
-    exactAlarmGranted,
     enableNotifications,
     disableNotifications,
     updateSettings,
-    requestExactAlarm,
   };
 };

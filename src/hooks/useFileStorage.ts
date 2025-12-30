@@ -257,13 +257,13 @@ const savePhoto = useCallback(
     let updatedContent = '';
     let updatedPhotos: PhotoData[] = [];
 
-    // ✅ SINGLE state update - using new $[photo:...]$ format
+    // ✅ SINGLE state update
     setAllData(prev => {
       const current = prev[dateKey] || { content: '', photos: [] };
 
       updatedContent = current.content
-        ? `${current.content}\n$[photo:${filename}]$`
-        : `$[photo:${filename}]$`;
+        ? `${current.content}\n[photo:${filename}]`
+        : `[photo:${filename}]`;
 
       updatedPhotos = [...current.photos, photo];
 
@@ -387,7 +387,7 @@ const deleteVoiceNote = useCallback(
 );
 
 
-  // Delete photo and remove marker from content (supports both old and new formats)
+  // Delete photo and remove marker from content
   const deletePhoto = useCallback(
   async (filename: string) => {
     setAllData(prev => {
@@ -398,12 +398,10 @@ const deleteVoiceNote = useCallback(
         p => p.filename !== filename
       );
 
-      // Remove both old [photo:...] and new $[photo:...]$ formats
-      const oldMarker = `[photo:${filename}]`;
-      const newMarker = `$[photo:${filename}]$`;
+      const photoMarker = `[photo:${filename}]`;
       const updatedContent = current.content
         .split('\n')
-        .filter(line => line.trim() !== oldMarker && line.trim() !== newMarker)
+        .filter(line => line !== photoMarker)
         .join('\n');
 
       const merged: Record<string, DayFileData> = {
@@ -426,17 +424,12 @@ const deleteVoiceNote = useCallback(
           directory: Directory.Documents,
         });
 
-        // Update content file - remove both old and new formats
-        const oldMarker = `[photo:${filename}]`;
-        const newMarker = `$[photo:${filename}]$`;
-        const updatedContentForFile = dayData.content
-          .split('\n')
-          .filter(line => line.trim() !== oldMarker && line.trim() !== newMarker)
-          .join('\n');
-
         await Filesystem.writeFile({
           path: `${APP_FOLDER}/${dateFolder}/content.txt`,
-          data: updatedContentForFile,
+          data: dayData.content
+            .split('\n')
+            .filter(line => line !== `[photo:${filename}]`)
+            .join('\n'),
           directory: Directory.Documents,
           encoding: Encoding.UTF8,
         });
