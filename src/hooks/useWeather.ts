@@ -1,4 +1,6 @@
 import { useState, useCallback } from 'react';
+import { Geolocation } from '@capacitor/geolocation';
+import { Capacitor } from '@capacitor/core';
 import { WeatherData } from './useFileStorage';
 
 // Weather condition codes from Open-Meteo
@@ -43,15 +45,31 @@ export const useWeather = () => {
       let longitude = lng;
 
       if (!latitude || !longitude) {
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: false,
-            timeout: 5000,
-            maximumAge: 300000 // 5 minutes
+        // Use Capacitor Geolocation for native, fallback to navigator for web
+        if (Capacitor.isNativePlatform()) {
+          try {
+            const position = await Geolocation.getCurrentPosition({
+              enableHighAccuracy: false,
+              timeout: 10000,
+            });
+            latitude = position.coords.latitude;
+            longitude = position.coords.longitude;
+          } catch (geoError: any) {
+            console.error('Capacitor geolocation error:', geoError);
+            throw new Error('Location permission denied or unavailable');
+          }
+        } else {
+          // Web fallback
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: false,
+              timeout: 5000,
+              maximumAge: 300000 // 5 minutes
+            });
           });
-        });
-        latitude = position.coords.latitude;
-        longitude = position.coords.longitude;
+          latitude = position.coords.latitude;
+          longitude = position.coords.longitude;
+        }
       }
 
       // Fetch weather from Open-Meteo (free, no API key needed)

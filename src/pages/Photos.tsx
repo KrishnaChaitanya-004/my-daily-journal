@@ -1,11 +1,23 @@
-import { ArrowLeft } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowLeft, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAllPhotos } from '@/hooks/useAllPhotos';
 import { format } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const Photos = () => {
   const navigate = useNavigate();
-  const { allPhotos, getPhotoUrl } = useAllPhotos();
+  const { allPhotos, getPhotoUrl, deletePhoto } = useAllPhotos();
+  const [photoToDelete, setPhotoToDelete] = useState<{ filename: string; dateKey: string } | null>(null);
 
   const formatDate = (dateKey?: string) => {
     if (!dateKey) return '';
@@ -19,6 +31,20 @@ const Photos = () => {
   const handlePhotoClick = (dateKey?: string) => {
     if (dateKey) {
       navigate(`/?date=${dateKey}`);
+    }
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, filename: string, dateKey?: string) => {
+    e.stopPropagation();
+    if (dateKey) {
+      setPhotoToDelete({ filename, dateKey });
+    }
+  };
+
+  const confirmDelete = () => {
+    if (photoToDelete) {
+      deletePhoto(photoToDelete.filename, photoToDelete.dateKey);
+      setPhotoToDelete(null);
     }
   };
 
@@ -59,7 +85,7 @@ const Photos = () => {
                 <button
                   key={`${photo.filename}-${index}`}
                   onClick={() => handlePhotoClick(photo.dateKey)}
-                  className="aspect-square rounded-lg overflow-hidden bg-secondary relative"
+                  className="aspect-square rounded-lg overflow-hidden bg-secondary relative group"
                 >
                   <img
                     src={photoUrl}
@@ -67,6 +93,14 @@ const Photos = () => {
                     className="w-full h-full object-cover"
                     loading="lazy"
                   />
+
+                  {/* Delete button overlay */}
+                  <button
+                    onClick={(e) => handleDeleteClick(e, photo.filename, photo.dateKey)}
+                    className="absolute top-1 right-1 p-1.5 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive"
+                  >
+                    <Trash2 className="w-3 h-3 text-white" />
+                  </button>
 
                   {photo.dateKey && (
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-1">
@@ -81,6 +115,24 @@ const Photos = () => {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!photoToDelete} onOpenChange={() => setPhotoToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Photo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this photo from your diary. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 };
