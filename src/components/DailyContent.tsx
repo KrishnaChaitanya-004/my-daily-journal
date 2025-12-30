@@ -3,6 +3,7 @@ import { CheckSquare, Camera, Clock, Check, MapPin, Cloud, Hash, X, Mic, Square,
 import { Camera as CapacitorCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
+import { useNavigate } from 'react-router-dom';
 import PhotoThumbnail from './PhotoThumbnail';
 import PhotoViewer from './PhotoViewer';
 import { format } from 'date-fns';
@@ -57,6 +58,7 @@ const DailyContent = ({
   onDeleteVoiceNote,
   getPhotoUrl
 }: DailyContentProps) => {
+  const navigate = useNavigate();
   const [taskText, setTaskText] = useState('');
   const [localContent, setLocalContent] = useState(content);
   const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
@@ -65,6 +67,7 @@ const DailyContent = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const previousContentRef = useRef(content);
   
   const { getCurrentLocation, isLoading: locationLoading } = useLocation();
   const { fetchWeather, isLoading: weatherLoading } = useWeather();
@@ -73,6 +76,7 @@ const DailyContent = ({
   // Sync localContent when content changes (e.g., date change or task toggle)
   useEffect(() => {
     setLocalContent(content);
+    previousContentRef.current = content;
   }, [content]);
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -80,25 +84,49 @@ const DailyContent = ({
     setLocalContent(newContent);
   };
 
-  const handleSave = () => {
-    onUpdateContent(localContent);
-    onEditingChange(false);
+  // Helper to extract photo filenames from content (supports both old and new formats)
+  const extractPhotoFilenames = (text: string): string[] => {
+    const filenames: string[] = [];
+    // Match both $[photo:filename]$ and [photo:filename] formats
+    const regex = /\$?\[photo:([^\]]+)\]\$?/g;
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      filenames.push(match[1].trim());
+    }
+    return filenames;
   };
 
-  // Handle Android back button when editing
+  const handleSave = () => {
+    // Check for deleted photo markers and delete actual photos
+    const previousPhotos = extractPhotoFilenames(previousContentRef.current);
+    const currentPhotos = extractPhotoFilenames(localContent);
+    
+    // Find photos that were removed
+    const deletedPhotos = previousPhotos.filter(p => !currentPhotos.includes(p));
+    deletedPhotos.forEach(filename => {
+      onDeletePhoto(filename);
+    });
+    
+    onUpdateContent(localContent);
+    onEditingChange(false);
+    previousContentRef.current = localContent;
+  };
+
+  // Handle Android back button when editing - navigate to home
   useEffect(() => {
     if (!isEditing || !Capacitor.isNativePlatform()) return;
 
     const backHandler = CapacitorApp.addListener('backButton', () => {
-      // Save and close editor
+      // Save, close editor, and navigate to home
       onUpdateContent(localContent);
       onEditingChange(false);
+      navigate('/');
     });
 
     return () => {
       backHandler.then(h => h.remove());
     };
-  }, [isEditing, localContent, onUpdateContent, onEditingChange]);
+  }, [isEditing, localContent, onUpdateContent, onEditingChange, navigate]);
 
 const handleAddTask = () => {
   if (!taskText.trim()) return;
@@ -234,8 +262,8 @@ const handleAddTask = () => {
     return (
       <>
         {lines.map((line, index) => {
-          // More tolerant photo matching - allow whitespace around the marker
-          const photoMatch = line.trim().match(/^\[photo:(.+?)\]$/);
+          // Match both old [photo:...] and new $[photo:...]$ formats
+          const photoMatch = line.trim().match(/^\$?\[photo:(.+?)\]\$?$/);
           if (photoMatch) {
             const filename = photoMatch[1].trim();
             const photo = getPhotoByFilename(filename);
