@@ -39,6 +39,7 @@
     --today: 0 72% 51%;
     --today-foreground: 0 0% 100%;
     --has-content: 0 72% 51%;
+    --calendar-selection: 0 0% 12%;
   }
 
   .dark {

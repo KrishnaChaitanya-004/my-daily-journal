@@ -167,7 +167,7 @@ const Calendar = ({
                       relative z-10 w-7 h-7 flex items-center justify-center rounded-full
                       transition-smooth
                       ${dateIsToday ? 'ring-2 ring-primary text-primary font-medium' : ''}
-                      ${dateIsSelected && !dateIsToday ? 'bg-secondary' : ''}
+                      ${dateIsSelected && !dateIsToday ? 'bg-[hsl(var(--calendar-selection))]' : ''}
                       ${dateInCurrentMonth ? 'hover:bg-secondary/50' : ''}
                     `}
                   >
