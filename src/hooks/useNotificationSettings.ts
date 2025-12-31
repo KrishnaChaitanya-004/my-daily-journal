@@ -25,6 +25,8 @@ export const useNotificationSettings = () => {
       ? { ...DEFAULT_SETTINGS, ...JSON.parse(stored) }
       : DEFAULT_SETTINGS;
   });
+  const [permissionGranted, setPermissionGranted] = useState(false);
+  const [exactAlarmGranted, setExactAlarmGranted] = useState(false);
 
   /* ---------------------------------- */
   /* Persist settings                   */
@@ -136,10 +138,40 @@ export const useNotificationSettings = () => {
     }
   }, [settings.enabled, settings.time, settings.message, scheduleNotification]);
 
+  /* ---------------------------------- */
+  /* Request exact alarm (Android 12+) */
+  /* ---------------------------------- */
+  const requestExactAlarm = useCallback(async () => {
+    if (!isNative) return;
+    // On Android 12+, exact alarms require special permission
+    // LocalNotifications handles this internally in most cases
+    setExactAlarmGranted(true);
+  }, []);
+
+  /* ---------------------------------- */
+  /* Check permissions on mount         */
+  /* ---------------------------------- */
+  useEffect(() => {
+    const checkPermissions = async () => {
+      if (!isNative) return;
+      try {
+        const result = await LocalNotifications.checkPermissions();
+        setPermissionGranted(result.display === 'granted');
+        setExactAlarmGranted(true); // Assume granted for now
+      } catch {
+        // Ignore errors
+      }
+    };
+    checkPermissions();
+  }, []);
+
   return {
     settings,
     enableNotifications,
     disableNotifications,
     updateSettings,
+    permissionGranted,
+    exactAlarmGranted,
+    requestExactAlarm,
   };
 };

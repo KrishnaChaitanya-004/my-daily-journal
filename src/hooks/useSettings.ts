@@ -11,6 +11,7 @@ export interface AppSettings {
   customFontName: string;
   showWritingPrompts: boolean;
   showCalendar: boolean;
+  calendarSelectionColor: string;
 }
 
 const SETTINGS_KEY = 'diary-settings';
@@ -26,6 +27,7 @@ const defaultSettings: AppSettings = {
   customFontName: '',
   showWritingPrompts: true,
   showCalendar: true,
+  calendarSelectionColor: '',
 };
 
 const themeColors: Record<string, { primary: string; ring: string }> = {
@@ -125,6 +127,13 @@ export const useSettings = () => {
     // Apply background color and derived colors
     const bgColor = settings.backgroundColor || defaultSettings.backgroundColor;
     root.style.setProperty('--background', hexToHsl(bgColor));
+    
+    // Apply calendar selection color
+    if (settings.calendarSelectionColor) {
+      root.style.setProperty('--calendar-selection', hexToHsl(settings.calendarSelectionColor));
+    } else {
+      root.style.setProperty('--calendar-selection', getDarkerHsl(bgColor, 8));
+    }
     
     // Set card color as a slightly different shade of background
     root.style.setProperty('--card', getDarkerHsl(bgColor, 5));

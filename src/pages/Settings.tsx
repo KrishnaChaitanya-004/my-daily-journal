@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette, Download, Upload, Lock, Fingerprint, Trash2, Bell, Clock, Link2, Lightbulb } from 'lucide-react';
+import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette, Download, Upload, Lock, Fingerprint, Trash2, Bell, Clock, Link2, Lightbulb, Circle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings, AppSettings } from '@/hooks/useSettings';
 import { useDiaryExportImport } from '@/hooks/useDiaryExportImport';
@@ -52,7 +52,7 @@ const fontColorOptions = [
   { value: '#1e3a5f', label: 'Navy' }
 ];
 
-// Custom color picker component
+// Custom color picker component (circle style for inline use)
 const CustomColorPicker = ({ value, onChange }: { value: string; onChange: (color: string) => void }) => (
   <label
     className="w-10 h-10 rounded-full transition-smooth tap-highlight-none border-2 border-dashed border-muted-foreground 
@@ -68,6 +68,52 @@ const CustomColorPicker = ({ value, onChange }: { value: string; onChange: (colo
     />
   </label>
 );
+
+// Modern color picker component with gradient preview (for modern Android-style)
+const ModernColorPicker = ({ 
+  value, 
+  onChange, 
+  label 
+}: { 
+  value: string; 
+  onChange: (color: string) => void;
+  label: string;
+}) => (
+  <div className="relative">
+    <label className="flex items-center gap-3 p-3 rounded-xl bg-secondary/50 border border-border cursor-pointer hover:border-primary/30 transition-smooth">
+      <div 
+        className="w-10 h-10 rounded-xl border-2 border-white/20 shadow-inner"
+        style={{ 
+          backgroundColor: value,
+          boxShadow: `0 0 20px ${value}40`
+        }}
+      />
+      <div className="flex-1">
+        <span className="text-sm text-foreground">{label}</span>
+        <span className="text-xs text-muted-foreground block">{value.toUpperCase()}</span>
+      </div>
+      <Pipette className="w-4 h-4 text-muted-foreground" />
+      <input
+        type="color"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+      />
+    </label>
+  </div>
+);
+
+// Selection color options for calendar
+const selectionColorOptions = [
+  { value: '', label: 'Default', color: '' },
+  { value: '#3b82f6', label: 'Blue', color: 'bg-blue-500' },
+  { value: '#22c55e', label: 'Green', color: 'bg-green-500' },
+  { value: '#a855f7', label: 'Purple', color: 'bg-purple-500' },
+  { value: '#f97316', label: 'Orange', color: 'bg-orange-500' },
+  { value: '#ec4899', label: 'Pink', color: 'bg-pink-500' },
+  { value: '#14b8a6', label: 'Teal', color: 'bg-teal-500' },
+  { value: '#eab308', label: 'Yellow', color: 'bg-yellow-500' },
+];
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -269,7 +315,44 @@ const Settings = () => {
           </div>
         </section>
 
-        {/* Font Family */}
+        {/* Calendar Selection Color */}
+        <section className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Circle className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-sm font-medium text-foreground">Calendar Selection</h2>
+              <p className="text-xs text-muted-foreground">Color of selected date circle</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3 mb-4">
+            {selectionColorOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => updateSetting('calendarSelectionColor', option.value)}
+                title={option.label}
+                className={`
+                  w-10 h-10 rounded-full transition-smooth tap-highlight-none border-2
+                  ${settings.calendarSelectionColor === option.value 
+                    ? 'ring-2 ring-offset-2 ring-offset-card ring-foreground scale-110' 
+                    : 'hover:scale-105'
+                  }
+                  ${option.value === '' ? 'border-dashed border-muted-foreground bg-secondary' : 'border-transparent'}
+                `}
+                style={option.value ? { backgroundColor: option.value } : undefined}
+              >
+                {option.value === '' && <span className="text-[10px] text-muted-foreground">Auto</span>}
+              </button>
+            ))}
+          </div>
+          <ModernColorPicker 
+            value={settings.calendarSelectionColor || '#3b82f6'} 
+            onChange={(color) => updateSetting('calendarSelectionColor', color)}
+            label="Custom Selection Color"
+          />
+        </section>
+
         <section className="bg-card rounded-xl border border-border p-4">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
