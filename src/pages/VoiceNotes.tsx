@@ -16,6 +16,7 @@ interface VoiceNoteWithDate {
 const VoiceNotes = () => {
   const navigate = useNavigate();
   const [playingNote, setPlayingNote] = useState<string | null>(null);
+  const [playbackTime, setPlaybackTime] = useState<number>(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const getAllVoiceNotes = (): VoiceNoteWithDate[] => {
@@ -62,6 +63,7 @@ const VoiceNotes = () => {
     if (playingNote === note.filename) {
       audioRef.current?.pause();
       setPlayingNote(null);
+      setPlaybackTime(0);
     } else {
       if (audioRef.current) {
         audioRef.current.pause();
@@ -69,10 +71,17 @@ const VoiceNotes = () => {
       
       if (note.base64) {
         const audio = new Audio(`data:audio/webm;base64,${note.base64}`);
-        audio.onended = () => setPlayingNote(null);
+        audio.onended = () => {
+          setPlayingNote(null);
+          setPlaybackTime(0);
+        };
+        audio.ontimeupdate = () => {
+          setPlaybackTime(audio.currentTime);
+        };
         audio.play();
         audioRef.current = audio;
         setPlayingNote(note.filename);
+        setPlaybackTime(0);
       }
     }
   };
@@ -129,8 +138,11 @@ const VoiceNotes = () => {
                 </button>
                 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">
-                    {formatDuration(note.duration)}
+                  <p className="text-sm font-medium text-foreground font-mono">
+                    {playingNote === note.filename 
+                      ? `${formatDuration(playbackTime)} / ${formatDuration(note.duration)}`
+                      : formatDuration(note.duration)
+                    }
                   </p>
                   <button
                     onClick={() => handleNoteClick(note.dateKey)}

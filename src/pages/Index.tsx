@@ -212,6 +212,7 @@ const isCalendarVisible = settings.showCalendar !== false;
           weather={weather}
           voiceNotes={voiceNotes}
           isEditing={isEditing}
+          selectedDate={selectedDate}
           onEditingChange={setIsEditing}
           onUpdateContent={saveContent}
           onAddTask={addTask}

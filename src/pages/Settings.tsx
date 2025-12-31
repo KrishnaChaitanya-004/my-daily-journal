@@ -223,7 +223,7 @@ const Settings = () => {
               <p className="text-xs text-muted-foreground">Choose your accent color</p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 mb-4">
             {colorOptions.map((option) => (
               <button
                 key={option.value}
@@ -237,14 +237,15 @@ const Settings = () => {
                 `}
               />
             ))}
-            <CustomColorPicker 
-              value={settings.themeColor === 'custom' ? (settings.customThemeColor || '#ef4444') : '#888888'} 
-              onChange={(color) => {
-                updateSetting('customThemeColor', color);
-                updateSetting('themeColor', 'custom');
-              }} 
-            />
           </div>
+          <ModernColorPicker 
+            value={settings.themeColor === 'custom' ? (settings.customThemeColor || '#ef4444') : '#888888'} 
+            onChange={(color) => {
+              updateSetting('customThemeColor', color);
+              updateSetting('themeColor', 'custom');
+            }}
+            label="Custom Theme Color"
+          />
         </section>
 
         {/* Background Color */}
@@ -258,7 +259,7 @@ const Settings = () => {
               <p className="text-xs text-muted-foreground">Set your background color</p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 mb-4">
             {backgroundColorOptions.map((option) => (
               <button
                 key={option.value}
@@ -274,11 +275,12 @@ const Settings = () => {
                 style={{ backgroundColor: option.value }}
               />
             ))}
-            <CustomColorPicker 
-              value={settings.backgroundColor || '#0a0a0a'} 
-              onChange={(color) => updateSetting('backgroundColor', color)} 
-            />
           </div>
+          <ModernColorPicker 
+            value={settings.backgroundColor || '#0a0a0a'} 
+            onChange={(color) => updateSetting('backgroundColor', color)}
+            label="Custom Background Color"
+          />
         </section>
 
         {/* Font Color */}
@@ -292,7 +294,7 @@ const Settings = () => {
               <p className="text-xs text-muted-foreground">Set your text color</p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 mb-4">
             {fontColorOptions.map((option) => (
               <button
                 key={option.value}
@@ -308,11 +310,12 @@ const Settings = () => {
                 style={{ backgroundColor: option.value }}
               />
             ))}
-            <CustomColorPicker 
-              value={settings.fontColor || '#ededed'} 
-              onChange={(color) => updateSetting('fontColor', color)} 
-            />
           </div>
+          <ModernColorPicker 
+            value={settings.fontColor || '#ededed'} 
+            onChange={(color) => updateSetting('fontColor', color)}
+            label="Custom Font Color"
+          />
         </section>
 
         {/* Calendar Selection Color */}

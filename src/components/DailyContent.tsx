@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, ChangeEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CheckSquare, Camera, Clock, Check, MapPin, Cloud, Hash, X, Mic, Square, Play, Pause, Trash2 } from 'lucide-react';
 import { Camera as CapacitorCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
@@ -26,6 +27,7 @@ interface DailyContentProps {
   weather?: WeatherData;
   voiceNotes: VoiceNoteData[];
   isEditing: boolean;
+  selectedDate: Date;
   onEditingChange: (editing: boolean) => void;
   onUpdateContent: (content: string) => void;
   onAddTask: (taskText: string) => void;
@@ -46,6 +48,7 @@ const DailyContent = ({
   weather,
   voiceNotes,
   isEditing,
+  selectedDate,
   onEditingChange,
   onUpdateContent, 
   onAddTask,
@@ -57,11 +60,13 @@ const DailyContent = ({
   onDeleteVoiceNote,
   getPhotoUrl
 }: DailyContentProps) => {
+  const navigate = useNavigate();
   const [taskText, setTaskText] = useState('');
   const [localContent, setLocalContent] = useState(content);
   const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState('');
   const [playingVoice, setPlayingVoice] = useState<string | null>(null);
+  const [playbackTime, setPlaybackTime] = useState<number>(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -210,15 +215,23 @@ const handleAddTask = () => {
     if (playingVoice === note.filename) {
       audioRef.current?.pause();
       setPlayingVoice(null);
+      setPlaybackTime(0);
     } else {
       if (audioRef.current) {
         audioRef.current.pause();
       }
       const audio = new Audio(`data:audio/webm;base64,${note.base64}`);
-      audio.onended = () => setPlayingVoice(null);
+      audio.onended = () => {
+        setPlayingVoice(null);
+        setPlaybackTime(0);
+      };
+      audio.ontimeupdate = () => {
+        setPlaybackTime(audio.currentTime);
+      };
       audio.play();
       audioRef.current = audio;
       setPlayingVoice(note.filename);
+      setPlaybackTime(0);
     }
   };
 
@@ -391,7 +404,12 @@ const handleAddTask = () => {
               >
                 {playingVoice === note.filename ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
               </button>
-              <span className="text-xs text-muted-foreground">{formatDuration(note.duration)}</span>
+              <span className="text-xs text-muted-foreground font-mono">
+                {playingVoice === note.filename 
+                  ? `${formatDuration(playbackTime)} / ${formatDuration(note.duration)}`
+                  : formatDuration(note.duration)
+                }
+              </span>
               <button
                 onClick={() => onDeleteVoiceNote(note.filename)}
                 className="text-muted-foreground hover:text-destructive transition-smooth"
@@ -513,8 +531,8 @@ const handleAddTask = () => {
       <div 
         className="flex-1 mb-4 overflow-y-auto cursor-text"
         onClick={() => {
-          onEditingChange(true);
-          setTimeout(() => textareaRef.current?.focus(), 0);
+          const dateKey = new Intl.DateTimeFormat('en-CA').format(selectedDate);
+          navigate(`/editor?date=${dateKey}`);
         }}
       >
         <div className="min-h-[200px]">
