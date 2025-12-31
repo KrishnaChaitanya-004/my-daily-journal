@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-ro
 import { App as CapacitorApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import Index from "./pages/Index";
+import Editor from "./pages/Editor";
 import Photos from "./pages/Photos";
 import VoiceNotes from "./pages/VoiceNotes";
 import Places from "./pages/Places";
@@ -70,6 +71,7 @@ const AppContent = () => {
       <BackButtonHandler />
       <Routes>
         <Route path="/" element={<Index />} />
+        <Route path="/editor" element={<Editor />} />
         <Route path="/photos" element={<Photos />} />
         <Route path="/voice-notes" element={<VoiceNotes />} />
         <Route path="/places" element={<Places />} />

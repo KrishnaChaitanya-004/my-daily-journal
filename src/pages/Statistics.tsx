@@ -1,4 +1,4 @@
-import { ArrowLeft, TrendingUp, Calendar, Image, CheckSquare, Flame, BarChart3, Target } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Calendar, Image, CheckSquare, Flame, BarChart3, Target, PenLine, CalendarDays, ListOrdered } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStatistics } from '@/hooks/useStatistics';
 import { useHabits } from '@/hooks/useHabits';
@@ -148,7 +148,10 @@ label = isNaN(d.getTime()) ? stat.date : format(d, 'MMM d');
 
         {/* Word Count Chart */}
         <div className="bg-card rounded-xl p-4 border border-border">
-          <h3 className="text-sm font-medium text-foreground mb-4">Words Written (Last 30 Days)</h3>
+          <div className="flex items-center gap-2 mb-4">
+            <PenLine className="w-4 h-4 text-primary" />
+            <h3 className="text-sm font-medium text-foreground">Words Written (Last 30 Days)</h3>
+          </div>
           <div className="h-48">
             <ChartContainer config={chartConfig}>
               <AreaChart data={chartData} margin={{ left: 0, right: 0, top: 0, bottom: 20 }}>
@@ -219,7 +222,10 @@ label = isNaN(d.getTime()) ? stat.date : format(d, 'MMM d');
 
         {/* Most Active Months */}
         <div className="bg-card rounded-xl p-4 border border-border overflow-hidden">
-          <h3 className="text-sm font-medium text-foreground mb-4">Most Active Months ({new Date().getFullYear()})</h3>
+          <div className="flex items-center gap-2 mb-4">
+            <CalendarDays className="w-4 h-4 text-primary" />
+            <h3 className="text-sm font-medium text-foreground">Most Active Months ({new Date().getFullYear()})</h3>
+          </div>
           <div className="h-40">
             <ChartContainer config={chartConfig}>
               <BarChart 
@@ -258,7 +264,10 @@ label = isNaN(d.getTime()) ? stat.date : format(d, 'MMM d');
         {/* Monthly Overview */}
         {monthlyStats.length > 0 && (
           <div className="bg-card rounded-xl p-4 border border-border">
-            <h3 className="text-sm font-medium text-foreground mb-4">Monthly Overview</h3>
+            <div className="flex items-center gap-2 mb-4">
+              <ListOrdered className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-medium text-foreground">Monthly Overview</h3>
+            </div>
             <div className="space-y-3">
               {monthlyStats.slice(-4).reverse().map(month => (
                 <div key={month.month} className="flex items-center justify-between text-sm">
