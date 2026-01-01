@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette, Download, Upload, Lock, Fingerprint, Trash2, Bell, Clock, Link2, Lightbulb, Circle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings, AppSettings } from '@/hooks/useSettings';
@@ -78,30 +78,44 @@ const ModernColorPicker = ({
   value: string; 
   onChange: (color: string) => void;
   label: string;
-}) => (
-  <div className="relative">
-    <label className="flex items-center gap-3 p-3 rounded-xl bg-secondary/50 border border-border cursor-pointer hover:border-primary/30 transition-smooth">
-      <div 
-        className="w-10 h-10 rounded-xl border-2 border-white/20 shadow-inner"
-        style={{ 
-          backgroundColor: value,
-          boxShadow: `0 0 20px ${value}40`
-        }}
-      />
-      <div className="flex-1">
-        <span className="text-sm text-foreground">{label}</span>
-        <span className="text-xs text-muted-foreground block">{value.toUpperCase()}</span>
-      </div>
-      <Pipette className="w-4 h-4 text-muted-foreground" />
+}) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  
+  const handleClick = () => {
+    inputRef.current?.click();
+  };
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={handleClick}
+        className="flex items-center gap-3 p-3 rounded-xl bg-secondary/50 border border-border cursor-pointer hover:border-primary/30 transition-smooth w-full text-left"
+      >
+        <div 
+          className="w-10 h-10 rounded-xl border-2 border-white/20 shadow-inner shrink-0"
+          style={{ 
+            backgroundColor: value,
+            boxShadow: `0 0 20px ${value}40`
+          }}
+        />
+        <div className="flex-1 min-w-0">
+          <span className="text-sm text-foreground block">{label}</span>
+          <span className="text-xs text-muted-foreground block">{value.toUpperCase()}</span>
+        </div>
+        <Pipette className="w-4 h-4 text-muted-foreground shrink-0" />
+      </button>
       <input
+        ref={inputRef}
         type="color"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+        className="sr-only"
+        aria-hidden="true"
       />
-    </label>
-  </div>
-);
+    </div>
+  );
+};
 
 // Selection color options for calendar
 const selectionColorOptions = [
