@@ -1,7 +1,17 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">KC’s Diary</string>
-    <string name="title_activity_main">KC’s Diary</string>
+    <string name="app_name">KC\'s Diary</string>
+    <string name="title_activity_main">KC\'s Diary</string>
     <string name="package_name">com.krishna.dailyjournal</string>
     <string name="custom_url_scheme">com.krishna.dailyjournal</string>
+    
+    <!-- Widget descriptions -->
+    <string name="widget_quick_entry_description">Quick access to write in your diary</string>
+    <string name="widget_habits_description">Track your daily habits at a glance</string>
+    <string name="widget_stats_description">View your diary statistics</string>
+    
+    <!-- Widget labels -->
+    <string name="widget_quick_entry_label">Quick Entry</string>
+    <string name="widget_habits_label">Habits Tracker</string>
+    <string name="widget_stats_label">Diary Stats</string>
 </resources>
