@@ -92,6 +92,7 @@ export const useNotificationSettings = () => {
           schedule: {
             on: { hour, minute },
             repeats: true,
+            allowWhileIdle: true, // Fire even in Doze/battery saver mode
           },
         },
       ],
