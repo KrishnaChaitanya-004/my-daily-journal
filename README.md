@@ -1,73 +1,165 @@
-# Welcome to your Lovable project
+# 📔 KC’s Diary
 
-## Project info
+**KC’s Diary** is a modern, offline-first personal journaling application built with **React + TypeScript** and powered by **Capacitor** for Android.  
+It helps you capture daily thoughts, tasks, photos, voice notes, locations, habits, and memories — all stored **locally on your device** with full privacy.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+---
 
-## How can I edit this code?
+## ✨ Features
 
-There are several ways of editing your application.
+### 📝 Daily Journal
+- Write rich text diary entries per day  
+- Auto-save when app goes to background  
+- Insert timestamps while writing  
+- Full-screen distraction-free editor  
 
-**Use Lovable**
+### ✅ Tasks (Todos)
+- Add tasks inline inside notes  
+- Toggle tasks as completed/uncompleted  
+- Tasks can be added via **Floating Action Button (FAB)**  
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### 📸 Photos
+- Capture photos using device camera  
+- Import photos from gallery  
+- Photos are stored locally per day  
+- Inline photo rendering inside notes  
+- Full-screen photo viewer  
 
-Changes made via Lovable will be committed automatically to this repo.
+### 🎙️ Voice Notes
+- Record voice notes directly from the app  
+- Play, pause, and delete recordings  
+- Duration shown for each voice note  
+- Stored securely on device  
 
-**Use your preferred IDE**
+### 📍 Location & 🌦️ Weather
+- Attach current location to a diary entry  
+- Save place name with coordinates  
+- Fetch and store weather information  
+- Optional — fully user-controlled  
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 🔖 Bookmarks
+- Bookmark important days  
+- Quickly access saved entries  
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 🗓️ Calendar
+- Visual calendar with:
+  - Selected date highlight  
+  - Days with content indicator  
+  - Bookmarked days indicator  
+- Customizable **calendar selection color**  
+- Collapsible calendar view  
 
-Follow these steps:
+### 📊 Statistics
+- Daily, weekly, and monthly insights  
+- Word count trends  
+- Photo usage stats  
+- Task completion overview  
+- Habit consistency (last 30 days)  
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### 🎯 Habits
+- Create daily habits  
+- Track completion per day  
+- View consistency charts  
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### 🏷️ Tags
+- Add tags to diary entries  
+- Filter and browse by tags  
 
-# Step 3: Install the necessary dependencies.
-npm i
+### 🔍 Search
+- Full-text search across all diary entries  
+- Instant navigation to matched dates  
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+---
+
+## 🎨 Customization & Settings
+
+### 🎨 Theme & Appearance
+- Theme color (preset + custom)  
+- Background color  
+- Font color  
+- Calendar selection color  
+- Widget theme color (Android)  
+- Font family:
+  - Inter  
+  - Delius  
+  - Georgia  
+  - Courier  
+  - Custom Google Fonts  
+- Font size: Small / Medium / Large  
+
+### 🔒 Security
+- App lock with PIN (4–6 digits)  
+- Optional biometric (fingerprint) unlock  
+- Local-only authentication (no server)  
+
+### 🔔 Notifications
+- Daily reminder notifications  
+- Custom reminder time  
+- Custom message  
+- Android exact-alarm support  
+- Battery optimization guidance  
+
+### 📦 Data Management
+- Export diary data as ZIP  
+- Import diary backup  
+- 100% offline & local storage  
+
+---
+
+## 📱 Android Support
+
+- Built using **Capacitor**  
+- Native Android permissions handled:
+  - Camera  
+  - Microphone  
+  - Storage  
+  - Notifications  
+  - Location  
+- Offline-first (no backend required)  
+- Android splash screen & app icons  
+- Optimized for Android WebView quirks  
+
+---
+
+## 🛠️ Tech Stack
+
+- **React + TypeScript**  
+- **Vite**  
+- **Tailwind CSS**  
+- **Capacitor (Android)**  
+- **Lucide Icons**  
+- **Recharts**  
+- **date-fns**  
+- LocalStorage + Capacitor Filesystem  
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (>= 18 recommended)  
+- Android Studio  
+- Capacitor CLI  
+
+### Install Dependencies
+```bash
+npm install
+```
+---
+###Run in Browser
+```bash
 npm run dev
 ```
+---
+###Build for Android
+```bash
+npm run build
+npx cap sync android
+npx cap open android
+```
+---
+This project was made possible with the help of:
 
-**Edit a file directly in GitHub**
+Lovable — for rapid UI scaffolding and idea acceleration
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+ChatGPT (OpenAI) — for deep debugging, Android-specific fixes, architecture guidance, and step-by-step problem solving
