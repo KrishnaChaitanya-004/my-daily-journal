@@ -159,7 +159,12 @@ const isCalendarVisible = settings.showCalendar !== false;
       {/* Top bar with hamburger, app name, and bookmark */}
       <header className="flex items-center justify-between px-3 pt-4 pb-2 shrink-0">
         <AppMenu />
-        <h1 className="text-lg font-semibold gradient-text">KC's Diary</h1>
+        <h1 
+          className="text-lg font-semibold"
+          style={{ color: settings.fontColor || '#ededed' }}
+        >
+          KC's Diary
+        </h1>
         <button
           onClick={() => toggleBookmark(selectedDate)}
           className={`
