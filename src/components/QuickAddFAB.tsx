@@ -22,54 +22,20 @@ const QuickAddFAB = ({ onAddNote, onAddVoice, onAddTask }: QuickAddFABProps) => 
 
   const handleVoiceRecord = async () => {
     if (isRecording) {
-      console.log('STOP RECORD CLICKED');
-
       const result = await stopRecording();
       if (result) {
-        console.log('RECORD RESULT', result);
-
-        // // 🔊 TEMP TEST — proves mic is working
-        // const audio = new Audio(
-        //   `data:audio/aac;base64,${result.base64}`
-        // );
-        // audio.play();
-
         await onAddVoice(result.base64, result.duration);
-      } else {
-        console.log('NO RECORD RESULT');
       }
-
       setIsOpen(false);
     } else {
-      console.log('START RECORD CLICKED');
-
       const started = await startRecording();
-      console.log('RECORD STARTED?', started);
-
       if (!started) {
         alert('Microphone could not start recording');
       }
     }
   };
 
-  const handleNoteClick = () => {
-    setIsOpen(false);
-    onAddNote();
-  };
-
   const actions = [
-    {
-      icon: Pencil,
-      label: 'Note',
-      action: handleNoteClick,
-      color: 'bg-blue-500',
-    },
-    {
-      icon: Mic,
-      label: isRecording ? formatDuration(duration) : 'Voice',
-      action: handleVoiceRecord,
-      color: isRecording ? 'bg-red-500' : 'bg-purple-500',
-    },
     {
       icon: CheckSquare,
       label: 'Task',
@@ -78,6 +44,21 @@ const QuickAddFAB = ({ onAddNote, onAddVoice, onAddTask }: QuickAddFABProps) => 
         setIsOpen(false);
       },
       color: 'bg-orange-500',
+    },
+    {
+      icon: Mic,
+      label: isRecording ? formatDuration(duration) : 'Voice',
+      action: handleVoiceRecord,
+      color: isRecording ? 'bg-red-500' : 'bg-purple-500',
+    },
+    {
+      icon: Pencil,
+      label: 'Note',
+      action: () => {
+        onAddNote();
+        setIsOpen(false);
+      },
+      color: 'bg-blue-500',
     },
   ];
 
@@ -91,55 +72,72 @@ const QuickAddFAB = ({ onAddNote, onAddVoice, onAddTask }: QuickAddFABProps) => 
         />
       )}
 
-      {/* FAB */}
-      <div className="fixed bottom-6 right-4 z-50 flex flex-col-reverse items-center gap-3">
-        {isOpen &&
-          actions.map((action, index) => (
-            <button
-              key={action.label}
-              onClick={action.action}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg
-                ${action.color} text-white
-                transform transition-all duration-200 ease-out
-                hover:scale-105 active:scale-95`}
-              style={{
-                animation: `slideUp 0.2s ease-out ${index * 0.05}s both`,
-              }}
-            >
-              <action.icon className="w-5 h-5" />
-              <span className="text-sm font-medium">
-                {action.label}
-              </span>
-            </button>
-          ))}
+      {/* FAB wrapper — position NEVER moves */}
+      <div
+        className="fixed z-50 flex flex-col items-center"
+        style={{
+          right: '20px',
+          bottom: 'calc(20px + env(safe-area-inset-bottom))',
+        }}
+      >
+        {/* Action buttons — appear ABOVE FAB */}
+        <div className="flex flex-col items-center gap-3 mb-3">
+          {isOpen &&
+            actions.map((action, index) => (
+              <button
+                key={action.label}
+                onClick={action.action}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full shadow-lg
+                  ${action.color} text-white
+                  transform transition-all duration-200 ease-out
+                  hover:scale-105 active:scale-95`}
+                style={{
+                  animation: `fabUp 0.2s ease-out ${index * 0.06}s both`,
+                }}
+              >
+                <action.icon className="w-5 h-5" />
+                <span className="text-sm font-medium">
+                  {action.label}
+                </span>
+              </button>
+            ))}
+        </div>
 
-        {/* Main FAB */}
+        {/* MAIN FAB (stays fixed) */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className={`w-9 h-9 rounded-full shadow-lg
+          className={`w-12 h-12 rounded-full shadow-xl
             flex items-center justify-center
-            transition-all duration-300 ease-out
+            transition-transform duration-300
             ${isOpen ? 'bg-muted-foreground rotate-45' : 'bg-primary'}`}
         >
           {isOpen ? (
-            <X className="w-4 h-4 text-white" />
+            <X className="w-5 h-5 text-white" />
           ) : (
-            <Plus className="w-4 h-4 text-primary-foreground" />
+            <Plus className="w-5 h-5 text-primary-foreground" />
           )}
         </button>
       </div>
 
+      {/* Error toast */}
       {error && (
-        <div className="fixed bottom-20 right-4 bg-red-500 text-white px-3 py-2 rounded text-sm">
+        <div
+          className="fixed z-50 bg-red-500 text-white px-3 py-2 rounded text-sm"
+          style={{
+            right: '20px',
+            bottom: 'calc(90px + env(safe-area-inset-bottom))',
+          }}
+        >
           {error}
         </div>
       )}
 
+      {/* Animations */}
       <style>{`
-        @keyframes slideUp {
+        @keyframes fabUp {
           from {
             opacity: 0;
-            transform: translateY(10px) scale(0.9);
+            transform: translateY(12px) scale(0.9);
           }
           to {
             opacity: 1;
