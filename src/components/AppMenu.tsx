@@ -1,16 +1,20 @@
 import { Menu } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import MenuDrawer from './MenuDrawer';
 
 const AppMenu = () => {
-  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
 
   return (
-    <button
-      onClick={() => navigate('/menu')}
-      className="p-2 text-muted-foreground hover:text-foreground transition-smooth tap-highlight-none"
-    >
-      <Menu className="w-5 h-5" />
-    </button>
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="p-2 text-muted-foreground hover:text-foreground transition-smooth tap-highlight-none rounded-xl hover:bg-secondary/50"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+      <MenuDrawer open={open} onOpenChange={setOpen} />
+    </>
   );
 };
 
