@@ -89,6 +89,7 @@ export const useNotificationSettings = () => {
           title: "KC's Diary",
           body: settings.message,
           channelId: 'diary-reminder',
+          smallIcon: 'ic_notification',
           schedule: {
             on: { hour, minute },
             repeats: true,

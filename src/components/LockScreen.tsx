@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Fingerprint, Lock, Delete } from 'lucide-react';
-import appLogo from '@/assets/app-logo.jpeg';
+import appLogo from '@/assets/app-icon.png';
 
 interface LockScreenProps {
   onUnlock: (password: string) => boolean;
