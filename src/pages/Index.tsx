@@ -157,16 +157,16 @@ const isCalendarVisible = settings.showCalendar !== false;
   return (
     <main className="h-screen bg-background flex flex-col max-w-md mx-auto overflow-hidden">
       {/* Top bar with hamburger, app name, and bookmark */}
-      <header className="flex items-center justify-between px-2 pt-3 pb-1 shrink-0">
+      <header className="flex items-center justify-between px-3 pt-4 pb-2 shrink-0">
         <AppMenu />
-        <h1 className="text-lg text-foreground">KC's Diary</h1>
+        <h1 className="text-lg font-semibold gradient-text">KC's Diary</h1>
         <button
           onClick={() => toggleBookmark(selectedDate)}
           className={`
-            p-2 transition-smooth tap-highlight-none
+            p-2.5 transition-smooth tap-highlight-none rounded-xl
             ${currentDateBookmarked 
-              ? 'text-primary' 
-              : 'text-muted-foreground hover:text-foreground'
+              ? 'text-primary bg-primary/10' 
+              : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
             }
           `}
           title={currentDateBookmarked ? 'Remove bookmark' : 'Bookmark this day'}
