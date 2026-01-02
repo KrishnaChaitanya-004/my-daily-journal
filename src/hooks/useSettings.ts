@@ -12,6 +12,7 @@ export interface AppSettings {
   showWritingPrompts: boolean;
   showCalendar: boolean;
   calendarSelectionColor: string;
+  widgetThemeColor: string;
 }
 
 const SETTINGS_KEY = 'diary-settings';
@@ -28,6 +29,7 @@ const defaultSettings: AppSettings = {
   showWritingPrompts: true,
   showCalendar: true,
   calendarSelectionColor: '',
+  widgetThemeColor: '#7C3AED',
 };
 
 const themeColors: Record<string, { primary: string; ring: string }> = {

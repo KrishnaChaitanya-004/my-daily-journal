@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette, Download, Upload, Lock, Fingerprint, Trash2, Bell, Clock, Link2, Lightbulb, Circle } from 'lucide-react';
+import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette, Download, Upload, Lock, Fingerprint, Trash2, Bell, Clock, Link2, Lightbulb, Circle, Smartphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings, AppSettings } from '@/hooks/useSettings';
 import { useDiaryExportImport } from '@/hooks/useDiaryExportImport';
@@ -368,6 +368,54 @@ const Settings = () => {
             onChange={(color) => updateSetting('calendarSelectionColor', color)}
             label="Custom Selection Color"
           />
+        </section>
+
+        {/* Widget Theme Color */}
+        <section className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Smartphone className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-sm font-medium text-foreground">Widget Theme</h2>
+              <p className="text-xs text-muted-foreground">Android home screen widget color</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3 mb-4">
+            {[
+              { value: '#7C3AED', label: 'Purple' },
+              { value: '#3b82f6', label: 'Blue' },
+              { value: '#22c55e', label: 'Green' },
+              { value: '#ef4444', label: 'Red' },
+              { value: '#f97316', label: 'Orange' },
+              { value: '#ec4899', label: 'Pink' },
+              { value: '#14b8a6', label: 'Teal' },
+              { value: '#eab308', label: 'Yellow' },
+            ].map((option) => (
+              <button
+                key={option.value}
+                onClick={() => updateSetting('widgetThemeColor', option.value)}
+                title={option.label}
+                className={`
+                  w-10 h-10 rounded-full transition-smooth tap-highlight-none border-2
+                  ${settings.widgetThemeColor === option.value 
+                    ? 'ring-2 ring-offset-2 ring-offset-card ring-foreground scale-110' 
+                    : 'hover:scale-105'
+                  }
+                  border-transparent
+                `}
+                style={{ backgroundColor: option.value }}
+              />
+            ))}
+          </div>
+          <ModernColorPicker 
+            value={settings.widgetThemeColor || '#7C3AED'} 
+            onChange={(color) => updateSetting('widgetThemeColor', color)}
+            label="Custom Widget Color"
+          />
+          <p className="text-xs text-muted-foreground mt-3">
+            Note: Run `npx cap sync` after changing to update Android widgets
+          </p>
         </section>
 
         <section className="bg-card rounded-xl border border-border p-4">
