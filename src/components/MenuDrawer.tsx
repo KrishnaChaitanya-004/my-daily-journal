@@ -97,10 +97,19 @@ const MenuDrawer = ({ open, onOpenChange }: MenuDrawerProps) => {
     onOpenChange(false);
     setSearchQuery('');
   };
+const handleOpenChange = (isOpen: boolean) => {
+  onOpenChange(isOpen);
+  if (!isOpen) setSearchQuery('');
+};
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="left" className="w-[300px] p-0 bg-background border-r border-border">
+  <SheetContent
+    side="left"
+    className="w-[300px] p-0 bg-background border-r border-border"
+    onOpenAutoFocus={(e) => e.preventDefault()}
+  >
+
         <SheetHeader className="p-4 border-b border-border">
           <div className="flex items-center justify-between">
             <SheetTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
