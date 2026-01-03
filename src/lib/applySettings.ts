@@ -14,6 +14,8 @@ interface AppSettings {
   customFontName: string;
   showWritingPrompts: boolean;
   showCalendar: boolean;
+  calendarSelectionColor: string;
+  widgetThemeColor: string;
 }
 
 const defaultSettings: AppSettings = {
@@ -27,6 +29,8 @@ const defaultSettings: AppSettings = {
   customFontName: '',
   showWritingPrompts: true,
   showCalendar: true,
+  calendarSelectionColor: '',
+  widgetThemeColor: '#7C3AED',
 };
 
 const themeColors: Record<string, { primary: string; ring: string }> = {
@@ -120,6 +124,13 @@ export const applySettingsImmediately = () => {
     root.style.setProperty('--secondary', getDarkerHsl(bgColor, 8));
     root.style.setProperty('--muted', getDarkerHsl(bgColor, 10));
     root.style.setProperty('--accent', getDarkerHsl(bgColor, 10));
+    
+    // Apply calendar selection color - CRITICAL: apply immediately
+    if (settings.calendarSelectionColor) {
+      root.style.setProperty('--calendar-selection', hexToHsl(settings.calendarSelectionColor));
+    } else {
+      root.style.setProperty('--calendar-selection', getDarkerHsl(bgColor, 8));
+    }
     
     // Apply font color
     const fgColor = settings.fontColor || defaultSettings.fontColor;

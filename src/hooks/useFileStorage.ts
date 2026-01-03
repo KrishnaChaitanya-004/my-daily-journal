@@ -40,7 +40,11 @@ export interface DayFileData {
   voiceNotes?: VoiceNoteData[];
 }
 
-const APP_FOLDER = 'mydiaryapp';
+const APP_FOLDER = 'kcsdiary';
+
+// Use app-private storage (Data directory) instead of public Documents
+// This ensures diary data is NOT accessible via file managers
+const STORAGE_DIRECTORY = Directory.Data;
 
 const formatDateFolder = (date: Date): string => {
   const day = date.getDate().toString().padStart(2, '0');
@@ -52,6 +56,89 @@ const formatDateFolder = (date: Date): string => {
 const isNativePlatform = (): boolean => {
   return Capacitor.isNativePlatform();
 };
+
+// Migration function to move data from Documents to Data (private)
+const migrateToPrivateStorage = async () => {
+  if (!isNativePlatform()) return;
+  
+  try {
+    // Check if old data exists in Documents
+    const oldDir = await Filesystem.readdir({
+      path: 'mydiaryapp',
+      directory: Directory.Documents
+    });
+    
+    if (oldDir.files.length > 0) {
+      console.log('Migrating data from public to private storage...');
+      
+      // Create new directory in private storage
+      try {
+        await Filesystem.mkdir({
+          path: APP_FOLDER,
+          directory: STORAGE_DIRECTORY,
+          recursive: true
+        });
+      } catch {} // May already exist
+      
+      // Copy each date folder
+      for (const file of oldDir.files) {
+        if (file.type === 'directory') {
+          try {
+            // Read all files in the date folder
+            const dateFiles = await Filesystem.readdir({
+              path: `mydiaryapp/${file.name}`,
+              directory: Directory.Documents
+            });
+            
+            // Create date folder in private storage
+            await Filesystem.mkdir({
+              path: `${APP_FOLDER}/${file.name}`,
+              directory: STORAGE_DIRECTORY,
+              recursive: true
+            });
+            
+            // Copy each file
+            for (const dateFile of dateFiles.files) {
+              try {
+                const fileContent = await Filesystem.readFile({
+                  path: `mydiaryapp/${file.name}/${dateFile.name}`,
+                  directory: Directory.Documents
+                });
+                
+                await Filesystem.writeFile({
+                  path: `${APP_FOLDER}/${file.name}/${dateFile.name}`,
+                  data: fileContent.data as string,
+                  directory: STORAGE_DIRECTORY
+                });
+              } catch (e) {
+                console.error(`Failed to copy file ${dateFile.name}:`, e);
+              }
+            }
+          } catch (e) {
+            console.error(`Failed to migrate folder ${file.name}:`, e);
+          }
+        }
+      }
+      
+      // Delete old public folder after successful migration
+      try {
+        await Filesystem.rmdir({
+          path: 'mydiaryapp',
+          directory: Directory.Documents,
+          recursive: true
+        });
+        console.log('Migration complete, old data removed');
+      } catch (e) {
+        console.error('Failed to remove old data folder:', e);
+      }
+    }
+  } catch {
+    // No old data to migrate
+  }
+};
+
+// Run migration on load
+migrateToPrivateStorage();
 
 // Fallback to localStorage for web
 const STORAGE_KEY = 'diary-app-data';
@@ -127,7 +214,7 @@ export const useFileStorage = (selectedDate: Date) => {
     try {
       await Filesystem.mkdir({
         path: `${APP_FOLDER}/${dateFolder}`,
-        directory: Directory.Documents,
+        directory: STORAGE_DIRECTORY,
         recursive: true
       });
     } catch (e) {
@@ -150,7 +237,7 @@ const writeMetaFile = async (data: Partial<DayFileData>) => {
   await Filesystem.writeFile({
     path: `${APP_FOLDER}/${dateFolder}/meta.json`,
     data: JSON.stringify(meta),
-    directory: Directory.Documents,
+    directory: STORAGE_DIRECTORY,
     encoding: Encoding.UTF8,
   });
 };
@@ -176,7 +263,7 @@ const writeMetaFile = async (data: Partial<DayFileData>) => {
       await Filesystem.writeFile({
         path: `${APP_FOLDER}/${dateFolder}/content.txt`,
         data: content,
-        directory: Directory.Documents,
+        directory: STORAGE_DIRECTORY,
         encoding: Encoding.UTF8,
       });
     } catch (e) {
@@ -222,7 +309,7 @@ const saveDayMeta = useCallback(
         await Filesystem.writeFile({
           path: `${APP_FOLDER}/${dateFolder}/meta.json`,
           data: JSON.stringify(metaOnly),
-          directory: Directory.Documents,
+          directory: STORAGE_DIRECTORY,
           encoding: Encoding.UTF8,
         });
       } catch (e) {
@@ -288,13 +375,13 @@ const savePhoto = useCallback(
         await Filesystem.writeFile({
           path: `${APP_FOLDER}/${dateFolder}/${filename}`,
           data: pureBase64,
-          directory: Directory.Documents,
+          directory: STORAGE_DIRECTORY,
         });
 
         await Filesystem.writeFile({
           path: `${APP_FOLDER}/${dateFolder}/content.txt`,
           data: updatedContent,
-          directory: Directory.Documents,
+          directory: STORAGE_DIRECTORY,
           encoding: Encoding.UTF8,
         });
 
@@ -308,7 +395,7 @@ const savePhoto = useCallback(
         await Filesystem.writeFile({
           path: `${APP_FOLDER}/${dateFolder}/photos.json`,
           data: JSON.stringify(photosForFile),
-          directory: Directory.Documents,
+          directory: STORAGE_DIRECTORY,
           encoding: Encoding.UTF8,
         });
       } catch (e) {
@@ -421,7 +508,7 @@ const deleteVoiceNote = useCallback(
       try {
         await Filesystem.deleteFile({
           path: `${APP_FOLDER}/${dateFolder}/${filename}`,
-          directory: Directory.Documents,
+          directory: STORAGE_DIRECTORY,
         });
 
         await Filesystem.writeFile({
@@ -430,7 +517,7 @@ const deleteVoiceNote = useCallback(
             .split('\n')
             .filter(line => line !== `[photo:${filename}]`)
             .join('\n'),
-          directory: Directory.Documents,
+          directory: STORAGE_DIRECTORY,
           encoding: Encoding.UTF8,
         });
 
@@ -439,7 +526,7 @@ const deleteVoiceNote = useCallback(
           data: JSON.stringify(
             dayData.photos.filter(p => p.filename !== filename)
           ),
-          directory: Directory.Documents,
+          directory: STORAGE_DIRECTORY,
           encoding: Encoding.UTF8,
         });
       } catch (e) {
@@ -460,7 +547,7 @@ const deleteVoiceNote = useCallback(
         // Load content
         const contentResult = await Filesystem.readFile({
           path: `${APP_FOLDER}/${dateFolder}/content.txt`,
-          directory: Directory.Documents,
+          directory: STORAGE_DIRECTORY,
           encoding: Encoding.UTF8
         });
         
@@ -469,7 +556,7 @@ const deleteVoiceNote = useCallback(
         try {
           const photosResult = await Filesystem.readFile({
             path: `${APP_FOLDER}/${dateFolder}/photos.json`,
-            directory: Directory.Documents,
+            directory: STORAGE_DIRECTORY,
             encoding: Encoding.UTF8
           });
           const parsed: PhotoData[] = JSON.parse(photosResult.data as string);
@@ -488,7 +575,7 @@ photos = parsed.map(p => ({
 try {
   const metaResult = await Filesystem.readFile({
     path: `${APP_FOLDER}/${dateFolder}/meta.json`,
-    directory: Directory.Documents,
+    directory: STORAGE_DIRECTORY,
     encoding: Encoding.UTF8,
   });
   meta = JSON.parse(metaResult.data as string);
