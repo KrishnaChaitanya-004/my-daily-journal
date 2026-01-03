@@ -8,7 +8,6 @@ import { App as CapacitorApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import Index from "./pages/Index";
 import Editor from "./pages/Editor";
-// Menu is now a drawer component, not a page
 import Photos from "./pages/Photos";
 import VoiceNotes from "./pages/VoiceNotes";
 import Places from "./pages/Places";
@@ -20,6 +19,7 @@ import Tags from "./pages/Tags";
 import NotFound from "./pages/NotFound";
 import LockScreen from "./components/LockScreen";
 import { useAppLock } from "./hooks/useAppLock";
+import { getMenuState, closeGlobalMenu } from "./hooks/useMenuState";
 
 const queryClient = new QueryClient();
 
@@ -31,8 +31,14 @@ const useAndroidBackButton = () => {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
-    const backHandler = CapacitorApp.addListener('backButton', ({ canGoBack }) => {
-      // If on home page, exit app
+    const backHandler = CapacitorApp.addListener('backButton', () => {
+      // First check if menu is open - close it instead of navigating/exiting
+      if (getMenuState()) {
+        closeGlobalMenu();
+        return;
+      }
+
+      // If on home page and menu is closed, exit app
       if (location.pathname === '/') {
         CapacitorApp.exitApp();
       } else {
@@ -73,7 +79,6 @@ const AppContent = () => {
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/editor" element={<Editor />} />
-        {/* Menu is now a drawer, no longer a page route */}
         <Route path="/photos" element={<Photos />} />
         <Route path="/voice-notes" element={<VoiceNotes />} />
         <Route path="/places" element={<Places />} />

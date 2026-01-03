@@ -9,9 +9,15 @@
     <string name="widget_quick_entry_description">Quick access to write in your diary</string>
     <string name="widget_habits_description">Track your daily habits at a glance</string>
     <string name="widget_stats_description">View your diary statistics</string>
+    <string name="widget_today_diary_description">Write today\'s diary entry</string>
+    <string name="widget_quick_add_description">Quick add notes, voice, or tasks</string>
+    <string name="widget_habits_progress_description">View today\'s habits progress</string>
     
     <!-- Widget labels -->
     <string name="widget_quick_entry_label">Quick Entry</string>
     <string name="widget_habits_label">Habits Tracker</string>
     <string name="widget_stats_label">Diary Stats</string>
+    <string name="widget_today_diary_label">Today\'s Diary</string>
+    <string name="widget_quick_add_label">Quick Add</string>
+    <string name="widget_habits_progress_label">Habits Progress</string>
 </resources>
