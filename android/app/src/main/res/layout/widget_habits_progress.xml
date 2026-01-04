@@ -12,64 +12,38 @@
         android:id="@+id/widget_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Today's Habits"
+        android:text="🎯 Today's Habits"
         android:textColor="#FFFFFF"
         android:textSize="14sp"
         android:textStyle="bold"
         android:gravity="center" />
 
-    <FrameLayout
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:layout_marginTop="12dp">
+    <TextView
+        android:id="@+id/progress_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="0/0"
+        android:textColor="#FFFFFF"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp" />
 
-        <!-- Progress Ring Background -->
-        <ProgressBar
-            android:id="@+id/progress_background"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:indeterminate="false"
-            android:max="100"
-            android:progress="100"
-            android:progressDrawable="@drawable/widget_progress_bg" />
-
-        <!-- Progress Ring -->
-        <ProgressBar
-            android:id="@+id/progress_ring"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:indeterminate="false"
-            android:max="100"
-            android:progress="0"
-            android:progressDrawable="@drawable/widget_progress_ring" />
-
-        <!-- Center Text -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:gravity="center">
-
-            <TextView
-                android:id="@+id/progress_count"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0/0"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
-        </LinearLayout>
-
-    </FrameLayout>
+    <ProgressBar
+        android:id="@+id/progress_ring"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginHorizontal="8dp"
+        android:indeterminate="false"
+        android:max="100"
+        android:progress="0" />
 
     <TextView
         android:id="@+id/progress_label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Completed"
+        android:text="Tap to view habits"
         android:textColor="#B0B0B0"
         android:textSize="12sp"
         android:gravity="center"

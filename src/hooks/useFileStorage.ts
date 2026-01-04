@@ -551,7 +551,7 @@ const deleteVoiceNote = useCallback(
           encoding: Encoding.UTF8
         });
         
-        // Load photos metadata
+        // Load photos metadata and their base64 data
         let photos: PhotoData[] = [];
         try {
           const photosResult = await Filesystem.readFile({
@@ -561,10 +561,26 @@ const deleteVoiceNote = useCallback(
           });
           const parsed: PhotoData[] = JSON.parse(photosResult.data as string);
 
-photos = parsed.map(p => ({
-  ...p,
-  path: `${APP_FOLDER}/${dateFolder}/${p.filename}`,
-}));
+          // Load base64 data for each photo
+          photos = await Promise.all(parsed.map(async (p) => {
+            try {
+              const photoFile = await Filesystem.readFile({
+                path: `${APP_FOLDER}/${dateFolder}/${p.filename}`,
+                directory: STORAGE_DIRECTORY
+              });
+              return {
+                ...p,
+                path: `${APP_FOLDER}/${dateFolder}/${p.filename}`,
+                base64: photoFile.data as string
+              };
+            } catch {
+              // Photo file missing, return without base64
+              return {
+                ...p,
+                path: `${APP_FOLDER}/${dateFolder}/${p.filename}`
+              };
+            }
+          }));
 
         } catch {
           // No photos file yet
