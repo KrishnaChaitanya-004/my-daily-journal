@@ -117,8 +117,10 @@ const ModernColorPicker = ({
   );
 };
 
-// Selection color options for calendar - no auto option
+// Selection color options for calendar
+// 'auto' follows the current Theme Color
 const selectionColorOptions = [
+  { value: 'auto', label: 'Auto', color: 'bg-primary' },
   { value: '#3b82f6', label: 'Blue', color: 'bg-blue-500' },
   { value: '#22c55e', label: 'Green', color: 'bg-green-500' },
   { value: '#a855f7', label: 'Purple', color: 'bg-purple-500' },
@@ -351,21 +353,22 @@ const Settings = () => {
                 title={option.label}
                 className={`
                   w-10 h-10 rounded-full transition-smooth tap-highlight-none border-2
-                  ${(settings.calendarSelectionColor || '#3b82f6') === option.value 
+                  ${(settings.calendarSelectionColor || 'auto') === option.value 
                     ? 'ring-2 ring-offset-2 ring-offset-card ring-foreground scale-110' 
                     : 'hover:scale-105'
                   }
-                  border-transparent
+                  border-transparent ${option.color}
                 `}
-                style={{ backgroundColor: option.value }}
               />
             ))}
           </div>
-          <ModernColorPicker 
-            value={settings.calendarSelectionColor || '#3b82f6'} 
-            onChange={(color) => updateSetting('calendarSelectionColor', color)}
-            label="Custom Selection Color"
-          />
+          {settings.calendarSelectionColor !== 'auto' && (
+            <ModernColorPicker 
+              value={settings.calendarSelectionColor || '#3b82f6'} 
+              onChange={(color) => updateSetting('calendarSelectionColor', color)}
+              label="Custom Selection Color"
+            />
+          )}
         </section>
 
         {/* Widget Theme Color */}

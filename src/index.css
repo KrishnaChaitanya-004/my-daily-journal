@@ -39,7 +39,7 @@
     --today: 262 83% 58%;
     --today-foreground: 0 0% 100%;
     --has-content: 262 70% 60%;
-    --calendar-selection: 217 91% 60%; /* Default blue #3b82f6 */
+    --calendar-selection: var(--primary);
 
     /* Gradient tokens */
     --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%), hsl(280 70% 50%));

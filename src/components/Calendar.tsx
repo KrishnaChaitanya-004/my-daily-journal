@@ -168,7 +168,7 @@ const Calendar = ({
                       transition-smooth
                       ${dateIsToday && !dateIsSelected ? 'ring-2 ring-primary text-primary font-medium' : ''}
                       ${dateIsToday && dateIsSelected ? 'bg-[hsl(var(--calendar-selection))] ring-2 ring-primary text-primary-foreground font-medium' : ''}
-                      ${dateIsSelected && !dateIsToday ? 'bg-[hsl(var(--calendar-selection))] text-foreground' : ''}
+                      ${dateIsSelected && !dateIsToday ? 'bg-[hsl(var(--calendar-selection))] text-primary-foreground' : ''}
                       ${!dateIsSelected && dateInCurrentMonth ? 'hover:bg-secondary/50' : ''}
                     `}
                   >
