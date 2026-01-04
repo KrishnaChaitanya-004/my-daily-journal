@@ -28,7 +28,7 @@ const defaultSettings: AppSettings = {
   customFontName: '',
   showWritingPrompts: true,
   showCalendar: true,
-  calendarSelectionColor: '#3b82f6', // Default blue - no auto option
+  calendarSelectionColor: 'auto',
   widgetThemeColor: '#7C3AED',
 };
 
@@ -130,9 +130,18 @@ export const useSettings = () => {
     const bgColor = settings.backgroundColor || defaultSettings.backgroundColor;
     root.style.setProperty('--background', hexToHsl(bgColor));
     
-    // Apply calendar selection color - always use specific color (no auto)
-    const selectionColor = settings.calendarSelectionColor || '#3b82f6';
-    root.style.setProperty('--calendar-selection', hexToHsl(selectionColor));
+    // Apply calendar selection color
+    // - 'auto' follows the current theme primary color
+    // - otherwise use the chosen hex
+    const selectionColor = settings.calendarSelectionColor === 'auto'
+      ? (settings.themeColor === 'custom' ? settings.customThemeColor : undefined)
+      : settings.calendarSelectionColor;
+    root.style.setProperty(
+      '--calendar-selection',
+      settings.calendarSelectionColor === 'auto'
+        ? primaryHsl
+        : hexToHsl(selectionColor || '#3b82f6')
+    );
     
     // Set card color as a slightly different shade of background
     root.style.setProperty('--card', getDarkerHsl(bgColor, 5));

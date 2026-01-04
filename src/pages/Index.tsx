@@ -44,7 +44,8 @@ const Index = () => {
 
   // Initialize settings on mount
   const { settings, updateSetting } = useSettings();
-const isCalendarVisible = settings.showCalendar !== false;
+  const isCalendarVisible = settings.showCalendar !== false;
+
   const {
     content,
     photos,
@@ -63,16 +64,19 @@ const isCalendarVisible = settings.showCalendar !== false;
   } = useFileStorage(selectedDate);
 
   const { isBookmarked, toggleBookmark } = useBookmarks();
-  
+
   // Auto-save when app goes to background
   const { registerSaveCallback } = useAutoSave();
   const contentRef = useRef(content);
-  
+
+  // Swipe navigation state
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+
   // Keep content ref updated
   useEffect(() => {
     contentRef.current = content;
   }, [content]);
-  
+
   // Register auto-save callback
   useEffect(() => {
     registerSaveCallback(() => {
@@ -93,7 +97,7 @@ const isCalendarVisible = settings.showCalendar !== false;
 
   const handleDateSelect = useCallback((date: Date) => {
     setSelectedDate(date);
-    if (date.getMonth() !== currentMonth.getMonth() || 
+    if (date.getMonth() !== currentMonth.getMonth() ||
         date.getFullYear() !== currentMonth.getFullYear()) {
       setCurrentMonth(new Date(date.getFullYear(), date.getMonth(), 1));
     }
@@ -103,19 +107,55 @@ const isCalendarVisible = settings.showCalendar !== false;
     const currentDay = selectedDate.getDate();
     const year = newMonth.getFullYear();
     const month = newMonth.getMonth();
-    
+
     const lastDayOfNewMonth = new Date(year, month + 1, 0).getDate();
     const newDay = Math.min(currentDay, lastDayOfNewMonth);
-    
+
     const newSelectedDate = new Date(year, month, newDay);
     setSelectedDate(newSelectedDate);
     setCurrentMonth(newMonth);
   }, [selectedDate]);
 
+  const shiftSelectedDate = useCallback((deltaDays: number) => {
+    const next = new Date(selectedDate);
+    next.setDate(next.getDate() + deltaDays);
+    handleDateSelect(next);
+  }, [selectedDate, handleDateSelect]);
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    if (isEditing) return;
+    const t = e.touches[0];
+    if (!t) return;
+    touchStartRef.current = { x: t.clientX, y: t.clientY };
+  }, [isEditing]);
+
+  const onTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (isEditing) return;
+    const start = touchStartRef.current;
+    touchStartRef.current = null;
+    if (!start) return;
+
+    const t = e.changedTouches[0];
+    if (!t) return;
+
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+
+    // Horizontal swipe only (avoid interfering with vertical scrolling)
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+    if (absDx < 60) return;
+    if (absDx < absDy * 1.3) return;
+
+    // Per your request: swipe left => previous day, swipe right => next day
+    if (dx < 0) shiftSelectedDate(-1);
+    else shiftSelectedDate(1);
+  }, [isEditing, shiftSelectedDate]);
+
   const addTask = useCallback((taskText: string) => {
     const taskLine = `□ ${taskText}`;
-    const newContent = content 
-      ? `${content}\n${taskLine}` 
+    const newContent = content
+      ? `${content}\n${taskLine}`
       : taskLine;
     saveContent(newContent);
   }, [content, saveContent]);
@@ -123,13 +163,13 @@ const isCalendarVisible = settings.showCalendar !== false;
   const toggleTask = useCallback((lineIndex: number) => {
     const lines = content.split('\n');
     const line = lines[lineIndex];
-    
+
     if (line.startsWith('□ ')) {
       lines[lineIndex] = '✓ ' + line.slice(2);
     } else if (line.startsWith('✓ ')) {
       lines[lineIndex] = '□ ' + line.slice(2);
     }
-    
+
     saveContent(lines.join('\n'));
   }, [content, saveContent]);
 
@@ -146,8 +186,8 @@ const isCalendarVisible = settings.showCalendar !== false;
   }, [saveVoiceNote]);
 
   const handleInsertPrompt = useCallback((promptText: string) => {
-    const newContent = content 
-      ? `${content}\n\n${promptText}\n` 
+    const newContent = content
+      ? `${content}\n\n${promptText}\n`
       : `${promptText}\n`;
     saveContent(newContent);
   }, [content, saveContent]);
@@ -159,7 +199,7 @@ const isCalendarVisible = settings.showCalendar !== false;
       {/* Top bar with hamburger, app name, and bookmark */}
       <header className="flex items-center justify-between px-3 pt-4 pb-2 shrink-0">
         <AppMenu />
-        <h1 
+        <h1
           className="text-lg font-semibold"
           style={{ color: settings.fontColor || '#ededed' }}
         >
@@ -169,15 +209,15 @@ const isCalendarVisible = settings.showCalendar !== false;
           onClick={() => toggleBookmark(selectedDate)}
           className={`
             p-2.5 transition-smooth tap-highlight-none rounded-xl
-            ${currentDateBookmarked 
-              ? 'text-primary bg-primary/10' 
+            ${currentDateBookmarked
+              ? 'text-primary bg-primary/10'
               : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
             }
           `}
           title={currentDateBookmarked ? 'Remove bookmark' : 'Bookmark this day'}
         >
-          <Bookmark 
-            className={`w-5 h-5 ${currentDateBookmarked ? 'fill-primary' : ''}`} 
+          <Bookmark
+            className={`w-5 h-5 ${currentDateBookmarked ? 'fill-primary' : ''}`}
           />
         </button>
       </header>
@@ -208,7 +248,12 @@ const isCalendarVisible = settings.showCalendar !== false;
       )}
 
       {/* Content Section - takes remaining space */}
-      <section key={selectedDate.toISOString()} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+      <section
+        key={selectedDate.toISOString()}
+        className="flex-1 flex flex-col min-h-0 overflow-hidden"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
         <DailyContent
           content={content}
           photos={photos}
