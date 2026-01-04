@@ -117,9 +117,8 @@ const ModernColorPicker = ({
   );
 };
 
-// Selection color options for calendar
+// Selection color options for calendar - no auto option
 const selectionColorOptions = [
-  { value: '', label: 'Default', color: '' },
   { value: '#3b82f6', label: 'Blue', color: 'bg-blue-500' },
   { value: '#22c55e', label: 'Green', color: 'bg-green-500' },
   { value: '#a855f7', label: 'Purple', color: 'bg-purple-500' },
@@ -127,6 +126,7 @@ const selectionColorOptions = [
   { value: '#ec4899', label: 'Pink', color: 'bg-pink-500' },
   { value: '#14b8a6', label: 'Teal', color: 'bg-teal-500' },
   { value: '#eab308', label: 'Yellow', color: 'bg-yellow-500' },
+  { value: '#ef4444', label: 'Red', color: 'bg-red-500' },
 ];
 
 const Settings = () => {
@@ -351,16 +351,14 @@ const Settings = () => {
                 title={option.label}
                 className={`
                   w-10 h-10 rounded-full transition-smooth tap-highlight-none border-2
-                  ${settings.calendarSelectionColor === option.value 
+                  ${(settings.calendarSelectionColor || '#3b82f6') === option.value 
                     ? 'ring-2 ring-offset-2 ring-offset-card ring-foreground scale-110' 
                     : 'hover:scale-105'
                   }
-                  ${option.value === '' ? 'border-dashed border-muted-foreground bg-secondary' : 'border-transparent'}
+                  border-transparent
                 `}
-                style={option.value ? { backgroundColor: option.value } : undefined}
-              >
-                {option.value === '' && <span className="text-[10px] text-muted-foreground">Auto</span>}
-              </button>
+                style={{ backgroundColor: option.value }}
+              />
             ))}
           </div>
           <ModernColorPicker 

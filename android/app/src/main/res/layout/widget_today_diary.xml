@@ -17,7 +17,7 @@
             android:id="@+id/widget_icon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="📝"
+            android:text="📔"
             android:textSize="20sp" />
 
         <TextView
@@ -25,7 +25,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Today's Entry"
+            android:text="KC's Diary"
             android:textColor="#FFFFFF"
             android:textSize="16sp"
             android:textStyle="bold"
@@ -57,21 +57,16 @@
         android:maxLines="2"
         android:ellipsize="end" />
 
-    <LinearLayout
+    <TextView
+        android:id="@+id/widget_write_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:gravity="center">
-
-        <Button
-            android:id="@+id/widget_write_button"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="✍️ Write Now"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:background="@drawable/widget_button_background"
-            android:padding="12dp" />
-    </LinearLayout>
+        android:text="✍️ Write Now"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:background="@drawable/widget_button_background"
+        android:padding="12dp" />
 
 </LinearLayout>
