@@ -11,28 +11,42 @@ public class HabitsProgressWidgetProvider extends AppWidgetProvider {
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
+        updateAll(context, appWidgetManager, appWidgetIds);
+    }
+
+    public static void updateAll(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         for (int appWidgetId : appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId);
         }
     }
 
-    static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
+    public static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_habits_progress);
 
-        // Default progress (will be updated via JS bridge when app syncs)
-        views.setTextViewText(R.id.progress_count, "0/0");
+        // Apply theme accent color
+        int accent = WidgetPrefs.getWidgetThemeColor(context, 0xFF7C3AED);
+        try {
+            views.setInt(R.id.widget_accent, "setBackgroundColor", accent);
+        } catch (Exception ignored) {}
+
+        int completed = WidgetPrefs.getHabitsCompleted(context);
+        int total = WidgetPrefs.getHabitsTotal(context);
+
+        views.setTextViewText(R.id.progress_count, completed + "/" + total);
         views.setTextViewText(R.id.progress_label, "Tap to view");
-        views.setProgressBar(R.id.progress_ring, 100, 0, false);
+
+        int pct = (total > 0) ? Math.round((completed * 100f) / total) : 0;
+        views.setProgressBar(R.id.progress_ring, 100, pct, false);
 
         // Create intent to open habits page
         Intent intent = new Intent(context, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         intent.putExtra("openHabits", true);
-        
+
         PendingIntent pendingIntent = PendingIntent.getActivity(
-            context, 
-            300, 
-            intent, 
+            context,
+            300,
+            intent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
