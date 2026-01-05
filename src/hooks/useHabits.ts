@@ -1,6 +1,7 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { getAllDiaryData, DayFileData } from './useFileStorage';
 import { subDays, parseISO, differenceInDays } from 'date-fns';
+import { widgetsBridge } from '@/lib/widgetsBridge';
 
 export interface Habit {
   id: string;
@@ -44,7 +45,7 @@ export const useHabits = () => {
       color: defaultColors[habits.length % defaultColors.length],
       createdAt: Date.now()
     };
-    
+
     const updated = [...habits, newHabit];
     setHabits(updated);
     localStorage.setItem(HABITS_KEY, JSON.stringify(updated));
@@ -67,17 +68,17 @@ export const useHabits = () => {
     try {
       const data = localStorage.getItem(STORAGE_KEY);
       const parsed = data ? JSON.parse(data) : {};
-      
+
       if (!parsed[dateKey]) {
         parsed[dateKey] = { content: '', photos: [] };
       }
-      
+
       const currentHabits = parsed[dateKey].habits || {};
       currentHabits[habitId] = !currentHabits[habitId];
       parsed[dateKey].habits = currentHabits;
-      
+
       localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
-      
+
       // Force re-render by returning new state
       return currentHabits[habitId];
     } catch (e) {
@@ -94,20 +95,20 @@ export const useHabits = () => {
   const getHabitStreak = useCallback((habitId: string): number => {
     let streak = 0;
     const today = new Date();
-    
+
     // Check from today going backwards
     for (let i = 0; i < 365; i++) {
       const date = subDays(today, i);
       const dateKey = date.toISOString().split('T')[0];
       const dayData = allData[dateKey] as DayFileData | undefined;
-      
+
       if (dayData?.habits?.[habitId]) {
         streak++;
       } else if (i > 0) { // Allow today to be incomplete
         break;
       }
     }
-    
+
     return streak;
   }, [allData]);
 
@@ -115,22 +116,22 @@ export const useHabits = () => {
     let totalCompleted = 0;
     let last7Days = 0;
     let last30Days = 0;
-    
+
     const today = new Date();
-    
+
     Object.entries(allData).forEach(([dateKey, dayData]) => {
       const data = dayData as DayFileData;
       if (data?.habits?.[habitId]) {
         totalCompleted++;
-        
+
         const daysAgo = differenceInDays(today, parseISO(dateKey));
         if (daysAgo < 7) last7Days++;
         if (daysAgo < 30) last30Days++;
       }
     });
-    
+
     const streak = getHabitStreak(habitId);
-    
+
     return {
       totalCompleted,
       last7Days,
@@ -149,6 +150,11 @@ export const useHabits = () => {
       percentage: habits.length > 0 ? Math.round((completed / habits.length) * 100) : 0
     };
   }, [habits, allData]);
+
+  // Push today's habits progress into native widget storage (real-time)
+  useEffect(() => {
+    widgetsBridge.setHabitsProgress(getTodayProgress.completed, getTodayProgress.total);
+  }, [getTodayProgress.completed, getTodayProgress.total]);
 
   return {
     habits,

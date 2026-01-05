@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { widgetsBridge } from '@/lib/widgetsBridge';
 
 export interface DayData {
   content: string;
@@ -14,14 +15,14 @@ const loadAllData = (): Record<string, DayData> => {
   try {
     const data = localStorage.getItem(STORAGE_KEY);
     if (!data) return {};
-    
+
     const parsed = JSON.parse(data);
-    
+
     // Migrate old format to new format
     const migrated: Record<string, DayData> = {};
     for (const [key, value] of Object.entries(parsed)) {
       const oldData = value as any;
-      
+
       // Check if it's new format (has content string)
       if (typeof oldData.content === 'string') {
         migrated[key] = oldData as DayData;
@@ -52,7 +53,7 @@ const loadAllData = (): Record<string, DayData> => {
         migrated[key] = { content: lines.join('\n') };
       }
     }
-    
+
     return migrated;
   } catch {
     return {};
@@ -63,9 +64,16 @@ const saveAllData = (data: Record<string, DayData>) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 };
 
+const makeSnippet = (content: string): string => {
+  const trimmed = (content || '').trim();
+  if (!trimmed) return '';
+  const oneLine = trimmed.replace(/\s+/g, ' ');
+  return oneLine.length > 80 ? oneLine.slice(0, 80) + '…' : oneLine;
+};
+
 export const useDiaryStorage = (selectedDate: Date) => {
   const [allData, setAllData] = useState<Record<string, DayData>>(loadAllData);
-  
+
   const dateKey = formatDateKey(selectedDate);
   const dayData = allData[dateKey] || { content: '' };
 
@@ -77,10 +85,17 @@ export const useDiaryStorage = (selectedDate: Date) => {
     });
   }, [dateKey]);
 
+  // Push today's content snippet into widgets (so they update immediately)
+  useEffect(() => {
+    const todayKey = formatDateKey(new Date());
+    if (dateKey !== todayKey) return;
+    widgetsBridge.setTodaySnippet(dateKey, makeSnippet(dayData.content));
+  }, [dateKey, dayData.content]);
+
   const addTask = useCallback((taskText: string) => {
     const taskLine = `□ ${taskText}`;
-    const newContent = dayData.content 
-      ? `${dayData.content}\n${taskLine}` 
+    const newContent = dayData.content
+      ? `${dayData.content}\n${taskLine}`
       : taskLine;
     updateContent(newContent);
   }, [dayData.content, updateContent]);
@@ -88,13 +103,13 @@ export const useDiaryStorage = (selectedDate: Date) => {
   const toggleTask = useCallback((lineIndex: number) => {
     const lines = dayData.content.split('\n');
     const line = lines[lineIndex];
-    
+
     if (line.startsWith('□ ')) {
       lines[lineIndex] = '✓ ' + line.slice(2);
     } else if (line.startsWith('✓ ')) {
       lines[lineIndex] = '□ ' + line.slice(2);
     }
-    
+
     updateContent(lines.join('\n'));
   }, [dayData.content, updateContent]);
 

@@ -1,0 +1,43 @@
+package com.krishna.dailyjournal;
+
+import android.appwidget.AppWidgetManager;
+import android.content.ComponentName;
+import android.content.Context;
+
+/**
+ * Central place to force-refresh all widgets immediately (no updatePeriodMillis reliance).
+ */
+public final class WidgetsUpdater {
+  private WidgetsUpdater() {}
+
+  public static void updateAll(Context context) {
+    AppWidgetManager mgr = AppWidgetManager.getInstance(context);
+
+    updateProvider(context, mgr, TodayDiaryWidgetProvider.class);
+    updateProvider(context, mgr, QuickAddWidgetProvider.class);
+    updateProvider(context, mgr, HabitsProgressWidgetProvider.class);
+    updateProvider(context, mgr, HabitsWidgetProvider.class);
+    updateProvider(context, mgr, StatsWidgetProvider.class);
+    updateProvider(context, mgr, QuickEntryWidgetProvider.class);
+  }
+
+  private static void updateProvider(Context context, AppWidgetManager mgr, Class<?> providerClass) {
+    ComponentName cn = new ComponentName(context, providerClass);
+    int[] ids = mgr.getAppWidgetIds(cn);
+    if (ids == null || ids.length == 0) return;
+
+    if (providerClass == TodayDiaryWidgetProvider.class) {
+      TodayDiaryWidgetProvider.updateAll(context, mgr, ids);
+    } else if (providerClass == QuickAddWidgetProvider.class) {
+      QuickAddWidgetProvider.updateAll(context, mgr, ids);
+    } else if (providerClass == HabitsProgressWidgetProvider.class) {
+      HabitsProgressWidgetProvider.updateAll(context, mgr, ids);
+    } else if (providerClass == HabitsWidgetProvider.class) {
+      HabitsWidgetProvider.updateAll(context, mgr, ids);
+    } else if (providerClass == StatsWidgetProvider.class) {
+      StatsWidgetProvider.updateAll(context, mgr, ids);
+    } else if (providerClass == QuickEntryWidgetProvider.class) {
+      QuickEntryWidgetProvider.updateAll(context, mgr, ids);
+    }
+  }
+}
