@@ -72,6 +72,7 @@
         <!-- Quick Entry Widget (legacy) -->
         <receiver
             android:name=".QuickEntryWidgetProvider"
+            android:enabled="true"
             android:exported="true"
             android:label="@string/widget_quick_entry_label">
             <intent-filter>
@@ -85,6 +86,7 @@
         <!-- Habits Widget (legacy) -->
         <receiver
             android:name=".HabitsWidgetProvider"
+            android:enabled="true"
             android:exported="true"
             android:label="@string/widget_habits_label">
             <intent-filter>
@@ -98,6 +100,7 @@
         <!-- Stats Widget -->
         <receiver
             android:name=".StatsWidgetProvider"
+            android:enabled="true"
             android:exported="true"
             android:label="@string/widget_stats_label">
             <intent-filter>
@@ -108,9 +111,10 @@
                 android:resource="@xml/widget_stats_info" />
         </receiver>
 
-        <!-- Today's Diary Widget (NEW) -->
+        <!-- Today's Diary Widget -->
         <receiver
             android:name=".TodayDiaryWidgetProvider"
+            android:enabled="true"
             android:exported="true"
             android:label="@string/widget_today_diary_label">
             <intent-filter>
@@ -121,9 +125,10 @@
                 android:resource="@xml/widget_today_diary_info" />
         </receiver>
 
-        <!-- Quick Add Widget (NEW) -->
+        <!-- Quick Add Widget -->
         <receiver
             android:name=".QuickAddWidgetProvider"
+            android:enabled="true"
             android:exported="true"
             android:label="@string/widget_quick_add_label">
             <intent-filter>
@@ -134,9 +139,10 @@
                 android:resource="@xml/widget_quick_add_info" />
         </receiver>
 
-        <!-- Habits Progress Widget (NEW) -->
+        <!-- Habits Progress Widget -->
         <receiver
             android:name=".HabitsProgressWidgetProvider"
+            android:enabled="true"
             android:exported="true"
             android:label="@string/widget_habits_progress_label">
             <intent-filter>
