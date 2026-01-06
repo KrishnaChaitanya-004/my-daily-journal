@@ -3,11 +3,12 @@
     android:initialLayout="@layout/widget_today_diary"
     android:minWidth="180dp"
     android:minHeight="150dp"
-    android:minResizeWidth="160dp"
+    android:minResizeWidth="140dp"
     android:minResizeHeight="110dp"
+    android:targetCellWidth="3"
+    android:targetCellHeight="2"
     android:resizeMode="horizontal|vertical"
-    android:updatePeriodMillis="0"
+    android:updatePeriodMillis="1800000"
     android:previewImage="@mipmap/ic_launcher"
     android:description="@string/widget_today_diary_description"
     android:widgetCategory="home_screen" />
-

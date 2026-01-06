@@ -119,8 +119,8 @@ const ModernColorPicker = ({
 
 // Selection color options for calendar
 // 'auto' follows the current Theme Color
-const selectionColorOptions = [
-  { value: 'auto', label: 'Auto', color: 'bg-primary' },
+const selectionColorOptions: { value: string; label: string; color: string; isAuto?: boolean }[] = [
+  { value: 'auto', label: 'Auto', color: '', isAuto: true },
   { value: '#3b82f6', label: 'Blue', color: 'bg-blue-500' },
   { value: '#22c55e', label: 'Green', color: 'bg-green-500' },
   { value: '#a855f7', label: 'Purple', color: 'bg-purple-500' },
@@ -357,9 +357,14 @@ const Settings = () => {
                     ? 'ring-2 ring-offset-2 ring-offset-card ring-foreground scale-110' 
                     : 'hover:scale-105'
                   }
-                  border-transparent ${option.color}
+                  ${option.isAuto 
+                    ? 'border-dashed border-muted-foreground bg-gradient-to-br from-primary/60 to-primary flex items-center justify-center' 
+                    : `border-transparent ${option.color}`
+                  }
                 `}
-              />
+              >
+                {option.isAuto && <span className="text-[10px] font-bold text-primary-foreground">A</span>}
+              </button>
             ))}
           </div>
           {settings.calendarSelectionColor !== 'auto' && (
