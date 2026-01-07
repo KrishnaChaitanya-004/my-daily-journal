@@ -7,19 +7,19 @@
     android:padding="12dp"
     android:background="@drawable/widget_background">
 
-    <View
+    <ImageView
         android:id="@+id/widget_accent"
         android:layout_width="match_parent"
         android:layout_height="4dp"
         android:layout_marginBottom="12dp"
-        android:background="#7C3AED" />
-
+        android:background="#7C3AED"
+        android:contentDescription="accent" />
 
     <TextView
         android:id="@+id/widget_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="⚡ Quick Add"
+        android:text="Quick Add"
         android:textColor="#FFFFFF"
         android:textSize="14sp"
         android:textStyle="bold"
@@ -45,8 +45,10 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="📝"
-                android:textSize="24sp" />
+                android:text="+"
+                android:textColor="#FFFFFF"
+                android:textSize="24sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -57,9 +59,9 @@
                 android:layout_marginTop="4dp" />
         </LinearLayout>
 
-        <View
+        <FrameLayout
             android:layout_width="8dp"
-            android:layout_height="match_parent" />
+            android:layout_height="1dp" />
 
         <LinearLayout
             android:id="@+id/btn_add_voice"
@@ -74,8 +76,10 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="🎤"
-                android:textSize="24sp" />
+                android:text="Mic"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -86,9 +90,9 @@
                 android:layout_marginTop="4dp" />
         </LinearLayout>
 
-        <View
+        <FrameLayout
             android:layout_width="8dp"
-            android:layout_height="match_parent" />
+            android:layout_height="1dp" />
 
         <LinearLayout
             android:id="@+id/btn_add_task"
@@ -103,8 +107,10 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="✅"
-                android:textSize="24sp" />
+                android:text="[x]"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"

@@ -8,19 +8,19 @@
     android:gravity="center"
     android:background="@drawable/widget_background">
 
-    <View
+    <ImageView
         android:id="@+id/widget_accent"
         android:layout_width="match_parent"
         android:layout_height="4dp"
         android:layout_marginBottom="12dp"
-        android:background="#7C3AED" />
-
+        android:background="#7C3AED"
+        android:contentDescription="accent" />
 
     <TextView
         android:id="@+id/widget_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="🎯 Today's Habits"
+        android:text="Habits Progress"
         android:textColor="#FFFFFF"
         android:textSize="14sp"
         android:textStyle="bold"

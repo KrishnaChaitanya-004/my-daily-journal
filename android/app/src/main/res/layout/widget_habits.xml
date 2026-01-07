@@ -7,19 +7,19 @@
     android:padding="16dp"
     android:background="@drawable/widget_background">
 
-    <View
+    <ImageView
         android:id="@+id/widget_accent"
         android:layout_width="match_parent"
         android:layout_height="4dp"
         android:layout_marginBottom="12dp"
-        android:background="#7C3AED" />
-
+        android:background="#7C3AED"
+        android:contentDescription="accent" />
 
     <TextView
         android:id="@+id/habits_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="✅ Today's Habits"
+        android:text="Today's Habits"
         android:textColor="#FFFFFF"
         android:textSize="16sp"
         android:textStyle="bold" />
@@ -43,7 +43,7 @@
             android:id="@+id/habit_1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="○ Loading habits..."
+            android:text="Tap to view habits"
             android:textColor="#E0E0E0"
             android:textSize="14sp"
             android:padding="4dp" />

@@ -5,9 +5,12 @@ import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 import android.widget.RemoteViews;
 
 public class QuickAddWidgetProvider extends AppWidgetProvider {
+
+    private static final String TAG = "QuickAddWidget";
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
@@ -21,56 +24,62 @@ public class QuickAddWidgetProvider extends AppWidgetProvider {
     }
 
     public static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
-        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_quick_add);
-
-        // Apply theme accent color
-        int accent = WidgetPrefs.getWidgetThemeColor(context, 0xFF7C3AED);
         try {
-            views.setInt(R.id.widget_accent, "setBackgroundColor", accent);
-        } catch (Exception ignored) {}
+            RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_quick_add);
 
-        // Add Note button
-        Intent noteIntent = new Intent(context, MainActivity.class);
-        noteIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        noteIntent.putExtra("openEditor", true);
-        noteIntent.putExtra("action", "note");
+            // Apply theme accent color
+            int accent = WidgetPrefs.getWidgetThemeColor(context, 0xFF7C3AED);
+            try {
+                views.setInt(R.id.widget_accent, "setBackgroundColor", accent);
+            } catch (Exception e) {
+                Log.w(TAG, "Could not set accent color", e);
+            }
 
-        PendingIntent notePendingIntent = PendingIntent.getActivity(
-            context,
-            200,
-            noteIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
-        views.setOnClickPendingIntent(R.id.btn_add_note, notePendingIntent);
+            // Add Note button
+            Intent noteIntent = new Intent(context, MainActivity.class);
+            noteIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            noteIntent.putExtra("openEditor", true);
+            noteIntent.putExtra("action", "note");
 
-        // Add Voice button
-        Intent voiceIntent = new Intent(context, MainActivity.class);
-        voiceIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        voiceIntent.putExtra("openEditor", true);
-        voiceIntent.putExtra("action", "voice");
+            PendingIntent notePendingIntent = PendingIntent.getActivity(
+                context,
+                200,
+                noteIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+            views.setOnClickPendingIntent(R.id.btn_add_note, notePendingIntent);
 
-        PendingIntent voicePendingIntent = PendingIntent.getActivity(
-            context,
-            201,
-            voiceIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
-        views.setOnClickPendingIntent(R.id.btn_add_voice, voicePendingIntent);
+            // Add Voice button
+            Intent voiceIntent = new Intent(context, MainActivity.class);
+            voiceIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            voiceIntent.putExtra("openEditor", true);
+            voiceIntent.putExtra("action", "voice");
 
-        // Add Task button
-        Intent taskIntent = new Intent(context, MainActivity.class);
-        taskIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        taskIntent.putExtra("openEditor", true);
-        taskIntent.putExtra("action", "task");
+            PendingIntent voicePendingIntent = PendingIntent.getActivity(
+                context,
+                201,
+                voiceIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+            views.setOnClickPendingIntent(R.id.btn_add_voice, voicePendingIntent);
 
-        PendingIntent taskPendingIntent = PendingIntent.getActivity(
-            context,
-            202,
-            taskIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
-        views.setOnClickPendingIntent(R.id.btn_add_task, taskPendingIntent);
+            // Add Task button
+            Intent taskIntent = new Intent(context, MainActivity.class);
+            taskIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            taskIntent.putExtra("openEditor", true);
+            taskIntent.putExtra("action", "task");
 
-        appWidgetManager.updateAppWidget(appWidgetId, views);
+            PendingIntent taskPendingIntent = PendingIntent.getActivity(
+                context,
+                202,
+                taskIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+            views.setOnClickPendingIntent(R.id.btn_add_task, taskPendingIntent);
+
+            appWidgetManager.updateAppWidget(appWidgetId, views);
+        } catch (Exception e) {
+            Log.e(TAG, "Error updating widget", e);
+        }
     }
 }

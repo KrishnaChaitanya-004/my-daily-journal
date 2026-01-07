@@ -17,6 +17,9 @@ public final class WidgetPrefs {
   public static final String KEY_HABITS_TOTAL = "habits_total";
   public static final String KEY_TODAY_SNIPPET = "today_snippet";
   public static final String KEY_TODAY_DATE = "today_date"; // yyyy-MM-dd
+  public static final String KEY_STATS_ENTRIES = "stats_entries";
+  public static final String KEY_STATS_STREAK = "stats_streak";
+  public static final String KEY_STATS_WORDS = "stats_words";
 
   private static SharedPreferences prefs(Context context) {
     return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -60,5 +63,25 @@ public final class WidgetPrefs {
 
   public static String getTodaySnippet(Context context) {
     return prefs(context).getString(KEY_TODAY_SNIPPET, "");
+  }
+
+  public static void setStats(Context context, int entries, int streak, int words) {
+    prefs(context).edit()
+        .putInt(KEY_STATS_ENTRIES, entries)
+        .putInt(KEY_STATS_STREAK, streak)
+        .putInt(KEY_STATS_WORDS, words)
+        .apply();
+  }
+
+  public static int getStatsEntries(Context context) {
+    return prefs(context).getInt(KEY_STATS_ENTRIES, 0);
+  }
+
+  public static int getStatsStreak(Context context) {
+    return prefs(context).getInt(KEY_STATS_STREAK, 0);
+  }
+
+  public static int getStatsWords(Context context) {
+    return prefs(context).getInt(KEY_STATS_WORDS, 0);
   }
 }
