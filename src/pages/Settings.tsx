@@ -1,11 +1,12 @@
 import { useState, useRef } from 'react';
-import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette, Download, Upload, Lock, Fingerprint, Trash2, Bell, Clock, Link2, Lightbulb, Circle, Smartphone } from 'lucide-react';
+import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette, Download, Upload, Lock, Fingerprint, Trash2, Bell, Clock, Link2, Lightbulb, Circle, Smartphone, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings, AppSettings } from '@/hooks/useSettings';
 import { useDiaryExportImport } from '@/hooks/useDiaryExportImport';
 import { useAppLock } from '@/hooks/useAppLock';
 import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 import { toast } from '@/hooks/use-toast';
+import { widgetsBridge } from '@/lib/widgetsBridge';
 
 const fontOptions: { value: AppSettings['fontFamily']; label: string }[] = [
   { value: 'inter', label: 'Inter' },
@@ -419,9 +420,19 @@ const Settings = () => {
             onChange={(color) => updateSetting('widgetThemeColor', color)}
             label="Custom Widget Color"
           />
-          <p className="text-xs text-muted-foreground mt-3">
-            Note: Run `npx cap sync` after changing to update Android widgets
-          </p>
+          <button
+            onClick={async () => {
+              await widgetsBridge.refresh();
+              toast({
+                title: 'Widgets Refreshed',
+                description: 'All Android widgets have been updated.',
+              });
+            }}
+            className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-smooth tap-highlight-none"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span className="text-sm font-medium">Refresh All Widgets</span>
+          </button>
         </section>
 
         <section className="bg-card rounded-xl border border-border p-4">
