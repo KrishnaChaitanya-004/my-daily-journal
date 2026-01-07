@@ -5,6 +5,7 @@ type WidgetsBridgePlugin = {
   setWidgetThemeColor(options: { hex: string }): Promise<void>;
   setHabitsProgress(options: { completed: number; total: number }): Promise<void>;
   setTodaySnippet(options: { dateKey: string; snippet: string }): Promise<void>;
+  setStats(options: { entries: number; streak: number; words: number }): Promise<void>;
   refreshWidgets(): Promise<void>;
 };
 
@@ -35,6 +36,15 @@ export const widgetsBridge = {
     if (!Capacitor.isNativePlatform()) return;
     try {
       await WidgetsBridge.setTodaySnippet({ dateKey, snippet });
+    } catch {
+      // no-op
+    }
+  },
+
+  async setStats(entries: number, streak: number, words: number) {
+    if (!Capacitor.isNativePlatform()) return;
+    try {
+      await WidgetsBridge.setStats({ entries, streak, words });
     } catch {
       // no-op
     }

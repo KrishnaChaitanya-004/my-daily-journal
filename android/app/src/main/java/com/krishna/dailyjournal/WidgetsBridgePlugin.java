@@ -39,6 +39,16 @@ public class WidgetsBridgePlugin extends Plugin {
   }
 
   @PluginMethod
+  public void setStats(PluginCall call) {
+    int entries = call.getInt("entries", 0);
+    int streak = call.getInt("streak", 0);
+    int words = call.getInt("words", 0);
+    WidgetPrefs.setStats(getContext(), entries, streak, words);
+    WidgetsUpdater.updateAll(getContext());
+    call.resolve(new JSObject());
+  }
+
+  @PluginMethod
   public void refreshWidgets(PluginCall call) {
     WidgetsUpdater.updateAll(getContext());
     call.resolve(new JSObject());

@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { DayFileData } from './useFileStorage';
 import { startOfWeek, endOfWeek, eachDayOfInterval, format, subDays, differenceInDays, parseISO } from 'date-fns';
+import { widgetsBridge } from '@/lib/widgetsBridge';
 
 const STORAGE_KEY = 'diary-app-data';
 
@@ -242,6 +243,15 @@ const currDate = new Date(entryDates[i]);
       averageWordsPerEntry: totalEntries > 0 ? Math.round(totalWords / totalEntries) : 0
     };
   }, [allData]);
+
+  // Push stats to native widgets whenever summary changes
+  useEffect(() => {
+    widgetsBridge.setStats(
+      summary.totalEntries,
+      summary.currentStreak,
+      summary.totalWords
+    );
+  }, [summary.totalEntries, summary.currentStreak, summary.totalWords]);
 
   return {
     dailyStats,
