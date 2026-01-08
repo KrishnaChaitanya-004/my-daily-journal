@@ -14,6 +14,14 @@ export interface Habit {
 const HABITS_KEY = 'diary-habits-list';
 const STORAGE_KEY = 'diary-app-data';
 
+const notifyHabitsChanged = () => {
+  try {
+    window.dispatchEvent(new Event('habits-changed'));
+  } catch {
+    // no-op
+  }
+};
+
 const defaultColors = [
   'hsl(var(--primary))',
   'hsl(142, 76%, 36%)', // green
@@ -54,6 +62,7 @@ export const useHabits = () => {
     setHabits(updated);
     localStorage.setItem(HABITS_KEY, JSON.stringify(updated));
     setDataVersion(v => v + 1);
+    notifyHabitsChanged();
     return newHabit;
   }, [habits]);
 
@@ -62,6 +71,7 @@ export const useHabits = () => {
     setHabits(updated);
     localStorage.setItem(HABITS_KEY, JSON.stringify(updated));
     setDataVersion(v => v + 1);
+    notifyHabitsChanged();
   }, [habits]);
 
   const deleteHabit = useCallback((id: string) => {
@@ -69,6 +79,7 @@ export const useHabits = () => {
     setHabits(updated);
     localStorage.setItem(HABITS_KEY, JSON.stringify(updated));
     setDataVersion(v => v + 1);
+    notifyHabitsChanged();
   }, [habits]);
 
   const toggleHabitForDate = useCallback((habitId: string, dateKey: string) => {
@@ -86,6 +97,7 @@ export const useHabits = () => {
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
       setDataVersion(v => v + 1);
+      notifyHabitsChanged();
 
       // Force re-render by returning new state
       return currentHabits[habitId];

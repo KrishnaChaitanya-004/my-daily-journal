@@ -20,6 +20,7 @@ import NotFound from "./pages/NotFound";
 import LockScreen from "./components/LockScreen";
 import { useAppLock } from "./hooks/useAppLock";
 import { getMenuState, closeGlobalMenu } from "./hooks/useMenuState";
+import { widgetsBridge } from "@/lib/widgetsBridge";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +62,48 @@ const BackButtonHandler = () => {
 
 const AppContent = () => {
   const { isLocked, lockSettings, biometricAvailable, unlock, unlockWithBiometric } = useAppLock();
+
+  // Keep the Habits Progress widget in sync even when the user isn't on /habits
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const HABITS_KEY = 'diary-habits-list';
+    const STORAGE_KEY = 'diary-app-data';
+
+    const syncHabitsProgress = async () => {
+      try {
+        const habitsRaw = localStorage.getItem(HABITS_KEY);
+        const habits = habitsRaw ? (JSON.parse(habitsRaw) as Array<{ id: string }>) : [];
+
+        const today = new Date().toISOString().split('T')[0];
+        const dataRaw = localStorage.getItem(STORAGE_KEY);
+        const data = dataRaw ? (JSON.parse(dataRaw) as Record<string, any>) : {};
+        const todayHabits = data?.[today]?.habits ?? {};
+
+        const completed = habits.filter((h) => !!todayHabits?.[h.id]).length;
+        await widgetsBridge.setHabitsProgress(completed, habits.length);
+      } catch {
+        // ignore
+      }
+    };
+
+    // Initial sync on launch
+    void syncHabitsProgress();
+
+    // Sync when the app comes back to foreground
+    const sub = CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) void syncHabitsProgress();
+    });
+
+    // Sync when habits change anywhere in the UI
+    const onHabitsChanged = () => void syncHabitsProgress();
+    window.addEventListener('habits-changed', onHabitsChanged);
+
+    return () => {
+      window.removeEventListener('habits-changed', onHabitsChanged);
+      sub.then((h) => h.remove());
+    };
+  }, []);
 
   if (isLocked) {
     return (
