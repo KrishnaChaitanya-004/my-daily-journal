@@ -26,7 +26,8 @@ public final class WidgetPrefs {
   }
 
   public static void setWidgetThemeColor(Context context, String hex) {
-    prefs(context).edit().putString(KEY_WIDGET_THEME_COLOR, hex).apply();
+    // commit() so widgets read the latest value immediately after we trigger an update
+    prefs(context).edit().putString(KEY_WIDGET_THEME_COLOR, hex).commit();
   }
 
   public static int getWidgetThemeColor(Context context, int fallbackColor) {
@@ -40,10 +41,11 @@ public final class WidgetPrefs {
   }
 
   public static void setHabitsProgress(Context context, int completed, int total) {
+    // commit() so widgets read the latest values immediately after we trigger an update
     prefs(context).edit()
         .putInt(KEY_HABITS_COMPLETED, completed)
         .putInt(KEY_HABITS_TOTAL, total)
-        .apply();
+        .commit();
   }
 
   public static int getHabitsCompleted(Context context) {
@@ -55,10 +57,11 @@ public final class WidgetPrefs {
   }
 
   public static void setTodaySnippet(Context context, String dateKey, String snippet) {
+    // commit() so widgets read the latest value immediately after we trigger an update
     prefs(context).edit()
         .putString(KEY_TODAY_DATE, dateKey)
         .putString(KEY_TODAY_SNIPPET, snippet)
-        .apply();
+        .commit();
   }
 
   public static String getTodaySnippet(Context context) {
@@ -66,11 +69,12 @@ public final class WidgetPrefs {
   }
 
   public static void setStats(Context context, int entries, int streak, int words) {
+    // commit() so widgets read the latest values immediately after we trigger an update
     prefs(context).edit()
         .putInt(KEY_STATS_ENTRIES, entries)
         .putInt(KEY_STATS_STREAK, streak)
         .putInt(KEY_STATS_WORDS, words)
-        .apply();
+        .commit();
   }
 
   public static int getStatsEntries(Context context) {
