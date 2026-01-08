@@ -35,7 +35,11 @@ export const useHabits = () => {
     }
   });
 
-  const allData = getAllDiaryData();
+  // Bump this whenever we write habits completion data to storage, so memoized
+  // calculations (including widget syncing) refresh reliably.
+  const [dataVersion, setDataVersion] = useState(0);
+
+  const allData = useMemo(() => getAllDiaryData(), [dataVersion]);
 
   const addHabit = useCallback((name: string, icon: string = '🎯') => {
     const newHabit: Habit = {
@@ -49,6 +53,7 @@ export const useHabits = () => {
     const updated = [...habits, newHabit];
     setHabits(updated);
     localStorage.setItem(HABITS_KEY, JSON.stringify(updated));
+    setDataVersion(v => v + 1);
     return newHabit;
   }, [habits]);
 
@@ -56,12 +61,14 @@ export const useHabits = () => {
     const updated = habits.map(h => h.id === id ? { ...h, ...updates } : h);
     setHabits(updated);
     localStorage.setItem(HABITS_KEY, JSON.stringify(updated));
+    setDataVersion(v => v + 1);
   }, [habits]);
 
   const deleteHabit = useCallback((id: string) => {
     const updated = habits.filter(h => h.id !== id);
     setHabits(updated);
     localStorage.setItem(HABITS_KEY, JSON.stringify(updated));
+    setDataVersion(v => v + 1);
   }, [habits]);
 
   const toggleHabitForDate = useCallback((habitId: string, dateKey: string) => {
@@ -78,6 +85,7 @@ export const useHabits = () => {
       parsed[dateKey].habits = currentHabits;
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+      setDataVersion(v => v + 1);
 
       // Force re-render by returning new state
       return currentHabits[habitId];

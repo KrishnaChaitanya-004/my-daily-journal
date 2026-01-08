@@ -26,26 +26,32 @@
         android:textStyle="bold"
         android:gravity="center" />
 
-    <TextView
-        android:id="@+id/progress_count"
+    <FrameLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="0/0"
-        android:textColor="#FFFFFF"
-        android:textSize="32sp"
-        android:textStyle="bold"
-        android:layout_marginTop="16dp" />
+        android:layout_marginTop="16dp">
 
-    <ProgressBar
-        android:id="@+id/progress_ring"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="8dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginHorizontal="8dp"
-        android:indeterminate="false"
-        android:max="100"
-        android:progress="0" />
+        <ProgressBar
+            android:id="@+id/progress_ring"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:indeterminate="false"
+            android:max="100"
+            android:progress="0"
+            android:progressDrawable="@drawable/widget_progress_ring" />
+
+        <TextView
+            android:id="@+id/progress_count"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="0/0"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+    </FrameLayout>
 
     <TextView
         android:id="@+id/progress_label"
@@ -55,6 +61,6 @@
         android:textColor="#B0B0B0"
         android:textSize="12sp"
         android:gravity="center"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="12dp" />
 
 </LinearLayout>
