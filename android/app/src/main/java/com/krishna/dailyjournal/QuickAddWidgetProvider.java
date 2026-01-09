@@ -27,8 +27,8 @@ public class QuickAddWidgetProvider extends AppWidgetProvider {
         try {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_quick_add);
 
-            // Apply theme accent color
-            int accent = WidgetPrefs.getWidgetThemeColor(context, 0xFF7C3AED);
+            // Apply theme accent color from file-based bridge
+            int accent = WidgetDataReader.getWidgetThemeColor(context, 0xFF7C3AED);
             try {
                 views.setInt(R.id.widget_accent, "setBackgroundColor", accent);
             } catch (Exception e) {

@@ -1,61 +1,144 @@
 import { Capacitor } from '@capacitor/core';
-import { registerPlugin } from '@capacitor/core';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 
-type WidgetsBridgePlugin = {
-  setWidgetThemeColor(options: { hex: string }): Promise<void>;
-  setHabitsProgress(options: { completed: number; total: number }): Promise<void>;
-  setTodaySnippet(options: { dateKey: string; snippet: string }): Promise<void>;
-  setStats(options: { entries: number; streak: number; words: number }): Promise<void>;
-  refreshWidgets(): Promise<void>;
-};
+/**
+ * Widget data bridge using file-based approach.
+ * 
+ * Instead of using a custom Capacitor plugin (which was unreliable),
+ * we write widget data to a JSON file that native Android code reads.
+ * 
+ * Flow:
+ * 1. JS writes to /files/widget-data.json via @capacitor/filesystem
+ * 2. Native WidgetDataReader.java reads this file
+ * 3. MainActivity.onResume() triggers widget refresh
+ * 4. Widgets display correct data
+ */
 
-const WidgetsBridge = registerPlugin<WidgetsBridgePlugin>('WidgetsBridge');
+const WIDGET_DATA_FILE = 'widget-data.json';
+
+interface WidgetData {
+  habitsCompleted: number;
+  habitsTotal: number;
+  todaySnippet: string;
+  todayDate: string;
+  statsEntries: number;
+  statsStreak: number;
+  statsWords: number;
+  themeColor: string;
+  lastUpdated: string;
+}
+
+// In-memory cache to reduce file reads
+let cachedData: WidgetData | null = null;
+
+/**
+ * Read current widget data from file
+ */
+async function readWidgetData(): Promise<WidgetData> {
+  if (cachedData) return cachedData;
+
+  const defaultData: WidgetData = {
+    habitsCompleted: 0,
+    habitsTotal: 0,
+    todaySnippet: '',
+    todayDate: '',
+    statsEntries: 0,
+    statsStreak: 0,
+    statsWords: 0,
+    themeColor: '#7C3AED',
+    lastUpdated: new Date().toISOString(),
+  };
+
+  try {
+    const result = await Filesystem.readFile({
+      path: WIDGET_DATA_FILE,
+      directory: Directory.Data,
+      encoding: Encoding.UTF8,
+    });
+
+    const parsed = JSON.parse(result.data as string) as WidgetData;
+    cachedData = { ...defaultData, ...parsed };
+    return cachedData;
+  } catch {
+    // File doesn't exist yet, use defaults
+    cachedData = defaultData;
+    return defaultData;
+  }
+}
+
+/**
+ * Write widget data to file
+ */
+async function writeWidgetData(data: Partial<WidgetData>): Promise<void> {
+  try {
+    const current = await readWidgetData();
+    const updated: WidgetData = {
+      ...current,
+      ...data,
+      lastUpdated: new Date().toISOString(),
+    };
+
+    await Filesystem.writeFile({
+      path: WIDGET_DATA_FILE,
+      directory: Directory.Data,
+      encoding: Encoding.UTF8,
+      data: JSON.stringify(updated),
+    });
+
+    // Update cache
+    cachedData = updated;
+  } catch (e) {
+    console.warn('[widgetsBridge] Failed to write widget data:', e);
+  }
+}
 
 export const widgetsBridge = {
   isAvailable: () => Capacitor.isNativePlatform(),
 
   async setWidgetThemeColor(hex: string) {
     if (!Capacitor.isNativePlatform()) return;
-    try {
-      await WidgetsBridge.setWidgetThemeColor({ hex });
-    } catch {
-      // no-op
-    }
+    await writeWidgetData({ themeColor: hex });
   },
 
   async setHabitsProgress(completed: number, total: number) {
     if (!Capacitor.isNativePlatform()) return;
-    try {
-      await WidgetsBridge.setHabitsProgress({ completed, total });
-    } catch {
-      // no-op
-    }
+    await writeWidgetData({ habitsCompleted: completed, habitsTotal: total });
   },
 
   async setTodaySnippet(dateKey: string, snippet: string) {
     if (!Capacitor.isNativePlatform()) return;
-    try {
-      await WidgetsBridge.setTodaySnippet({ dateKey, snippet });
-    } catch {
-      // no-op
-    }
+    await writeWidgetData({ todayDate: dateKey, todaySnippet: snippet });
   },
 
   async setStats(entries: number, streak: number, words: number) {
     if (!Capacitor.isNativePlatform()) return;
-    try {
-      await WidgetsBridge.setStats({ entries, streak, words });
-    } catch {
-      // no-op
-    }
+    await writeWidgetData({
+      statsEntries: entries,
+      statsStreak: streak,
+      statsWords: words,
+    });
   },
 
   async refresh() {
+    // No-op: widgets refresh when MainActivity.onResume() is called
+    // This method exists for API compatibility
+  },
+
+  /**
+   * Force a full sync of all widget data.
+   * Useful when the app starts or comes to foreground.
+   */
+  async syncAll(data: {
+    habitsCompleted?: number;
+    habitsTotal?: number;
+    todaySnippet?: string;
+    todayDate?: string;
+    statsEntries?: number;
+    statsStreak?: number;
+    statsWords?: number;
+    themeColor?: string;
+  }) {
     if (!Capacitor.isNativePlatform()) return;
-    try {
-      await WidgetsBridge.refreshWidgets();
-    } catch {
-      // no-op
-    }
+    await writeWidgetData(data);
   },
 };

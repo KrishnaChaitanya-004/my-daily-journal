@@ -30,8 +30,8 @@ public class HabitsWidgetProvider extends AppWidgetProvider {
         try {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_habits);
 
-            // Apply theme accent color
-            int accent = WidgetPrefs.getWidgetThemeColor(context, 0xFF7C3AED);
+            // Apply theme accent color from file-based bridge
+            int accent = WidgetDataReader.getWidgetThemeColor(context, 0xFF7C3AED);
             try {
                 views.setInt(R.id.widget_accent, "setBackgroundColor", accent);
             } catch (Exception e) {
@@ -43,9 +43,11 @@ public class HabitsWidgetProvider extends AppWidgetProvider {
             String currentDate = dateFormat.format(new Date());
             views.setTextViewText(R.id.habits_date, currentDate);
 
-            // Get habits data from prefs
-            int completed = WidgetPrefs.getHabitsCompleted(context);
-            int total = WidgetPrefs.getHabitsTotal(context);
+            // Get habits data from file-based bridge
+            int completed = WidgetDataReader.getHabitsCompleted(context);
+            int total = WidgetDataReader.getHabitsTotal(context);
+            
+            Log.d(TAG, "Widget data: completed=" + completed + ", total=" + total);
             
             if (total > 0) {
                 views.setTextViewText(R.id.habit_1, completed + " of " + total + " habits done");

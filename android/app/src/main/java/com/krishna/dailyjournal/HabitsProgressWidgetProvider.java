@@ -27,16 +27,19 @@ public class HabitsProgressWidgetProvider extends AppWidgetProvider {
         try {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_habits_progress);
 
-            // Apply theme accent color
-            int accent = WidgetPrefs.getWidgetThemeColor(context, 0xFF7C3AED);
+            // Apply theme accent color from file-based bridge
+            int accent = WidgetDataReader.getWidgetThemeColor(context, 0xFF7C3AED);
             try {
                 views.setInt(R.id.widget_accent, "setBackgroundColor", accent);
             } catch (Exception e) {
                 Log.w(TAG, "Could not set accent color", e);
             }
 
-            int completed = WidgetPrefs.getHabitsCompleted(context);
-            int total = WidgetPrefs.getHabitsTotal(context);
+            // Read habits data from file-based bridge
+            int completed = WidgetDataReader.getHabitsCompleted(context);
+            int total = WidgetDataReader.getHabitsTotal(context);
+
+            Log.d(TAG, "Widget data: completed=" + completed + ", total=" + total);
 
             views.setTextViewText(R.id.progress_count, completed + "/" + total);
             views.setTextViewText(R.id.progress_label, "Tap to view");

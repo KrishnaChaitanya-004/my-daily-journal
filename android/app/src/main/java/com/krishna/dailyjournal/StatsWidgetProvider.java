@@ -27,18 +27,20 @@ public class StatsWidgetProvider extends AppWidgetProvider {
         try {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_stats);
 
-            // Apply theme accent color
-            int accent = WidgetPrefs.getWidgetThemeColor(context, 0xFF7C3AED);
+            // Apply theme accent color from file-based bridge
+            int accent = WidgetDataReader.getWidgetThemeColor(context, 0xFF7C3AED);
             try {
                 views.setInt(R.id.widget_accent, "setBackgroundColor", accent);
             } catch (Exception e) {
                 Log.w(TAG, "Could not set accent color", e);
             }
 
-            // Get stats from prefs
-            int entries = WidgetPrefs.getStatsEntries(context);
-            int streak = WidgetPrefs.getStatsStreak(context);
-            int words = WidgetPrefs.getStatsWords(context);
+            // Get stats from file-based bridge
+            int entries = WidgetDataReader.getStatsEntries(context);
+            int streak = WidgetDataReader.getStatsStreak(context);
+            int words = WidgetDataReader.getStatsWords(context);
+
+            Log.d(TAG, "Widget data: entries=" + entries + ", streak=" + streak + ", words=" + words);
 
             views.setTextViewText(R.id.stats_entries, String.valueOf(entries));
             views.setTextViewText(R.id.stats_streak, String.valueOf(streak));
