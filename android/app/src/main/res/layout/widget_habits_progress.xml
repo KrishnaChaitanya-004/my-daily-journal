@@ -8,6 +8,7 @@
     android:gravity="center"
     android:background="@drawable/widget_background">
 
+    <!-- Accent bar -->
     <ImageView
         android:id="@+id/widget_accent"
         android:layout_width="match_parent"
@@ -16,6 +17,7 @@
         android:background="#7C3AED"
         android:contentDescription="accent" />
 
+    <!-- Title -->
     <TextView
         android:id="@+id/widget_title"
         android:layout_width="match_parent"
@@ -26,33 +28,40 @@
         android:textStyle="bold"
         android:gravity="center" />
 
-    <FrameLayout
+    <!-- Ring container -->
+    <!-- Ring container (bigger to prevent clipping) -->
+<FrameLayout
+    android:layout_width="104dp"
+    android:layout_height="104dp"
+    android:layout_marginTop="14dp">
+
+    <!-- Progress ring (slightly smaller) -->
+    <ProgressBar
+        android:id="@+id/progress_ring"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="88dp"
+        android:layout_height="88dp"
+        android:layout_gravity="center"
+        android:indeterminate="false"
+        android:max="100"
+        android:progress="0"
+        android:progressDrawable="@drawable/widget_progress_ring" />
+
+    <!-- Center text -->
+    <TextView
+        android:id="@+id/progress_count"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp">
+        android:layout_gravity="center"
+        android:text="0/0"
+        android:textColor="#FFFFFF"
+        android:textSize="22sp"
+        android:textStyle="bold" />
 
-        <ProgressBar
-            android:id="@+id/progress_ring"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="96dp"
-            android:layout_height="96dp"
-            android:indeterminate="false"
-            android:max="100"
-            android:progress="0"
-            android:progressDrawable="@drawable/widget_progress_ring" />
+</FrameLayout>
 
-        <TextView
-            android:id="@+id/progress_count"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:text="0/0"
-            android:textColor="#FFFFFF"
-            android:textSize="22sp"
-            android:textStyle="bold" />
 
-    </FrameLayout>
-
+    <!-- Footer label -->
     <TextView
         android:id="@+id/progress_label"
         android:layout_width="match_parent"
@@ -64,3 +73,4 @@
         android:layout_marginTop="12dp" />
 
 </LinearLayout>
+
