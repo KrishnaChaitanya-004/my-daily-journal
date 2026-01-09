@@ -40,8 +40,8 @@ public class TodayDiaryWidgetProvider extends AppWidgetProvider {
         try {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_today_diary);
 
-            // Apply theme accent color
-            int accent = WidgetPrefs.getWidgetThemeColor(context, 0xFF7C3AED);
+            // Apply theme accent color from file-based bridge
+            int accent = WidgetDataReader.getWidgetThemeColor(context, 0xFF7C3AED);
             try {
                 views.setInt(R.id.widget_accent, "setBackgroundColor", accent);
             } catch (Exception e) {
@@ -53,8 +53,8 @@ public class TodayDiaryWidgetProvider extends AppWidgetProvider {
             String currentDate = dateFormat.format(new Date());
             views.setTextViewText(R.id.widget_date, currentDate);
 
-            // Prefer today's snippet (if app pushed it), otherwise show rotating prompt
-            String snippet = WidgetPrefs.getTodaySnippet(context);
+            // Prefer today's snippet from file-based bridge, otherwise show rotating prompt
+            String snippet = WidgetDataReader.getTodaySnippet(context);
             if (snippet != null && snippet.trim().length() > 0) {
                 views.setTextViewText(R.id.widget_prompt, snippet);
             } else {
