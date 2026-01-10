@@ -13,7 +13,7 @@
         android:layout_height="4dp"
         android:layout_marginBottom="12dp"
         android:background="#7C3AED"
-        android:contentDescription="accent" />
+        android:contentDescription="@null" />
 
     <TextView
         android:id="@+id/stats_title"
@@ -26,9 +26,11 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:orientation="horizontal"
-        android:layout_marginTop="16dp">
+        android:layout_marginTop="12dp"
+        android:gravity="center_vertical">
 
         <LinearLayout
             android:layout_width="0dp"
@@ -42,18 +44,26 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="0"
-                android:textColor="#3b82f6"
-                android:textSize="24sp"
-                android:textStyle="bold" />
+                android:textColor="#7C3AED"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false" />
 
             <TextView
+                android:id="@+id/stats_entries_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Entries"
                 android:textColor="#B0B0B0"
-                android:textSize="11sp" />
+                android:textSize="11sp"
+                android:layout_marginTop="2dp" />
 
         </LinearLayout>
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="32dp"
+            android:background="#333333" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -68,17 +78,25 @@
                 android:layout_height="wrap_content"
                 android:text="0"
                 android:textColor="#f97316"
-                android:textSize="24sp"
-                android:textStyle="bold" />
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false" />
 
             <TextView
+                android:id="@+id/stats_streak_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Day Streak"
                 android:textColor="#B0B0B0"
-                android:textSize="11sp" />
+                android:textSize="11sp"
+                android:layout_marginTop="2dp" />
 
         </LinearLayout>
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="32dp"
+            android:background="#333333" />
 
         <LinearLayout
             android:layout_width="0dp"
@@ -93,15 +111,18 @@
                 android:layout_height="wrap_content"
                 android:text="0"
                 android:textColor="#22c55e"
-                android:textSize="24sp"
-                android:textStyle="bold" />
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false" />
 
             <TextView
+                android:id="@+id/stats_words_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Words"
                 android:textColor="#B0B0B0"
-                android:textSize="11sp" />
+                android:textSize="11sp"
+                android:layout_marginTop="2dp" />
 
         </LinearLayout>
 
@@ -112,9 +133,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Tap to view details"
-        android:textColor="#E0E0E0"
-        android:textSize="12sp"
-        android:layout_marginTop="12dp"
+        android:textColor="#808080"
+        android:textSize="11sp"
+        android:layout_marginTop="8dp"
         android:gravity="center" />
 
 </LinearLayout>

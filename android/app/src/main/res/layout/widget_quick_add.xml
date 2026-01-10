@@ -11,9 +11,9 @@
         android:id="@+id/widget_accent"
         android:layout_width="match_parent"
         android:layout_height="4dp"
-        android:layout_marginBottom="12dp"
+        android:layout_marginBottom="8dp"
         android:background="#7C3AED"
-        android:contentDescription="accent" />
+        android:contentDescription="@null" />
 
     <TextView
         android:id="@+id/widget_title"
@@ -27,19 +27,21 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:orientation="horizontal"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="8dp"
         android:gravity="center">
 
         <LinearLayout
             android:id="@+id/btn_add_note"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center"
             android:padding="8dp"
+            android:layout_marginEnd="4dp"
             android:background="@drawable/widget_action_button">
 
             <TextView
@@ -48,77 +50,73 @@
                 android:text="+"
                 android:textColor="#FFFFFF"
                 android:textSize="24sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:includeFontPadding="false" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Note"
-                android:textColor="#E0E0E0"
+                android:textColor="#B0B0B0"
                 android:textSize="11sp"
-                android:layout_marginTop="4dp" />
+                android:layout_marginTop="2dp" />
         </LinearLayout>
-
-        <FrameLayout
-            android:layout_width="8dp"
-            android:layout_height="1dp" />
 
         <LinearLayout
             android:id="@+id/btn_add_voice"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center"
             android:padding="8dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
             android:background="@drawable/widget_action_button">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Mic"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                android:text="🎤"
+                android:textSize="20sp"
+                android:includeFontPadding="false" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Voice"
-                android:textColor="#E0E0E0"
+                android:textColor="#B0B0B0"
                 android:textSize="11sp"
-                android:layout_marginTop="4dp" />
+                android:layout_marginTop="2dp" />
         </LinearLayout>
-
-        <FrameLayout
-            android:layout_width="8dp"
-            android:layout_height="1dp" />
 
         <LinearLayout
             android:id="@+id/btn_add_task"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center"
             android:padding="8dp"
+            android:layout_marginStart="4dp"
             android:background="@drawable/widget_action_button">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="[x]"
+                android:text="✓"
                 android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:includeFontPadding="false" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Task"
-                android:textColor="#E0E0E0"
+                android:textColor="#B0B0B0"
                 android:textSize="11sp"
-                android:layout_marginTop="4dp" />
+                android:layout_marginTop="2dp" />
         </LinearLayout>
 
     </LinearLayout>
