@@ -13,7 +13,7 @@
         android:layout_height="4dp"
         android:layout_marginBottom="12dp"
         android:background="#7C3AED"
-        android:contentDescription="accent" />
+        android:contentDescription="@null" />
 
     <TextView
         android:id="@+id/habits_title"
@@ -35,9 +35,11 @@
     <LinearLayout
         android:id="@+id/habits_container"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:orientation="vertical"
-        android:layout_marginTop="12dp">
+        android:layout_marginTop="12dp"
+        android:gravity="center_vertical">
 
         <TextView
             android:id="@+id/habit_1"
@@ -46,7 +48,8 @@
             android:text="Tap to view habits"
             android:textColor="#E0E0E0"
             android:textSize="14sp"
-            android:padding="4dp" />
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp" />
 
         <TextView
             android:id="@+id/habit_2"
@@ -54,7 +57,8 @@
             android:layout_height="wrap_content"
             android:textColor="#E0E0E0"
             android:textSize="14sp"
-            android:padding="4dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
             android:visibility="gone" />
 
         <TextView
@@ -63,7 +67,8 @@
             android:layout_height="wrap_content"
             android:textColor="#E0E0E0"
             android:textSize="14sp"
-            android:padding="4dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
             android:visibility="gone" />
 
         <TextView
@@ -72,7 +77,8 @@
             android:layout_height="wrap_content"
             android:textColor="#E0E0E0"
             android:textSize="14sp"
-            android:padding="4dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
             android:visibility="gone" />
 
     </LinearLayout>
@@ -82,8 +88,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="0/0 completed"
-        android:textColor="#22c55e"
+        android:textColor="#7C3AED"
         android:textSize="12sp"
+        android:textStyle="bold"
         android:layout_marginTop="8dp" />
 
 </LinearLayout>

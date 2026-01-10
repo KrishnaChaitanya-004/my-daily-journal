@@ -28,6 +28,9 @@ public class HabitsWidgetProvider extends AppWidgetProvider {
 
     public static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         try {
+            // Ensure midnight refresh is scheduled for daily reset
+            WidgetAlarmScheduler.scheduleNextMidnightRefresh(context);
+
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_habits);
 
             // Apply theme accent color from file-based bridge
@@ -56,6 +59,13 @@ public class HabitsWidgetProvider extends AppWidgetProvider {
             }
             
             views.setTextViewText(R.id.habits_progress, completed + "/" + total + " completed");
+
+            // Apply accent color to progress text
+            try {
+                views.setTextColor(R.id.habits_progress, accent);
+            } catch (Exception e) {
+                Log.w(TAG, "Could not set progress text color", e);
+            }
 
             // Create intent to open habits page
             Intent intent = new Intent(context, MainActivity.class);

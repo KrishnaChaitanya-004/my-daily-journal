@@ -13,7 +13,7 @@
         android:layout_height="4dp"
         android:layout_marginBottom="12dp"
         android:background="#7C3AED"
-        android:contentDescription="accent" />
+        android:contentDescription="@null" />
 
     <TextView
         android:id="@+id/widget_title"
@@ -35,22 +35,36 @@
     <TextView
         android:id="@+id/widget_prompt"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:text="Tap to write today's entry..."
         android:textColor="#E0E0E0"
         android:textSize="14sp"
         android:layout_marginTop="12dp"
         android:maxLines="3"
-        android:ellipsize="end" />
+        android:ellipsize="end"
+        android:gravity="top" />
 
-    <Button
+    <LinearLayout
         android:id="@+id/widget_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:text="Write Now"
-        android:textColor="#FFFFFF"
         android:background="@drawable/widget_button_background"
-        android:padding="12dp" />
+        android:gravity="center"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Write Now"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
 
 </LinearLayout>

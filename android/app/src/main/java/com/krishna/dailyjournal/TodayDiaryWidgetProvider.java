@@ -38,6 +38,9 @@ public class TodayDiaryWidgetProvider extends AppWidgetProvider {
 
     public static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         try {
+            // Ensure midnight refresh is scheduled for daily reset
+            WidgetAlarmScheduler.scheduleNextMidnightRefresh(context);
+
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_today_diary);
 
             // Apply theme accent color from file-based bridge

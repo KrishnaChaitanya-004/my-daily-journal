@@ -50,8 +50,12 @@ public class StatsWidgetProvider extends AppWidgetProvider {
             views.setTextViewText(R.id.stats_words, String.valueOf(words));
             views.setTextViewText(R.id.stats_message, "Tap to view your stats");
 
-            // Keep accent strip in sync with the app theme color
-            // (numbers remain as-is; only requested was RemoteViews sync reliability)
+            // Apply accent color to entries number (matches accent strip)
+            try {
+                views.setTextColor(R.id.stats_entries, accent);
+            } catch (Exception e) {
+                Log.w(TAG, "Could not set entries text color", e);
+            }
 
             // Create intent to open statistics page
             Intent intent = new Intent(context, MainActivity.class);
