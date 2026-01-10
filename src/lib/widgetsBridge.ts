@@ -19,6 +19,7 @@ const WIDGET_DATA_FILE = 'widget-data.json';
 interface WidgetData {
   habitsCompleted: number;
   habitsTotal: number;
+  habitsDate: string;
   todaySnippet: string;
   todayDate: string;
   statsEntries: number;
@@ -40,6 +41,7 @@ async function readWidgetData(): Promise<WidgetData> {
   const defaultData: WidgetData = {
     habitsCompleted: 0,
     habitsTotal: 0,
+    habitsDate: '',
     todaySnippet: '',
     todayDate: '',
     statsEntries: 0,
@@ -102,7 +104,11 @@ export const widgetsBridge = {
 
   async setHabitsProgress(completed: number, total: number) {
     if (!Capacitor.isNativePlatform()) return;
-    await writeWidgetData({ habitsCompleted: completed, habitsTotal: total });
+
+    const now = new Date();
+    const habitsDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    await writeWidgetData({ habitsCompleted: completed, habitsTotal: total, habitsDate });
   },
 
   async setTodaySnippet(dateKey: string, snippet: string) {

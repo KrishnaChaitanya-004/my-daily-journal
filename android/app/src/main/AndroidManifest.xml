@@ -153,6 +153,22 @@
                 android:resource="@xml/widget_habits_progress_info" />
         </receiver>
 
+        <!-- Daily refresh (for midnight reset) -->
+        <receiver
+            android:name=".DailyWidgetRefreshReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <!-- Reschedule alarms after device reboot -->
+        <receiver
+            android:name=".BootReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

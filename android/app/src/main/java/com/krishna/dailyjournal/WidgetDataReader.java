@@ -53,10 +53,32 @@ public final class WidgetDataReader {
 
     // ========== Habits Progress ==========
 
+    private static String getHabitsDate(Context context) {
+        JSONObject data = readWidgetData(context);
+        if (data == null) return "";
+        return data.optString("habitsDate", "");
+    }
+
+    private static String getTodayKey() {
+        // Local date key YYYY-MM-DD
+        java.util.Calendar c = java.util.Calendar.getInstance();
+        int y = c.get(java.util.Calendar.YEAR);
+        int m = c.get(java.util.Calendar.MONTH) + 1;
+        int d = c.get(java.util.Calendar.DAY_OF_MONTH);
+        return String.format(java.util.Locale.US, "%04d-%02d-%02d", y, m, d);
+    }
+
     public static int getHabitsCompleted(Context context) {
         JSONObject data = readWidgetData(context);
         if (data == null) return 0;
-        return data.optInt("habitsCompleted", 0);
+
+        int completed = data.optInt("habitsCompleted", 0);
+        String date = getHabitsDate(context);
+        if (date == null || date.isEmpty()) return completed;
+
+        // Daily reset: if the stored progress is not for today, completed becomes 0.
+        if (!getTodayKey().equals(date)) return 0;
+        return completed;
     }
 
     public static int getHabitsTotal(Context context) {

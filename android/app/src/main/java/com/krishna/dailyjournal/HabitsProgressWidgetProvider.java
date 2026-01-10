@@ -25,6 +25,9 @@ public class HabitsProgressWidgetProvider extends AppWidgetProvider {
 
     public static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         try {
+            // Ensure midnight refresh is scheduled so daily reset shows even if app is killed.
+            WidgetAlarmScheduler.scheduleNextMidnightRefresh(context);
+
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_habits_progress);
 
             // Apply theme accent color from file-based bridge
@@ -45,7 +48,11 @@ public class HabitsProgressWidgetProvider extends AppWidgetProvider {
             views.setTextViewText(R.id.progress_label, "Tap to view");
 
             int pct = (total > 0) ? Math.round((completed * 100f) / total) : 0;
-            views.setProgressBar(R.id.progress_ring, 100, pct, false);
+            // Always render from 0 with the latest computed value (no animation/spin).
+            views.setImageViewBitmap(
+                R.id.progress_ring_image,
+                RingRenderer.render(context, 88, 6, pct, accent)
+            );
 
             // Create intent to open habits page
             Intent intent = new Intent(context, MainActivity.class);
