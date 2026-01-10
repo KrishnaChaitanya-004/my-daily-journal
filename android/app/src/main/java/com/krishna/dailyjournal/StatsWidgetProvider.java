@@ -25,6 +25,9 @@ public class StatsWidgetProvider extends AppWidgetProvider {
 
     public static void updateAppWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         try {
+            // Ensure midnight refresh is scheduled (daily reset + consistency).
+            WidgetAlarmScheduler.scheduleNextMidnightRefresh(context);
+
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_stats);
 
             // Apply theme accent color from file-based bridge
@@ -46,6 +49,9 @@ public class StatsWidgetProvider extends AppWidgetProvider {
             views.setTextViewText(R.id.stats_streak, String.valueOf(streak));
             views.setTextViewText(R.id.stats_words, String.valueOf(words));
             views.setTextViewText(R.id.stats_message, "Tap to view your stats");
+
+            // Keep accent strip in sync with the app theme color
+            // (numbers remain as-is; only requested was RemoteViews sync reliability)
 
             // Create intent to open statistics page
             Intent intent = new Intent(context, MainActivity.class);

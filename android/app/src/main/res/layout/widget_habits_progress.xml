@@ -29,36 +29,31 @@
         android:gravity="center" />
 
     <!-- Ring container -->
-    <!-- Ring container (bigger to prevent clipping) -->
-<FrameLayout
-    android:layout_width="104dp"
-    android:layout_height="104dp"
-    android:layout_marginTop="14dp">
+    <FrameLayout
+        android:layout_width="104dp"
+        android:layout_height="104dp"
+        android:layout_marginTop="14dp">
 
-    <!-- Progress ring (slightly smaller) -->
-    <ProgressBar
-        android:id="@+id/progress_ring"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="88dp"
-        android:layout_height="88dp"
-        android:layout_gravity="center"
-        android:indeterminate="false"
-        android:max="100"
-        android:progress="0"
-        android:progressDrawable="@drawable/widget_progress_ring" />
+        <!-- Static background ring + progress arc rendered as a bitmap (RemoteViews-safe) -->
+        <ImageView
+            android:id="@+id/progress_ring_image"
+            android:layout_width="88dp"
+            android:layout_height="88dp"
+            android:layout_gravity="center"
+            android:contentDescription="progress ring" />
 
-    <!-- Center text -->
-    <TextView
-        android:id="@+id/progress_count"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="0/0"
-        android:textColor="#FFFFFF"
-        android:textSize="22sp"
-        android:textStyle="bold" />
+        <!-- Center text -->
+        <TextView
+            android:id="@+id/progress_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="0/0"
+            android:textColor="#FFFFFF"
+            android:textSize="22sp"
+            android:textStyle="bold" />
 
-</FrameLayout>
+    </FrameLayout>
 
 
     <!-- Footer label -->
