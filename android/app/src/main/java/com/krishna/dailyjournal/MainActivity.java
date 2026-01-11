@@ -1,5 +1,6 @@
 package com.krishna.dailyjournal;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import com.getcapacitor.BridgeActivity;
@@ -23,7 +24,26 @@ public class MainActivity extends BridgeActivity {
       // Best-effort; widget updatePeriodMillis still provides eventual refresh.
     }
 
-    // Note: We no longer register WidgetsBridgePlugin because we use file-based bridge
+    // Handle widget click intents
+    handleWidgetIntent(getIntent());
+  }
+
+  @Override
+  protected void onNewIntent(Intent intent) {
+    super.onNewIntent(intent);
+    handleWidgetIntent(intent);
+  }
+
+  private void handleWidgetIntent(Intent intent) {
+    if (intent == null) return;
+    
+    // Check if opened from Habits Progress widget
+    if (intent.getBooleanExtra("openHabits", false)) {
+      // Clear the extra to avoid re-triggering on config changes
+      intent.removeExtra("openHabits");
+      // Navigate to habits page using WebView URL
+      getBridge().getWebView().loadUrl("javascript:window.location.href='/habits'");
+    }
   }
 
   @Override
