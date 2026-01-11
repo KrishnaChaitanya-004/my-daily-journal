@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect, ChangeEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Check, Camera, Clock, Mic, Square, X } from 'lucide-react';
+import { Check, Image, Clock, Mic, Square, X, Camera } from 'lucide-react';
 import { Camera as CapacitorCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
 import { format } from 'date-fns';
 import { useFileStorage } from '@/hooks/useFileStorage';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
+import MediaMenu from '@/components/MediaMenu';
+import RichTextToolbar from '@/components/RichTextToolbar';
 
 const Editor = () => {
   const navigate = useNavigate();
@@ -31,8 +33,10 @@ const Editor = () => {
   
   const [localContent, setLocalContent] = useState(content);
   const [taskText, setTaskText] = useState('');
+  const [mediaMenuOpen, setMediaMenuOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   
   const { isRecording, duration, startRecording, stopRecording, cancelRecording, formatDuration } = useVoiceRecorder();
 
@@ -76,14 +80,35 @@ const Editor = () => {
     }
   };
 
-  const handlePhotoCapture = async () => {
+  const handleSelectGallery = async () => {
     if (Capacitor.isNativePlatform()) {
       try {
         const image = await CapacitorCamera.getPhoto({
           quality: 80,
           allowEditing: false,
           resultType: CameraResultType.Base64,
-          source: CameraSource.Prompt
+          source: CameraSource.Photos
+        });
+        
+        if (image.base64String) {
+          await savePhoto(image.base64String);
+        }
+      } catch (e) {
+        console.error('Gallery error:', e);
+      }
+    } else {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleSelectCamera = async () => {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const image = await CapacitorCamera.getPhoto({
+          quality: 80,
+          allowEditing: false,
+          resultType: CameraResultType.Base64,
+          source: CameraSource.Camera
         });
         
         if (image.base64String) {
@@ -93,7 +118,7 @@ const Editor = () => {
         console.error('Camera error:', e);
       }
     } else {
-      fileInputRef.current?.click();
+      cameraInputRef.current?.click();
     }
   };
 
@@ -121,15 +146,146 @@ const Editor = () => {
     }
   };
 
+  // Rich text formatting
+  const handleFormat = (format: string) => {
+    if (!textareaRef.current) return;
+    
+    const textarea = textareaRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = localContent.slice(start, end);
+    
+    let replacement = '';
+    let cursorOffset = 0;
+    
+    switch (format) {
+      case 'bold':
+        replacement = `**${selectedText || 'text'}**`;
+        cursorOffset = selectedText ? replacement.length : 2;
+        break;
+      case 'italic':
+        replacement = `_${selectedText || 'text'}_`;
+        cursorOffset = selectedText ? replacement.length : 1;
+        break;
+      case 'underline':
+        replacement = `__${selectedText || 'text'}__`;
+        cursorOffset = selectedText ? replacement.length : 2;
+        break;
+      case 'h1':
+        // Find start of current line
+        const lineStart1 = localContent.lastIndexOf('\n', start - 1) + 1;
+        const beforeLine1 = localContent.slice(0, lineStart1);
+        const currentLine1 = localContent.slice(lineStart1, end);
+        const afterLine1 = localContent.slice(end);
+        // Remove existing heading markers and add h1
+        const cleanLine1 = currentLine1.replace(/^#{1,2}\s*/, '');
+        const newContent1 = beforeLine1 + '# ' + cleanLine1 + afterLine1;
+        setLocalContent(newContent1);
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = lineStart1 + 2 + cleanLine1.length;
+          textarea.focus();
+        }, 0);
+        return;
+      case 'h2':
+        const lineStart2 = localContent.lastIndexOf('\n', start - 1) + 1;
+        const beforeLine2 = localContent.slice(0, lineStart2);
+        const currentLine2 = localContent.slice(lineStart2, end);
+        const afterLine2 = localContent.slice(end);
+        const cleanLine2 = currentLine2.replace(/^#{1,2}\s*/, '');
+        const newContent2 = beforeLine2 + '## ' + cleanLine2 + afterLine2;
+        setLocalContent(newContent2);
+        setTimeout(() => {
+          textarea.selectionStart = textarea.selectionEnd = lineStart2 + 3 + cleanLine2.length;
+          textarea.focus();
+        }, 0);
+        return;
+      case 'bullet':
+        const lineStart3 = localContent.lastIndexOf('\n', start - 1) + 1;
+        const beforeLine3 = localContent.slice(0, lineStart3);
+        const currentLine3 = localContent.slice(lineStart3, end);
+        const afterLine3 = localContent.slice(end);
+        // Toggle bullet
+        if (currentLine3.startsWith('• ')) {
+          const newContent3 = beforeLine3 + currentLine3.slice(2) + afterLine3;
+          setLocalContent(newContent3);
+        } else {
+          const cleanLine3 = currentLine3.replace(/^(\d+\.\s|•\s)/, '');
+          const newContent3 = beforeLine3 + '• ' + cleanLine3 + afterLine3;
+          setLocalContent(newContent3);
+        }
+        setTimeout(() => textarea.focus(), 0);
+        return;
+      case 'numbered':
+        const lineStart4 = localContent.lastIndexOf('\n', start - 1) + 1;
+        const beforeLine4 = localContent.slice(0, lineStart4);
+        const currentLine4 = localContent.slice(lineStart4, end);
+        const afterLine4 = localContent.slice(end);
+        // Count previous numbered items for auto-increment
+        const lines = beforeLine4.split('\n');
+        let lastNum = 0;
+        for (let i = lines.length - 1; i >= 0; i--) {
+          const match = lines[i].match(/^(\d+)\./);
+          if (match) {
+            lastNum = parseInt(match[1]);
+            break;
+          } else if (lines[i].trim() !== '') {
+            break;
+          }
+        }
+        if (currentLine4.match(/^\d+\.\s/)) {
+          const newContent4 = beforeLine4 + currentLine4.replace(/^\d+\.\s/, '') + afterLine4;
+          setLocalContent(newContent4);
+        } else {
+          const cleanLine4 = currentLine4.replace(/^(•\s)/, '');
+          const newContent4 = beforeLine4 + `${lastNum + 1}. ` + cleanLine4 + afterLine4;
+          setLocalContent(newContent4);
+        }
+        setTimeout(() => textarea.focus(), 0);
+        return;
+      default:
+        return;
+    }
+    
+    const newContent = localContent.slice(0, start) + replacement + localContent.slice(end);
+    setLocalContent(newContent);
+    
+    setTimeout(() => {
+      if (selectedText) {
+        textarea.selectionStart = start;
+        textarea.selectionEnd = start + replacement.length;
+      } else {
+        // Position cursor inside the markers to type
+        textarea.selectionStart = textarea.selectionEnd = start + cursorOffset;
+      }
+      textarea.focus();
+    }, 0);
+  };
+
   return (
     <main className="h-screen bg-background flex flex-col max-w-md mx-auto">
+      {/* Hidden file inputs */}
       <input
         ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileInput}
+        className="hidden"
+      />
+      <input
+        ref={cameraInputRef}
         type="file"
         accept="image/*"
         capture="environment"
         onChange={handleFileInput}
         className="hidden"
+      />
+      
+      {/* Media Menu */}
+      <MediaMenu
+        isOpen={mediaMenuOpen}
+        onClose={() => setMediaMenuOpen(false)}
+        onSelectGallery={handleSelectGallery}
+        onSelectCamera={handleSelectCamera}
       />
       
       {/* Header */}
@@ -150,6 +306,9 @@ const Editor = () => {
           <Check className="w-5 h-5" />
         </button>
       </header>
+      
+      {/* Rich Text Toolbar */}
+      <RichTextToolbar onFormat={handleFormat} />
       
       {/* Recording Indicator */}
       {isRecording && (
@@ -185,11 +344,11 @@ const Editor = () => {
       {/* Toolbar */}
       <div className="flex items-center gap-1 p-4 border-t border-border shrink-0">
         <button
-          onClick={handlePhotoCapture}
-          title="Add photo"
+          onClick={() => setMediaMenuOpen(true)}
+          title="Add media"
           className="p-1.5 text-muted-foreground hover:text-primary transition-smooth tap-highlight-none"
         >
-          <Camera className="w-5 h-5" />
+          <Image className="w-5 h-5" />
         </button>
         
         <button

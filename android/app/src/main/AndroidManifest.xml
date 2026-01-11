@@ -69,34 +69,6 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- Quick Entry Widget (legacy) -->
-        <receiver
-            android:name=".QuickEntryWidgetProvider"
-            android:enabled="true"
-            android:exported="true"
-            android:label="@string/widget_quick_entry_label">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/widget_quick_entry_info" />
-        </receiver>
-
-        <!-- Habits Widget (legacy) -->
-        <receiver
-            android:name=".HabitsWidgetProvider"
-            android:enabled="true"
-            android:exported="true"
-            android:label="@string/widget_habits_label">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/widget_habits_info" />
-        </receiver>
-
         <!-- Stats Widget -->
         <receiver
             android:name=".StatsWidgetProvider"
@@ -109,34 +81,6 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_stats_info" />
-        </receiver>
-
-        <!-- Today's Diary Widget -->
-        <receiver
-            android:name=".TodayDiaryWidgetProvider"
-            android:enabled="true"
-            android:exported="true"
-            android:label="@string/widget_today_diary_label">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/widget_today_diary_info" />
-        </receiver>
-
-        <!-- Quick Add Widget -->
-        <receiver
-            android:name=".QuickAddWidgetProvider"
-            android:enabled="true"
-            android:exported="true"
-            android:label="@string/widget_quick_add_label">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/widget_quick_add_info" />
         </receiver>
 
         <!-- Habits Progress Widget -->

@@ -13,12 +13,9 @@ public final class WidgetsUpdater {
   public static void updateAll(Context context) {
     AppWidgetManager mgr = AppWidgetManager.getInstance(context);
 
-    updateProvider(context, mgr, TodayDiaryWidgetProvider.class);
-    updateProvider(context, mgr, QuickAddWidgetProvider.class);
+    // Only update the remaining widgets (removed: TodayDiary, QuickAdd, Habits, QuickEntry)
     updateProvider(context, mgr, HabitsProgressWidgetProvider.class);
-    updateProvider(context, mgr, HabitsWidgetProvider.class);
     updateProvider(context, mgr, StatsWidgetProvider.class);
-    updateProvider(context, mgr, QuickEntryWidgetProvider.class);
   }
 
   private static void updateProvider(Context context, AppWidgetManager mgr, Class<?> providerClass) {
@@ -26,18 +23,10 @@ public final class WidgetsUpdater {
     int[] ids = mgr.getAppWidgetIds(cn);
     if (ids == null || ids.length == 0) return;
 
-    if (providerClass == TodayDiaryWidgetProvider.class) {
-      TodayDiaryWidgetProvider.updateAll(context, mgr, ids);
-    } else if (providerClass == QuickAddWidgetProvider.class) {
-      QuickAddWidgetProvider.updateAll(context, mgr, ids);
-    } else if (providerClass == HabitsProgressWidgetProvider.class) {
+    if (providerClass == HabitsProgressWidgetProvider.class) {
       HabitsProgressWidgetProvider.updateAll(context, mgr, ids);
-    } else if (providerClass == HabitsWidgetProvider.class) {
-      HabitsWidgetProvider.updateAll(context, mgr, ids);
     } else if (providerClass == StatsWidgetProvider.class) {
       StatsWidgetProvider.updateAll(context, mgr, ids);
-    } else if (providerClass == QuickEntryWidgetProvider.class) {
-      QuickEntryWidgetProvider.updateAll(context, mgr, ids);
     }
   }
 }
