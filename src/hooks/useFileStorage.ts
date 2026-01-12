@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
+import { syncWidgetStats } from '@/lib/syncWidgetStats';
 
 export interface PhotoData {
   filename: string;
@@ -256,6 +257,9 @@ const writeMetaFile = async (data: Partial<DayFileData>) => {
     saveToLocalStorage(merged);
     return merged;
   });
+
+  // Sync stats to widgets after saving
+  syncWidgetStats();
 
   if (isNativePlatform()) {
     await ensureFolder();

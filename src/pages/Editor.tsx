@@ -146,119 +146,9 @@ const Editor = () => {
     }
   };
 
-  // Rich text formatting
-  const handleFormat = (format: string) => {
-    if (!textareaRef.current) return;
-    
-    const textarea = textareaRef.current;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = localContent.slice(start, end);
-    
-    let replacement = '';
-    let cursorOffset = 0;
-    
-    switch (format) {
-      case 'bold':
-        replacement = `**${selectedText || 'text'}**`;
-        cursorOffset = selectedText ? replacement.length : 2;
-        break;
-      case 'italic':
-        replacement = `_${selectedText || 'text'}_`;
-        cursorOffset = selectedText ? replacement.length : 1;
-        break;
-      case 'underline':
-        replacement = `__${selectedText || 'text'}__`;
-        cursorOffset = selectedText ? replacement.length : 2;
-        break;
-      case 'h1':
-        // Find start of current line
-        const lineStart1 = localContent.lastIndexOf('\n', start - 1) + 1;
-        const beforeLine1 = localContent.slice(0, lineStart1);
-        const currentLine1 = localContent.slice(lineStart1, end);
-        const afterLine1 = localContent.slice(end);
-        // Remove existing heading markers and add h1
-        const cleanLine1 = currentLine1.replace(/^#{1,2}\s*/, '');
-        const newContent1 = beforeLine1 + '# ' + cleanLine1 + afterLine1;
-        setLocalContent(newContent1);
-        setTimeout(() => {
-          textarea.selectionStart = textarea.selectionEnd = lineStart1 + 2 + cleanLine1.length;
-          textarea.focus();
-        }, 0);
-        return;
-      case 'h2':
-        const lineStart2 = localContent.lastIndexOf('\n', start - 1) + 1;
-        const beforeLine2 = localContent.slice(0, lineStart2);
-        const currentLine2 = localContent.slice(lineStart2, end);
-        const afterLine2 = localContent.slice(end);
-        const cleanLine2 = currentLine2.replace(/^#{1,2}\s*/, '');
-        const newContent2 = beforeLine2 + '## ' + cleanLine2 + afterLine2;
-        setLocalContent(newContent2);
-        setTimeout(() => {
-          textarea.selectionStart = textarea.selectionEnd = lineStart2 + 3 + cleanLine2.length;
-          textarea.focus();
-        }, 0);
-        return;
-      case 'bullet':
-        const lineStart3 = localContent.lastIndexOf('\n', start - 1) + 1;
-        const beforeLine3 = localContent.slice(0, lineStart3);
-        const currentLine3 = localContent.slice(lineStart3, end);
-        const afterLine3 = localContent.slice(end);
-        // Toggle bullet
-        if (currentLine3.startsWith('• ')) {
-          const newContent3 = beforeLine3 + currentLine3.slice(2) + afterLine3;
-          setLocalContent(newContent3);
-        } else {
-          const cleanLine3 = currentLine3.replace(/^(\d+\.\s|•\s)/, '');
-          const newContent3 = beforeLine3 + '• ' + cleanLine3 + afterLine3;
-          setLocalContent(newContent3);
-        }
-        setTimeout(() => textarea.focus(), 0);
-        return;
-      case 'numbered':
-        const lineStart4 = localContent.lastIndexOf('\n', start - 1) + 1;
-        const beforeLine4 = localContent.slice(0, lineStart4);
-        const currentLine4 = localContent.slice(lineStart4, end);
-        const afterLine4 = localContent.slice(end);
-        // Count previous numbered items for auto-increment
-        const lines = beforeLine4.split('\n');
-        let lastNum = 0;
-        for (let i = lines.length - 1; i >= 0; i--) {
-          const match = lines[i].match(/^(\d+)\./);
-          if (match) {
-            lastNum = parseInt(match[1]);
-            break;
-          } else if (lines[i].trim() !== '') {
-            break;
-          }
-        }
-        if (currentLine4.match(/^\d+\.\s/)) {
-          const newContent4 = beforeLine4 + currentLine4.replace(/^\d+\.\s/, '') + afterLine4;
-          setLocalContent(newContent4);
-        } else {
-          const cleanLine4 = currentLine4.replace(/^(•\s)/, '');
-          const newContent4 = beforeLine4 + `${lastNum + 1}. ` + cleanLine4 + afterLine4;
-          setLocalContent(newContent4);
-        }
-        setTimeout(() => textarea.focus(), 0);
-        return;
-      default:
-        return;
-    }
-    
-    const newContent = localContent.slice(0, start) + replacement + localContent.slice(end);
+  // Content change handler for rich text toolbar
+  const handleContentChange = (newContent: string) => {
     setLocalContent(newContent);
-    
-    setTimeout(() => {
-      if (selectedText) {
-        textarea.selectionStart = start;
-        textarea.selectionEnd = start + replacement.length;
-      } else {
-        // Position cursor inside the markers to type
-        textarea.selectionStart = textarea.selectionEnd = start + cursorOffset;
-      }
-      textarea.focus();
-    }, 0);
   };
 
   return (
@@ -308,7 +198,11 @@ const Editor = () => {
       </header>
       
       {/* Rich Text Toolbar */}
-      <RichTextToolbar onFormat={handleFormat} />
+      <RichTextToolbar 
+        textareaRef={textareaRef}
+        content={localContent}
+        onContentChange={handleContentChange}
+      />
       
       {/* Recording Indicator */}
       {isRecording && (

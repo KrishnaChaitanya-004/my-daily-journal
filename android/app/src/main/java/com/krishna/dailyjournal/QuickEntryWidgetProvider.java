@@ -42,27 +42,12 @@ public class QuickEntryWidgetProvider extends AppWidgetProvider {
             }
 
             // Set current date
-            SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE, MMMM d, yyyy", Locale.getDefault());
+            SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE, MMMM d", Locale.getDefault());
             String currentDate = dateFormat.format(new Date());
             views.setTextViewText(R.id.widget_date, currentDate);
 
-            // Prefer today's snippet from file-based bridge, otherwise show prompt
-            String snippet = WidgetDataReader.getTodaySnippet(context);
-            if (snippet != null && snippet.trim().length() > 0) {
-                views.setTextViewText(R.id.widget_prompt, snippet);
-            } else {
-                String[] prompts = {
-                    "What made you smile today?",
-                    "What are you grateful for?",
-                    "What's on your mind right now?",
-                    "Describe your day in three words...",
-                    "What did you learn today?",
-                    "What are you looking forward to?",
-                    "How are you feeling right now?"
-                };
-                int promptIndex = (int) (System.currentTimeMillis() / 86400000) % prompts.length;
-                views.setTextViewText(R.id.widget_prompt, prompts[promptIndex]);
-            }
+            // Set prompt text - always show "Write today's diary"
+            views.setTextViewText(R.id.widget_prompt, "Write today's diary");
 
             // Create intent to open app
             Intent intent = new Intent(context, MainActivity.class);
