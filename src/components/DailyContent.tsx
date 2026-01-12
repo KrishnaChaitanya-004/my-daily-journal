@@ -6,6 +6,7 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import PhotoThumbnail from './PhotoThumbnail';
 import PhotoViewer from './PhotoViewer';
+import RichTextRenderer from './RichTextRenderer';
 import { format } from 'date-fns';
 import { LocationData, WeatherData, VoiceNoteData } from '@/hooks/useFileStorage';
 import { useLocation } from '@/hooks/useLocation';
@@ -247,7 +248,7 @@ const handleAddTask = () => {
     return (
       <>
         {lines.map((line, index) => {
-          // More tolerant photo matching - allow whitespace around the marker
+          // Photo markers
           const photoMatch = line.trim().match(/^\[photo:(.+?)\]$/);
           if (photoMatch) {
             const filename = photoMatch[1].trim();
@@ -265,7 +266,6 @@ const handleAddTask = () => {
                 </div>
               );
             }
-            // Photo marker exists but photo not found in array - show placeholder
             return (
               <div key={index} className="text-sm text-muted-foreground py-0.5 italic">
                 [Photo not found: {filename}]
@@ -273,6 +273,7 @@ const handleAddTask = () => {
             );
           }
 
+          // Tasks with toggle
           const isUncheckedTask = line.startsWith('□ ');
           const isCheckedTask = line.startsWith('✓ ');
           
@@ -285,30 +286,19 @@ const handleAddTask = () => {
                     e.stopPropagation();
                     onToggleTask(index);
                   }}
-                  className={`
-                    text-[20px] leading-none transition-smooth tap-highlight-none flex-shrink-0
-                    ${isCheckedTask ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}
-                  `}
+                  className={`text-[20px] leading-none transition-smooth tap-highlight-none flex-shrink-0 ${isCheckedTask ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
                 >
                   {isCheckedTask ? '✓' : '□'}
                 </button>
-                <span
-                  className={`
-                    text-sm font-light
-                    ${isCheckedTask ? 'line-through text-muted-foreground' : 'text-foreground'}
-                  `}
-                >
-                  {taskContent}
+                <span className={`text-sm font-light ${isCheckedTask ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                  <RichTextRenderer content={taskContent} />
                 </span>
               </div>
             );
           }
-          
-          return (
-            <div key={index} className="text-sm font-light leading-relaxed text-foreground py-0.5">
-              {line || <br />}
-            </div>
-          );
+
+          // Use RichTextRenderer for all other content
+          return <RichTextRenderer key={index} content={line} />;
         })}
       </>
     );

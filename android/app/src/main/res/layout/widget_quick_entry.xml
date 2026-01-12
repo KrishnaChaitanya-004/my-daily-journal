@@ -37,7 +37,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:text="Tap to write today's entry..."
+        android:text="Write today's diary"
         android:textColor="#E0E0E0"
         android:textSize="14sp"
         android:layout_marginTop="12dp"
