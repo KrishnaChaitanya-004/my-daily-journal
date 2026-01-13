@@ -1,5 +1,6 @@
 import { useRef, useEffect, useCallback } from 'react';
-import { Bold, Italic, Underline, Heading1, Heading2, List, ListOrdered } from 'lucide-react';
+import { Bold, Italic, Underline, Heading1, Heading2, List, ListOrdered, Copy } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 interface RichTextEditorProps {
   content: string;
@@ -103,7 +104,44 @@ const RichTextEditor = ({
     handleInput();
   }, [handleInput]);
 
+  const handleCopy = useCallback(async () => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+      toast({
+        title: "No text selected",
+        description: "Select some text first to copy",
+        duration: 2000,
+      });
+      return;
+    }
+
+    const selectedText = selection.toString();
+    
+    try {
+      await navigator.clipboard.writeText(selectedText);
+      toast({
+        title: "Copied!",
+        description: "Text copied to clipboard",
+        duration: 1500,
+      });
+    } catch (err) {
+      // Fallback for older browsers
+      document.execCommand('copy');
+      toast({
+        title: "Copied!",
+        duration: 1500,
+      });
+    }
+  }, []);
+
+  // Prevent context menu
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    return false;
+  }, []);
+
   const buttons = [
+    { icon: Copy, action: handleCopy, title: 'Copy' },
     { icon: Bold, action: () => applyFormat('bold'), title: 'Bold' },
     { icon: Italic, action: () => applyFormat('italic'), title: 'Italic' },
     { icon: Underline, action: () => applyFormat('underline'), title: 'Underline' },
@@ -117,7 +155,7 @@ const RichTextEditor = ({
     <div className={`flex flex-col h-full ${className}`}>
       {/* Toolbar */}
       <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-border bg-secondary/30 overflow-x-auto shrink-0">
-        {buttons.map(({ icon: Icon, action, title }) => (
+        {buttons.map(({ icon: Icon, action, title }, index) => (
           <button
             key={title}
             onMouseDown={(e) => {
@@ -126,7 +164,7 @@ const RichTextEditor = ({
             onClick={action}
             title={title}
             type="button"
-            className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-smooth tap-highlight-none flex-shrink-0"
+            className={`p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-smooth tap-highlight-none flex-shrink-0 ${index === 0 ? 'mr-1 border-r border-border pr-3' : ''}`}
           >
             <Icon className="w-4 h-4" />
           </button>
@@ -138,12 +176,14 @@ const RichTextEditor = ({
         ref={editorRef}
         contentEditable
         onInput={handleInput}
+        onContextMenu={handleContextMenu}
         data-placeholder={placeholder}
         className="
           flex-1 p-4 overflow-auto
           bg-transparent text-foreground text-sm font-light
           focus:outline-none
           leading-relaxed
+          select-text
           [&:empty]:before:content-[attr(data-placeholder)]
           [&:empty]:before:text-muted-foreground/60
           [&:empty]:before:pointer-events-none
@@ -154,6 +194,11 @@ const RichTextEditor = ({
           [&_li]:py-0.5
           [&_u]:underline [&_u]:decoration-primary
         "
+        style={{
+          WebkitTouchCallout: 'none',
+          WebkitUserSelect: 'text',
+          userSelect: 'text',
+        }}
         suppressContentEditableWarning
       />
     </div>
