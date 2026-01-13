@@ -6,12 +6,39 @@ interface RichTextRendererProps {
 }
 
 /**
- * Renders markdown-like content as styled HTML.
- * Supports: **bold**, _italic_, __underline__, # H1, ## H2, • bullets, 1. numbered lists
+ * Renders rich text content. 
+ * Supports both:
+ * - HTML content (new WYSIWYG format with <strong>, <em>, <u>, <h1>, <h2>, <ul>, <ol>)
+ * - Legacy markdown-like syntax (**bold**, _italic_, __underline__, # H1, ## H2, • bullets, 1. lists)
  */
 const RichTextRenderer = ({ content, className = '' }: RichTextRendererProps) => {
   if (!content) return null;
 
+  // Check if content contains HTML tags (new format)
+  const hasHtmlTags = /<[a-z][\s\S]*>/i.test(content);
+
+  if (hasHtmlTags) {
+    // Render HTML content directly
+    return (
+      <div 
+        className={`
+          text-sm font-light leading-relaxed text-foreground
+          [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mt-3 [&_h1]:mb-1
+          [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mt-2 [&_h2]:mb-1
+          [&_ul]:list-disc [&_ul]:pl-5
+          [&_ol]:list-decimal [&_ol]:pl-5
+          [&_li]:py-0.5
+          [&_u]:underline [&_u]:decoration-primary
+          [&_strong]:font-bold
+          [&_em]:italic
+          ${className}
+        `}
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+    );
+  }
+
+  // Legacy markdown-like content rendering
   const lines = content.split('\n');
 
   return (
@@ -97,7 +124,7 @@ const RichTextRenderer = ({ content, className = '' }: RichTextRendererProps) =>
 };
 
 /**
- * Render inline formatting: **bold**, _italic_, __underline__
+ * Render legacy inline formatting: **bold**, _italic_, __underline__
  */
 function renderInlineFormatting(text: string): React.ReactNode {
   if (!text) return null;
