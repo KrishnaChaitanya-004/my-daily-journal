@@ -13,10 +13,10 @@ public final class WidgetsUpdater {
   public static void updateAll(Context context) {
     AppWidgetManager mgr = AppWidgetManager.getInstance(context);
 
-    // Update all active widgets
+    // Update all active widgets in order: Quick Entry, Habits Progress, Stats
+    updateProvider(context, mgr, QuickEntryWidgetProvider.class);
     updateProvider(context, mgr, HabitsProgressWidgetProvider.class);
     updateProvider(context, mgr, StatsWidgetProvider.class);
-    updateProvider(context, mgr, QuickEntryWidgetProvider.class);
   }
 
   private static void updateProvider(Context context, AppWidgetManager mgr, Class<?> providerClass) {
@@ -24,12 +24,12 @@ public final class WidgetsUpdater {
     int[] ids = mgr.getAppWidgetIds(cn);
     if (ids == null || ids.length == 0) return;
 
-    if (providerClass == HabitsProgressWidgetProvider.class) {
+    if (providerClass == QuickEntryWidgetProvider.class) {
+      QuickEntryWidgetProvider.updateAll(context, mgr, ids);
+    } else if (providerClass == HabitsProgressWidgetProvider.class) {
       HabitsProgressWidgetProvider.updateAll(context, mgr, ids);
     } else if (providerClass == StatsWidgetProvider.class) {
       StatsWidgetProvider.updateAll(context, mgr, ids);
-    } else if (providerClass == QuickEntryWidgetProvider.class) {
-      QuickEntryWidgetProvider.updateAll(context, mgr, ids);
     }
   }
 }
