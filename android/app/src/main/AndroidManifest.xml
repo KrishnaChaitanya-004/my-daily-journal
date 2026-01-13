@@ -69,21 +69,21 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- Stats Widget -->
+        <!-- Quick Entry Widget (1st in order) -->
         <receiver
-            android:name=".StatsWidgetProvider"
+            android:name=".QuickEntryWidgetProvider"
             android:enabled="true"
             android:exported="true"
-            android:label="@string/widget_stats_label">
+            android:label="@string/widget_quick_entry_label">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_stats_info" />
+                android:resource="@xml/widget_quick_entry_info" />
         </receiver>
 
-        <!-- Habits Progress Widget -->
+        <!-- Habits Progress Widget (2nd in order) -->
         <receiver
             android:name=".HabitsProgressWidgetProvider"
             android:enabled="true"
@@ -97,18 +97,18 @@
                 android:resource="@xml/widget_habits_progress_info" />
         </receiver>
 
-        <!-- Quick Entry Widget -->
+        <!-- Stats Widget (3rd in order) -->
         <receiver
-            android:name=".QuickEntryWidgetProvider"
+            android:name=".StatsWidgetProvider"
             android:enabled="true"
             android:exported="true"
-            android:label="@string/widget_quick_entry_label">
+            android:label="@string/widget_stats_label">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_quick_entry_info" />
+                android:resource="@xml/widget_stats_info" />
         </receiver>
 
         <!-- Daily refresh (for midnight reset) -->

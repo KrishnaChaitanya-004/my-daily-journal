@@ -1,4 +1,5 @@
 import { Bold, Italic, Underline, Heading1, Heading2, List, ListOrdered } from 'lucide-react';
+import { useCallback } from 'react';
 
 interface RichTextToolbarProps {
   textareaRef: React.RefObject<HTMLTextAreaElement>;
@@ -17,153 +18,198 @@ const RichTextToolbar = ({ textareaRef, content, onContentChange }: RichTextTool
     { icon: ListOrdered, format: 'numbered', title: 'Numbered List' },
   ];
 
-  const handleFormat = (format: string) => {
+  const applyInlineFormat = useCallback((prefix: string, suffix: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    // Get current selection from textarea directly
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const currentContent = textarea.value;
+    const selectedText = currentContent.substring(start, end);
+
+    let newContent: string;
+    let newCursorPos: number;
+
+    if (selectedText.length > 0) {
+      // Text is selected - wrap it with formatting
+      newContent = 
+        currentContent.substring(0, start) + 
+        prefix + selectedText + suffix + 
+        currentContent.substring(end);
+      // Place cursor after the formatted text
+      newCursorPos = start + prefix.length + selectedText.length + suffix.length;
+    } else {
+      // No selection - insert markers and place cursor in middle
+      newContent = 
+        currentContent.substring(0, start) + 
+        prefix + suffix + 
+        currentContent.substring(end);
+      // Place cursor between the markers
+      newCursorPos = start + prefix.length;
+    }
+
+    // Update content
+    onContentChange(newContent);
+
+    // Set cursor position after React re-renders
+    requestAnimationFrame(() => {
+      textarea.focus();
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    });
+  }, [textareaRef, onContentChange]);
+
+  const applyLinePrefix = useCallback((prefix: string) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
     const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = content.slice(start, end);
+    const currentContent = textarea.value;
 
-    switch (format) {
-      case 'bold':
-        applyInlineFormat('**', '**', selectedText, start, end);
-        break;
-      case 'italic':
-        applyInlineFormat('_', '_', selectedText, start, end);
-        break;
-      case 'underline':
-        applyInlineFormat('__', '__', selectedText, start, end);
-        break;
-      case 'h1':
-        applyLinePrefix('# ', start);
-        break;
-      case 'h2':
-        applyLinePrefix('## ', start);
-        break;
-      case 'bullet':
-        applyLinePrefix('• ', start);
-        break;
-      case 'numbered':
-        applyNumberedPrefix(start);
-        break;
-    }
-  };
+    // Find the start of the current line
+    const lineStart = currentContent.lastIndexOf('\n', start - 1) + 1;
+    // Find the end of the current line
+    const lineEndIndex = currentContent.indexOf('\n', start);
+    const lineEnd = lineEndIndex === -1 ? currentContent.length : lineEndIndex;
+    
+    const currentLine = currentContent.substring(lineStart, lineEnd);
 
-  const applyInlineFormat = (prefix: string, suffix: string, selectedText: string, start: number, end: number) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    if (selectedText) {
-      // Wrap selected text
-      const newContent = content.slice(0, start) + prefix + selectedText + suffix + content.slice(end);
-      onContentChange(newContent);
-      
-      // Position cursor after the formatted text
-      setTimeout(() => {
-        const newPos = start + prefix.length + selectedText.length + suffix.length;
-        textarea.setSelectionRange(newPos, newPos);
-        textarea.focus();
-      }, 0);
-    } else {
-      // Insert markers and place cursor between them
-      const newContent = content.slice(0, start) + prefix + suffix + content.slice(end);
-      onContentChange(newContent);
-      
-      setTimeout(() => {
-        const cursorPos = start + prefix.length;
-        textarea.setSelectionRange(cursorPos, cursorPos);
-        textarea.focus();
-      }, 0);
-    }
-  };
-
-  const applyLinePrefix = (prefix: string, cursorPos: number) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    // Find start of current line
-    const lineStart = content.lastIndexOf('\n', cursorPos - 1) + 1;
-    const lineEnd = content.indexOf('\n', cursorPos);
-    const actualLineEnd = lineEnd === -1 ? content.length : lineEnd;
-    const currentLine = content.slice(lineStart, actualLineEnd);
-
-    // Remove any existing prefix (headers, bullets)
-    const cleanLine = currentLine.replace(/^(#{1,2}\s|•\s|\d+\.\s)/, '');
-
-    // Check if same prefix already exists - toggle it off
+    // Check if line already has the same prefix - toggle it off
     if (currentLine.startsWith(prefix)) {
-      const newContent = content.slice(0, lineStart) + cleanLine + content.slice(actualLineEnd);
+      const newLine = currentLine.substring(prefix.length);
+      const newContent = 
+        currentContent.substring(0, lineStart) + 
+        newLine + 
+        currentContent.substring(lineEnd);
+      
       onContentChange(newContent);
-      setTimeout(() => {
-        textarea.setSelectionRange(lineStart, lineStart);
-        textarea.focus();
-      }, 0);
-    } else {
-      // Apply new prefix
-      const newContent = content.slice(0, lineStart) + prefix + cleanLine + content.slice(actualLineEnd);
-      onContentChange(newContent);
-      setTimeout(() => {
-        const newCursorPos = lineStart + prefix.length + cleanLine.length;
-        textarea.setSelectionRange(newCursorPos, newCursorPos);
-        textarea.focus();
-      }, 0);
-    }
-  };
 
-  const applyNumberedPrefix = (cursorPos: number) => {
+      requestAnimationFrame(() => {
+        textarea.focus();
+        const newCursorPos = Math.max(lineStart, start - prefix.length);
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
+      });
+      return;
+    }
+
+    // Remove any existing prefix (headers, bullets, numbers)
+    const cleanLine = currentLine.replace(/^(#{1,2}\s|•\s|\d+\.\s)/, '');
+    const newLine = prefix + cleanLine;
+    const newContent = 
+      currentContent.substring(0, lineStart) + 
+      newLine + 
+      currentContent.substring(lineEnd);
+
+    onContentChange(newContent);
+
+    requestAnimationFrame(() => {
+      textarea.focus();
+      const newCursorPos = lineStart + newLine.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    });
+  }, [textareaRef, onContentChange]);
+
+  const applyNumberedPrefix = useCallback(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    // Find start of current line
-    const lineStart = content.lastIndexOf('\n', cursorPos - 1) + 1;
-    const lineEnd = content.indexOf('\n', cursorPos);
-    const actualLineEnd = lineEnd === -1 ? content.length : lineEnd;
-    const currentLine = content.slice(lineStart, actualLineEnd);
+    const start = textarea.selectionStart;
+    const currentContent = textarea.value;
+
+    // Find the start of the current line
+    const lineStart = currentContent.lastIndexOf('\n', start - 1) + 1;
+    // Find the end of the current line
+    const lineEndIndex = currentContent.indexOf('\n', start);
+    const lineEnd = lineEndIndex === -1 ? currentContent.length : lineEndIndex;
+    
+    const currentLine = currentContent.substring(lineStart, lineEnd);
 
     // Check if already numbered - toggle off
-    if (currentLine.match(/^\d+\.\s/)) {
-      const cleanLine = currentLine.replace(/^\d+\.\s/, '');
-      const newContent = content.slice(0, lineStart) + cleanLine + content.slice(actualLineEnd);
+    const numberedMatch = currentLine.match(/^(\d+)\.\s/);
+    if (numberedMatch) {
+      const newLine = currentLine.substring(numberedMatch[0].length);
+      const newContent = 
+        currentContent.substring(0, lineStart) + 
+        newLine + 
+        currentContent.substring(lineEnd);
+      
       onContentChange(newContent);
-      setTimeout(() => {
-        textarea.setSelectionRange(lineStart, lineStart);
+
+      requestAnimationFrame(() => {
         textarea.focus();
-      }, 0);
+        const newCursorPos = Math.max(lineStart, start - numberedMatch[0].length);
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
+      });
       return;
     }
 
     // Find previous numbered item to continue sequence
-    const beforeContent = content.slice(0, lineStart);
+    const beforeContent = currentContent.substring(0, lineStart);
     const lines = beforeContent.split('\n');
     let lastNum = 0;
     for (let i = lines.length - 1; i >= 0; i--) {
       const match = lines[i].match(/^(\d+)\./);
       if (match) {
-        lastNum = parseInt(match[1]);
+        lastNum = parseInt(match[1], 10);
         break;
       } else if (lines[i].trim() !== '') {
         break;
       }
     }
 
-    const cleanLine = currentLine.replace(/^(•\s)/, '');
+    // Remove any existing prefix
+    const cleanLine = currentLine.replace(/^(#{1,2}\s|•\s)/, '');
     const prefix = `${lastNum + 1}. `;
-    const newContent = content.slice(0, lineStart) + prefix + cleanLine + content.slice(actualLineEnd);
+    const newLine = prefix + cleanLine;
+    const newContent = 
+      currentContent.substring(0, lineStart) + 
+      newLine + 
+      currentContent.substring(lineEnd);
+
     onContentChange(newContent);
-    
-    setTimeout(() => {
-      const newCursorPos = lineStart + prefix.length + cleanLine.length;
-      textarea.setSelectionRange(newCursorPos, newCursorPos);
+
+    requestAnimationFrame(() => {
       textarea.focus();
-    }, 0);
-  };
+      const newCursorPos = lineStart + newLine.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    });
+  }, [textareaRef, onContentChange]);
+
+  const handleFormat = useCallback((format: string) => {
+    switch (format) {
+      case 'bold':
+        applyInlineFormat('**', '**');
+        break;
+      case 'italic':
+        applyInlineFormat('_', '_');
+        break;
+      case 'underline':
+        applyInlineFormat('__', '__');
+        break;
+      case 'h1':
+        applyLinePrefix('# ');
+        break;
+      case 'h2':
+        applyLinePrefix('## ');
+        break;
+      case 'bullet':
+        applyLinePrefix('• ');
+        break;
+      case 'numbered':
+        applyNumberedPrefix();
+        break;
+    }
+  }, [applyInlineFormat, applyLinePrefix, applyNumberedPrefix]);
 
   return (
     <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-border bg-secondary/30 overflow-x-auto">
       {buttons.map(({ icon: Icon, format, title }) => (
         <button
           key={format}
+          onMouseDown={(e) => {
+            // Prevent blur of textarea
+            e.preventDefault();
+          }}
           onClick={() => handleFormat(format)}
           title={title}
           type="button"
