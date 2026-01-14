@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, ChangeEvent } from "react";
+import { useState, useRef, useEffect, ChangeEvent, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Check, Image, Clock, Mic, Square, X, Camera } from "lucide-react";
 import {
@@ -7,10 +7,12 @@ import {
   CameraSource,
 } from "@capacitor/camera";
 import { Capacitor } from "@capacitor/core";
+import { App as CapacitorApp } from "@capacitor/app";
 import { format } from "date-fns";
 import { useFileStorage } from "@/hooks/useFileStorage";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import MediaMenu from "@/components/MediaMenu";
+import { toast } from "sonner";
 
 const Editor = () => {
   const navigate = useNavigate();
@@ -38,9 +40,13 @@ const Editor = () => {
   const [localContent, setLocalContent] = useState(content);
   const [taskText, setTaskText] = useState("");
   const [mediaMenuOpen, setMediaMenuOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const localContentRef = useRef(localContent);
+  const hasUnsavedChanges = useRef(false);
+
   const {
     isRecording,
     duration,
@@ -50,17 +56,114 @@ const Editor = () => {
     formatDuration,
   } = useVoiceRecorder();
 
+  // Keep ref in sync with state
+  useEffect(() => {
+    localContentRef.current = localContent;
+  }, [localContent]);
+
+  // Track unsaved changes
+  useEffect(() => {
+    hasUnsavedChanges.current = localContent !== content;
+  }, [localContent, content]);
+
   useEffect(() => {
     setLocalContent(content);
   }, [content]);
 
-  const handleSave = () => {
-    saveContent(localContent);
-    navigate(-1);
+  // Save function that returns a promise
+  const performSave = useCallback(async (): Promise<boolean> => {
+    if (isSaving) return false;
+    
+    try {
+      setIsSaving(true);
+      await saveContent(localContentRef.current);
+      hasUnsavedChanges.current = false;
+      return true;
+    } catch (error) {
+      console.error("Save failed:", error);
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [saveContent, isSaving]);
+
+  // Android back button handler - SAVES before navigating
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const backHandler = CapacitorApp.addListener("backButton", async () => {
+      if (hasUnsavedChanges.current) {
+        await performSave();
+        toast.success("Saved");
+      }
+      // Use absolute path with replace for reliable navigation
+      navigate("/", { replace: true });
+    });
+
+    return () => {
+      backHandler.then((h) => h.remove());
+    };
+  }, [performSave, navigate]);
+
+  // Auto-save when app goes to background
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === "hidden" && hasUnsavedChanges.current) {
+        await performSave();
+      }
+    };
+
+    const handlePageHide = async () => {
+      if (hasUnsavedChanges.current) {
+        await performSave();
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      if (hasUnsavedChanges.current) {
+        // Sync save for beforeunload
+        saveContent(localContentRef.current);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pagehide", handlePageHide);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pagehide", handlePageHide);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [performSave, saveContent]);
+
+  // Periodic auto-save every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      if (hasUnsavedChanges.current) {
+        await performSave();
+        // Silent save - no toast for periodic saves
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [performSave]);
+
+  const handleSave = async () => {
+    const success = await performSave();
+    if (success) {
+      toast.success("Saved successfully");
+    }
+    navigate("/", { replace: true });
   };
 
-  const handleCancel = () => {
-    navigate(-1);
+  const handleCancel = async () => {
+    // Save before leaving if there are changes
+    if (hasUnsavedChanges.current) {
+      await performSave();
+      toast.success("Saved");
+    }
+    navigate("/", { replace: true });
   };
 
   const handleAddTask = () => {
@@ -112,16 +215,14 @@ const Editor = () => {
       fileInputRef.current?.click();
     }
   };
+
   const handleSelectCamera = async () => {
     if (Capacitor.isNativePlatform()) {
       try {
         const image = await CapacitorCamera.getPhoto({
           quality: 80,
-
           allowEditing: false,
-
           resultType: CameraResultType.Base64,
-
           source: CameraSource.Camera,
         });
 
@@ -135,6 +236,7 @@ const Editor = () => {
       cameraInputRef.current?.click();
     }
   };
+
   const handleFileInput = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -190,16 +292,19 @@ const Editor = () => {
       <header className="flex items-center justify-between p-4 border-b border-border shrink-0">
         <button
           onClick={handleCancel}
-          className="p-2 text-muted-foreground hover:text-foreground transition-smooth tap-highlight-none"
+          disabled={isSaving}
+          className="p-2 text-muted-foreground hover:text-foreground transition-smooth tap-highlight-none disabled:opacity-50"
         >
           <X className="w-5 h-5" />
         </button>
         <span className="text-sm text-muted-foreground">
           {format(selectedDate, "MMM d, yyyy")}
+          {isSaving && " • Saving..."}
         </span>
         <button
           onClick={handleSave}
-          className="p-2 text-primary hover:bg-primary/10 rounded-full transition-smooth"
+          disabled={isSaving}
+          className="p-2 text-primary hover:bg-primary/10 rounded-full transition-smooth disabled:opacity-50"
         >
           <Check className="w-5 h-5" />
         </button>
