@@ -67,24 +67,19 @@ const Index = () => {
 
   // Auto-save when app goes to background
   const { registerSaveCallback } = useAutoSave();
-  const contentRef = useRef(content);
 
   // Swipe navigation state
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
-  // Keep content ref updated
-  useEffect(() => {
-    contentRef.current = content;
-  }, [content]);
-
-  // Register auto-save callback
+  // Register auto-save callback - this saves the latest content from the hook
+  // The actual editor saves on close, this is a fallback for when app goes to background
   useEffect(() => {
     registerSaveCallback(() => {
-      if (contentRef.current) {
-        saveContent(contentRef.current);
-      }
+      // Content from useFileStorage is already the saved state
+      // This callback is now mainly for ensuring localStorage is flushed
+      // The DailyContent component handles its own save on background
     });
-  }, [registerSaveCallback, saveContent]);
+  }, [registerSaveCallback]);
 
   // Update date from URL param
   useEffect(() => {

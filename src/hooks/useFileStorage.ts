@@ -244,37 +244,42 @@ const writeMetaFile = async (data: Partial<DayFileData>) => {
 };
 
   // Save content to file (native) or localStorage (web)
- const saveContent = useCallback(async (content: string) => {
-  setAllData(prev => {
-    const merged = {
-      ...prev,
-      [dateKey]: {
-        ...(prev[dateKey] || { content: '', photos: [] }),
-        content,
-      },
-    };
+  const saveContent = useCallback(async (newContent: string) => {
+    // Use functional update to ensure we always have the latest state
+    setAllData(prev => {
+      const currentDay = prev[dateKey] || { content: '', photos: [] };
+      
+      // Create merged data preserving all existing day data
+      const merged = {
+        ...prev,
+        [dateKey]: {
+          ...currentDay,
+          content: newContent,
+        },
+      };
 
-    saveToLocalStorage(merged);
-    return merged;
-  });
+      // Synchronously save to localStorage to prevent data loss
+      saveToLocalStorage(merged);
+      return merged;
+    });
 
-  // Sync stats to widgets after saving
-  syncWidgetStats();
+    // Sync stats to widgets after saving
+    syncWidgetStats();
 
-  if (isNativePlatform()) {
-    await ensureFolder();
-    try {
-      await Filesystem.writeFile({
-        path: `${APP_FOLDER}/${dateFolder}/content.txt`,
-        data: content,
-        directory: STORAGE_DIRECTORY,
-        encoding: Encoding.UTF8,
-      });
-    } catch (e) {
-      console.error('Failed to save content:', e);
+    if (isNativePlatform()) {
+      await ensureFolder();
+      try {
+        await Filesystem.writeFile({
+          path: `${APP_FOLDER}/${dateFolder}/content.txt`,
+          data: newContent,
+          directory: STORAGE_DIRECTORY,
+          encoding: Encoding.UTF8,
+        });
+      } catch (e) {
+        console.error('Failed to save content:', e);
+      }
     }
-  }
-}, [dateKey, dateFolder, ensureFolder]);
+  }, [dateKey, dateFolder, ensureFolder]);
 
 
   // Save day metadata (tags, location, weather, habits, mood)
@@ -642,7 +647,26 @@ setAllData(prev => {
   const hasContent = useCallback((date: Date): boolean => {
     const key = new Intl.DateTimeFormat('en-CA').format(date);
     const data = allData[key];
-    return (data?.content?.trim().length > 0) || (data?.photos?.length > 0);
+    if (!data) return false;
+    
+    // Check for actual text content (not just whitespace or empty photo markers)
+    const contentText = data.content || '';
+    const trimmedContent = contentText.trim();
+    
+    // If content only contains photo markers with no actual photos, it's not real content
+    if (trimmedContent) {
+      // Remove all photo markers and check if anything remains
+      const withoutPhotoMarkers = trimmedContent.replace(/\[photo:[^\]]+\]/g, '').trim();
+      if (withoutPhotoMarkers.length > 0) return true;
+    }
+    
+    // Check for actual photos
+    if (data.photos && data.photos.length > 0) return true;
+    
+    // Check for voice notes
+    if (data.voiceNotes && data.voiceNotes.length > 0) return true;
+    
+    return false;
   }, [allData]);
 
   return {

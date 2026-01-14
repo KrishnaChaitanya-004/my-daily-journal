@@ -75,8 +75,23 @@ const DailyContent = ({
   const { fetchWeather, isLoading: weatherLoading } = useWeather();
   const { isRecording, duration, startRecording, stopRecording, cancelRecording, formatDuration } = useVoiceRecorder();
   
+  // Track if we're in the middle of saving to prevent race conditions
+  const isSavingRef = useRef(false);
+  const pendingContentRef = useRef<string | null>(null);
+
   // Sync localContent when content changes (e.g., date change or task toggle)
+  // BUT skip if we just saved (to avoid overwriting with stale prop)
   useEffect(() => {
+    if (isSavingRef.current) {
+      // If we're saving, check if this is our saved content coming back
+      if (content === pendingContentRef.current) {
+        // Our save came through, reset flags
+        isSavingRef.current = false;
+        pendingContentRef.current = null;
+      }
+      // Don't overwrite localContent while saving
+      return;
+    }
     setLocalContent(content);
   }, [content]);
 
@@ -86,8 +101,22 @@ const DailyContent = ({
   };
 
   const handleSave = () => {
+    // Mark that we're saving to prevent race condition
+    isSavingRef.current = true;
+    pendingContentRef.current = localContent;
+    
+    // Save the content
     onUpdateContent(localContent);
-    onEditingChange(false);
+    
+    // Close editor after a small delay to ensure state propagates
+    setTimeout(() => {
+      onEditingChange(false);
+      // Reset saving flag after a brief moment
+      setTimeout(() => {
+        isSavingRef.current = false;
+        pendingContentRef.current = null;
+      }, 100);
+    }, 50);
   };
 
   // Handle Android back button when editing
@@ -95,15 +124,48 @@ const DailyContent = ({
     if (!isEditing || !Capacitor.isNativePlatform()) return;
 
     const backHandler = CapacitorApp.addListener('backButton', () => {
-      // Save and close editor
+      // Save and close editor using the same safe save logic
+      isSavingRef.current = true;
+      pendingContentRef.current = localContent;
       onUpdateContent(localContent);
-      onEditingChange(false);
+      setTimeout(() => {
+        onEditingChange(false);
+        setTimeout(() => {
+          isSavingRef.current = false;
+          pendingContentRef.current = null;
+        }, 100);
+      }, 50);
     });
 
     return () => {
       backHandler.then(h => h.remove());
     };
   }, [isEditing, localContent, onUpdateContent, onEditingChange]);
+
+  // Auto-save when app goes to background while editing
+  useEffect(() => {
+    if (!isEditing) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        // App is going to background, save current content immediately
+        onUpdateContent(localContent);
+      }
+    };
+
+    const handlePageHide = () => {
+      // Page is being hidden (mobile), save content
+      onUpdateContent(localContent);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pagehide', handlePageHide);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pagehide', handlePageHide);
+    };
+  }, [isEditing, localContent, onUpdateContent]);
 
 const handleAddTask = () => {
   if (!taskText.trim()) return;
