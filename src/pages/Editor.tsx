@@ -34,6 +34,10 @@ const Editor = () => {
   };
 
   const selectedDate = parseDateParam(dateParam);
+  // Keep date in the URL when returning to Index so it shows the same day you edited
+  const dateKey = new Intl.DateTimeFormat("en-CA").format(selectedDate); // yyyy-MM-dd
+  const indexPath = `/?date=${dateKey}`;
+
   const { content, saveContent, savePhoto, saveVoiceNote } =
     useFileStorage(selectedDate);
 
@@ -96,14 +100,14 @@ const Editor = () => {
         await performSave();
         toast.success("Saved");
       }
-      // Use absolute path with replace for reliable navigation
-      navigate("/", { replace: true });
+      // Navigate back to the same date so Index reflects the updated text immediately
+      navigate(indexPath, { replace: true });
     });
 
     return () => {
       backHandler.then((h) => h.remove());
     };
-  }, [performSave, navigate]);
+  }, [performSave, navigate, indexPath]);
 
   // Auto-save when app goes to background
   useEffect(() => {
@@ -154,7 +158,7 @@ const Editor = () => {
     if (success) {
       toast.success("Saved successfully");
     }
-    navigate("/", { replace: true });
+    navigate(indexPath, { replace: true });
   };
 
   const handleCancel = async () => {
@@ -163,7 +167,7 @@ const Editor = () => {
       await performSave();
       toast.success("Saved");
     }
-    navigate("/", { replace: true });
+    navigate(indexPath, { replace: true });
   };
 
   const handleAddTask = () => {
