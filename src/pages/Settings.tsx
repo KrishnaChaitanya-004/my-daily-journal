@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette, Download, Upload, Lock, Fingerprint, Trash2, Bell, Clock, Link2, Lightbulb, Circle, Smartphone, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette, Download, Upload, Lock, Fingerprint, Trash2, Bell, Clock, Link2, Lightbulb, Circle, Smartphone, RefreshCw, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings, AppSettings } from '@/hooks/useSettings';
 import { useDiaryExportImport } from '@/hooks/useDiaryExportImport';
@@ -7,6 +7,7 @@ import { useAppLock } from '@/hooks/useAppLock';
 import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 import { toast } from '@/hooks/use-toast';
 import { widgetsBridge } from '@/lib/widgetsBridge';
+import { PdfExportDialog } from '@/components/PdfExportDialog';
 
 const fontOptions: { value: AppSettings['fontFamily']; label: string }[] = [
   { value: 'inter', label: 'Inter' },
@@ -842,9 +843,23 @@ const Settings = () => {
             </div>
             <div>
               <h2 className="text-sm font-medium text-foreground">Data Management</h2>
-              <p className="text-xs text-muted-foreground">Import or export your diary data</p>
+              <p className="text-xs text-muted-foreground">Import, export, or create PDF books</p>
             </div>
           </div>
+          
+          {/* PDF Export Button */}
+          <PdfExportDialog
+            trigger={
+              <button
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-primary/10 border border-primary/30 
+                  text-primary hover:bg-primary/20 transition-smooth tap-highlight-none mb-3"
+              >
+                <FileText className="w-4 h-4" />
+                <span className="text-sm font-medium">Export as PDF Book</span>
+              </button>
+            }
+          />
+          
           <div className="flex gap-3">
             <button
               onClick={exportData}
@@ -852,7 +867,7 @@ const Settings = () => {
                 text-foreground hover:border-primary/30 transition-smooth tap-highlight-none"
             >
               <Download className="w-4 h-4" />
-              <span className="text-sm">Export</span>
+              <span className="text-sm">Backup</span>
             </button>
             <button
               onClick={triggerImport}
@@ -860,7 +875,7 @@ const Settings = () => {
                 text-foreground hover:border-primary/30 transition-smooth tap-highlight-none"
             >
               <Upload className="w-4 h-4" />
-              <span className="text-sm">Import</span>
+              <span className="text-sm">Restore</span>
             </button>
             <input
               ref={fileInputRef}
@@ -871,7 +886,7 @@ const Settings = () => {
             />
           </div>
           <p className="text-xs text-muted-foreground mt-3">
-            Export creates a backup zip file. Import restores from a backup.
+            Backup creates a zip file. Restore imports from a backup. PDF creates a printable book.
           </p>
         </section>
 

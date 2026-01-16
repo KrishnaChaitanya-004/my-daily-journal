@@ -16,6 +16,7 @@ import Settings from "./pages/Settings";
 import Statistics from "./pages/Statistics";
 import Habits from "./pages/Habits";
 import Tags from "./pages/Tags";
+import Achievements from "./pages/Achievements";
 import NotFound from "./pages/NotFound";
 import LockScreen from "./components/LockScreen";
 import { useAppLock } from "./hooks/useAppLock";
@@ -130,6 +131,7 @@ const AppContent = () => {
         <Route path="/statistics" element={<Statistics />} />
         <Route path="/habits" element={<Habits />} />
         <Route path="/tags" element={<Tags />} />
+        <Route path="/achievements" element={<Achievements />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
