@@ -4,11 +4,12 @@ import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { toast } from '@/hooks/use-toast';
+import { getPhotoFromIDB, getAllPhotosFromIDB } from '@/lib/photoStorage';
 
 interface DiaryEntry {
   date: string;
   content: string;
-  photos?: Array<{ filename: string; data: string }>;
+  photos?: Array<{ filename: string; data?: string; base64?: string }>;
   tags?: string[];
   weather?: { temp?: number; description?: string };
   location?: { name?: string };
@@ -23,6 +24,35 @@ const loadDiaryData = (): Record<string, any> => {
   } catch {
     return {};
   }
+};
+
+// Fetch actual photo data from IndexedDB
+const getPhotoData = async (filename: string, photoEntry?: { base64?: string; data?: string }): Promise<string | null> => {
+  // First check if base64 is already available in the entry
+  if (photoEntry?.base64) {
+    return photoEntry.base64.startsWith('data:') 
+      ? photoEntry.base64 
+      : `data:image/jpeg;base64,${photoEntry.base64}`;
+  }
+  if (photoEntry?.data) {
+    return photoEntry.data.startsWith('data:') 
+      ? photoEntry.data 
+      : `data:image/jpeg;base64,${photoEntry.data}`;
+  }
+  
+  // Try to fetch from IndexedDB
+  try {
+    const base64 = await getPhotoFromIDB(filename);
+    if (base64) {
+      return base64.startsWith('data:') 
+        ? base64 
+        : `data:image/jpeg;base64,${base64}`;
+    }
+  } catch (e) {
+    console.warn('Failed to fetch photo from IndexedDB:', filename, e);
+  }
+  
+  return null;
 };
 
 const formatDate = (dateStr: string): string => {
@@ -197,10 +227,13 @@ export const usePdfExport = () => {
             try {
               ensureSpace(60);
               
-              // Add photo (max width: contentWidth, max height: 80mm)
-              const imgData = photo.data.startsWith('data:') 
-                ? photo.data 
-                : `data:image/jpeg;base64,${photo.data}`;
+              // Fetch actual photo data from IndexedDB or entry
+              const imgData = await getPhotoData(photo.filename, photo);
+              
+              if (!imgData) {
+                console.warn('No photo data found for:', photo.filename);
+                continue;
+              }
               
               const maxWidth = contentWidth;
               const maxHeight = 80;
