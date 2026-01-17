@@ -4,16 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { toast } from '@/hooks/use-toast';
-import { getPhotoFromIDB, getAllPhotosFromIDB } from '@/lib/photoStorage';
-
-interface DiaryEntry {
-  date: string;
-  content: string;
-  photos?: Array<{ filename: string; data?: string; base64?: string }>;
-  tags?: string[];
-  weather?: { temp?: number; description?: string };
-  location?: { name?: string };
-}
+import { getPhotoFromIDB } from '@/lib/photoStorage';
 
 const STORAGE_KEY = 'diary-app-data';
 
@@ -56,13 +47,20 @@ const getPhotoData = async (filename: string, photoEntry?: { base64?: string; da
 };
 
 const formatDate = (dateStr: string): string => {
-  const date = new Date(dateStr);
+  // Parse yyyy-MM-dd as local date to avoid timezone issues
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
   return date.toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
+};
+
+// Helper to format date consistently (timezone-safe)
+const formatDateKey = (date: Date): string => {
+  return new Intl.DateTimeFormat('en-CA').format(date);
 };
 
 export const usePdfExport = () => {
@@ -94,11 +92,11 @@ export const usePdfExport = () => {
 
       // Apply date filters
       if (options?.startDate) {
-        const startStr = options.startDate.toISOString().split('T')[0];
+        const startStr = formatDateKey(options.startDate);
         entries = entries.filter(d => d >= startStr);
       }
       if (options?.endDate) {
-        const endStr = options.endDate.toISOString().split('T')[0];
+        const endStr = formatDateKey(options.endDate);
         entries = entries.filter(d => d <= endStr);
       }
 
@@ -249,7 +247,7 @@ export const usePdfExport = () => {
       }
 
       // Generate filename
-      const timestamp = new Date().toISOString().split('T')[0];
+      const timestamp = formatDateKey(new Date());
       const filename = `diary-export-${timestamp}.pdf`;
 
       // Export based on platform

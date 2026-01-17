@@ -43,6 +43,11 @@ export const useHabits = () => {
     }
   });
 
+  // Helper to format date consistently (timezone-safe)
+  const formatDateKey = (date: Date): string => {
+    return new Intl.DateTimeFormat('en-CA').format(date);
+  };
+
   // Bump this whenever we write habits completion data to storage, so memoized
   // calculations (including widget syncing) refresh reliably.
   const [dataVersion, setDataVersion] = useState(0);
@@ -119,7 +124,7 @@ export const useHabits = () => {
     // Check from today going backwards
     for (let i = 0; i < 365; i++) {
       const date = subDays(today, i);
-      const dateKey = date.toISOString().split('T')[0];
+      const dateKey = formatDateKey(date);
       const dayData = allData[dateKey] as DayFileData | undefined;
 
       if (dayData?.habits?.[habitId]) {
@@ -161,7 +166,7 @@ export const useHabits = () => {
   }, [allData, getHabitStreak]);
 
   const getTodayProgress = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = formatDateKey(new Date());
     const dayData = allData[today] as DayFileData | undefined;
     const completed = habits.filter(h => dayData?.habits?.[h.id]).length;
     return {

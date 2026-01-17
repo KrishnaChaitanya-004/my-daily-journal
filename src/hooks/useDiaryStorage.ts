@@ -7,8 +7,9 @@ export interface DayData {
 
 const STORAGE_KEY = 'diary-app-data';
 
+// Helper to format date consistently (timezone-safe)
 const formatDateKey = (date: Date): string => {
-  return date.toISOString().split('T')[0];
+  return new Intl.DateTimeFormat('en-CA').format(date);
 };
 
 const loadAllData = (): Record<string, DayData> => {

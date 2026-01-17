@@ -39,8 +39,13 @@ const Habits = () => {
   const [graphHabit, setGraphHabit] = useState<string | null>(null);
   const [, forceUpdate] = useState(0);
 
+  // Helper to format date consistently (timezone-safe)
+  const formatDateKey = (date: Date): string => {
+    return new Intl.DateTimeFormat('en-CA').format(date);
+  };
+
   const allData = getAllDiaryData();
-  const today = new Date().toISOString().split('T')[0];
+  const today = formatDateKey(new Date());
 
   const handleAddHabit = () => {
     if (newHabitName.trim()) {
@@ -63,7 +68,7 @@ const Habits = () => {
     
     for (let i = 29; i >= 0; i--) {
       const date = subDays(todayDate, i);
-      const dateKey = date.toISOString().split('T')[0];
+      const dateKey = formatDateKey(date);
       const dayData = allData[dateKey] as DayFileData | undefined;
       const isCompleted = dayData?.habits?.[habitId] ? 1 : 0;
       
@@ -85,7 +90,7 @@ const Habits = () => {
     const date = subDays(new Date(), 6 - i);
     return {
       date,
-      dateKey: date.toISOString().split('T')[0],
+      dateKey: formatDateKey(date),
       dayName: format(date, 'EEE'),
       dayNum: format(date, 'd')
     };

@@ -36,6 +36,11 @@ const loadHabits = (): Array<{ id: string }> => {
   }
 };
 
+// Helper to format date consistently (timezone-safe)
+const formatDateKey = (date: Date): string => {
+  return new Intl.DateTimeFormat('en-CA').format(date);
+};
+
 // Calculate current streak
 const calculateStreak = (data: Record<string, any>): number => {
   const sortedDates = Object.keys(data)
@@ -51,8 +56,8 @@ const calculateStreak = (data: Record<string, any>): number => {
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  const todayStr = today.toISOString().split('T')[0];
-  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  const todayStr = formatDateKey(today);
+  const yesterdayStr = formatDateKey(yesterday);
 
   // Check if streak is active (entry today or yesterday)
   const firstDate = sortedDates[0];
@@ -64,7 +69,7 @@ const calculateStreak = (data: Record<string, any>): number => {
   let checkDate = firstDate === todayStr ? today : yesterday;
 
   for (const dateStr of sortedDates) {
-    const checkDateStr = checkDate.toISOString().split('T')[0];
+    const checkDateStr = formatDateKey(checkDate);
     
     if (dateStr === checkDateStr) {
       const entry = data[dateStr];
@@ -111,11 +116,6 @@ const calculateHabitsCompleted = (data: Record<string, any>): number => {
       total += Object.values(habits).filter(Boolean).length;
     });
   return total;
-};
-
-// Check if first entry was made
-const hasFirstEntry = (data: Record<string, any>): boolean => {
-  return calculateTotalEntries(data) >= 1;
 };
 
 // Check if habits exist

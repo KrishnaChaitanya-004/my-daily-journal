@@ -3,6 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { format } from 'date-fns';
 
+// Helper to format date consistently (timezone-safe)
+const formatDateKey = (date: Date): string => {
+  return new Intl.DateTimeFormat('en-CA').format(date);
+};
+
 const Bookmarks = () => {
   const navigate = useNavigate();
   const { getBookmarkedDates } = useBookmarks();
@@ -10,7 +15,7 @@ const Bookmarks = () => {
 
   const handleDateClick = (date: Date) => {
     // Navigate to home with the date as a query param
-    navigate(`/?date=${date.toISOString().split('T')[0]}`);
+    navigate(`/?date=${formatDateKey(date)}`);
   };
 
   return (

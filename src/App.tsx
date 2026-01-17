@@ -76,7 +76,7 @@ const AppContent = () => {
         const habitsRaw = localStorage.getItem(HABITS_KEY);
         const habits = habitsRaw ? (JSON.parse(habitsRaw) as Array<{ id: string }>) : [];
 
-        const today = new Date().toISOString().split('T')[0];
+        const today = new Intl.DateTimeFormat('en-CA').format(new Date());
         const dataRaw = localStorage.getItem(STORAGE_KEY);
         const data = dataRaw ? (JSON.parse(dataRaw) as Record<string, any>) : {};
         const todayHabits = data?.[today]?.habits ?? {};

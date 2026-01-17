@@ -2,6 +2,11 @@ import { useState, useCallback, useEffect } from 'react';
 
 const BOOKMARKS_KEY = 'diary-bookmarks';
 
+// Helper to format date consistently (timezone-safe)
+const formatDateKey = (date: Date): string => {
+  return new Intl.DateTimeFormat('en-CA').format(date);
+};
+
 export const useBookmarks = () => {
   const [bookmarks, setBookmarks] = useState<string[]>(() => {
     try {
@@ -17,7 +22,7 @@ export const useBookmarks = () => {
   }, [bookmarks]);
 
   const toggleBookmark = useCallback((date: Date) => {
-    const dateKey = date.toISOString().split('T')[0];
+    const dateKey = formatDateKey(date);
     setBookmarks(prev => {
       if (prev.includes(dateKey)) {
         return prev.filter(d => d !== dateKey);
@@ -27,12 +32,16 @@ export const useBookmarks = () => {
   }, []);
 
   const isBookmarked = useCallback((date: Date): boolean => {
-    const dateKey = date.toISOString().split('T')[0];
+    const dateKey = formatDateKey(date);
     return bookmarks.includes(dateKey);
   }, [bookmarks]);
 
   const getBookmarkedDates = useCallback((): Date[] => {
-    return bookmarks.map(dateKey => new Date(dateKey)).sort((a, b) => b.getTime() - a.getTime());
+    return bookmarks.map(dateKey => {
+      // Parse yyyy-MM-dd as local date
+      const [year, month, day] = dateKey.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    }).sort((a, b) => b.getTime() - a.getTime());
   }, [bookmarks]);
 
   return {
