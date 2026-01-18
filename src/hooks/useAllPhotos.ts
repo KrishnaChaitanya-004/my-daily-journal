@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from 'react';
-import { getPhotoFromIDB, deletePhotoFromIDB, getAllPhotosFromIDB } from '@/lib/photoStorage';
+import { getPhotoFromIDB, deletePhotoFromIDB } from '@/lib/photoStorage';
 import { Capacitor } from '@capacitor/core';
 
 interface PhotoData {

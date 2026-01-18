@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Image, Camera, X } from 'lucide-react';
+import { Image, Camera } from 'lucide-react';
 
 interface MediaMenuProps {
   isOpen: boolean;
