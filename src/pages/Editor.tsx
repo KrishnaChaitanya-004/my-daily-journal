@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, ChangeEvent, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Check, Image, Clock, Mic, Square, X, Camera } from "lucide-react";
+import { Check, Image, Clock, Mic, Square, X } from "lucide-react";
 import {
   Camera as CapacitorCamera,
   CameraResultType,

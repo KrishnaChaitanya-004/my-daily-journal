@@ -1,6 +1,6 @@
 import { widgetsBridge } from './widgetsBridge';
 import { DayFileData } from '@/hooks/useFileStorage';
-import { subDays, differenceInDays } from 'date-fns';
+import { subDays } from 'date-fns';
 
 /**
  * Sync diary statistics to native widgets.
