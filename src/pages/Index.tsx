@@ -140,7 +140,7 @@ const Index = () => {
     const absDy = Math.abs(dy);
 
     // Vertical swipe for calendar collapse/expand (must be strong vertical swipe)
-    if (absDy > 800 && absDy > absDx * 2) {
+    if (absDy > 240 && absDy > absDx * 2) {
       // Swipe up => collapse calendar, swipe down => expand calendar
       if (dy < 0 && isCalendarVisible) {
         updateSetting('showCalendar', false);
