@@ -142,9 +142,9 @@ const Index = () => {
     if (absDx < 60) return;
     if (absDx < absDy * 1.3) return;
 
-    // Per your request: swipe left => previous day, swipe right => next day
-    if (dx < 0) shiftSelectedDate(-1);
-    else shiftSelectedDate(1);
+    // Swipe left => next day, swipe right => previous day
+    if (dx < 0) shiftSelectedDate(1);
+    else shiftSelectedDate(-1);
   }, [isEditing, shiftSelectedDate]);
 
   const addTask = useCallback((taskText: string) => {
