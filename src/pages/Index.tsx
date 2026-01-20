@@ -136,16 +136,28 @@ const Index = () => {
     const dx = t.clientX - start.x;
     const dy = t.clientY - start.y;
 
-    // Horizontal swipe only (avoid interfering with vertical scrolling)
     const absDx = Math.abs(dx);
     const absDy = Math.abs(dy);
+
+    // Vertical swipe for calendar collapse/expand (must be strong vertical swipe)
+    if (absDy > 80 && absDy > absDx * 2) {
+      // Swipe up => collapse calendar, swipe down => expand calendar
+      if (dy < 0 && isCalendarVisible) {
+        updateSetting('showCalendar', false);
+      } else if (dy > 0 && !isCalendarVisible) {
+        updateSetting('showCalendar', true);
+      }
+      return;
+    }
+
+    // Horizontal swipe for day navigation
     if (absDx < 60) return;
     if (absDx < absDy * 1.3) return;
 
     // Swipe left => next day, swipe right => previous day
     if (dx < 0) shiftSelectedDate(1);
     else shiftSelectedDate(-1);
-  }, [isEditing, shiftSelectedDate]);
+  }, [isEditing, shiftSelectedDate, isCalendarVisible, updateSetting]);
 
   const addTask = useCallback((taskText: string) => {
     const taskLine = `□ ${taskText}`;
