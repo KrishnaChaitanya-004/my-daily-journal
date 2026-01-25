@@ -126,8 +126,14 @@ const Calendar = ({
         </div>
       </div>
 
-      {!collapsed && (
-        <>
+      {/* Animated content wrapper */}
+      <div 
+        className={`
+          grid transition-all duration-300 ease-in-out overflow-hidden
+          ${collapsed ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100'}
+        `}
+      >
+        <div className="min-h-0">
           {/* Days of week */}
           <div className="grid grid-cols-7 mb-2">
             {DAYS.map((day) => (
@@ -188,8 +194,8 @@ const Calendar = ({
               );
             })}
           </div>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 };
