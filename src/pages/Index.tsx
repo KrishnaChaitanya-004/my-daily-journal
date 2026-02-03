@@ -214,7 +214,7 @@ const Index = () => {
           className="text-lg font-semibold"
           style={{ color: settings.fontColor || '#ededed' }}
         >
-          Maggie
+          KC's Diary
         </h1>
         <button
           onClick={() => toggleBookmark(selectedDate)}
