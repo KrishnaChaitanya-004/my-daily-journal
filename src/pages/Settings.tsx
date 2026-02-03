@@ -8,7 +8,7 @@ import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 import { toast } from '@/hooks/use-toast';
 import { widgetsBridge } from '@/lib/widgetsBridge';
 import { PdfExportDialog } from '@/components/PdfExportDialog';
-import { Slider } from '@/components/ui/slider';
+
 
 const fontOptions: { value: AppSettings['fontFamily']; label: string }[] = [
   { value: 'inter', label: 'Inter' },
@@ -128,14 +128,10 @@ const selectionColorOptions: { value: string; label: string; color: string; isAu
   { value: '#ef4444', label: 'Red', color: 'bg-red-500' },
 ];
 
-// Font size mapping for slider
-const fontSizeMap: { value: number; size: AppSettings['fontSize']; label: string; px: string }[] = [
-  { value: 12, size: 'small', label: '12', px: '12px' },
-  { value: 14, size: 'small', label: '14', px: '14px' },
-  { value: 16, size: 'medium', label: '16', px: '16px' },
-  { value: 18, size: 'large', label: '18', px: '18px' },
-  { value: 20, size: 'large', label: '20', px: '20px' },
-  { value: 22, size: 'large', label: '22', px: '22px' },
+const fontSizeOptions: { value: AppSettings['fontSize']; label: string }[] = [
+  { value: 'small', label: 'Small' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'large', label: 'Large' }
 ];
 
 const Settings = () => {
@@ -160,10 +156,7 @@ const Settings = () => {
   const [pinError, setPinError] = useState('');
   const [customFontUrlInput, setCustomFontUrlInput] = useState(settings.customFontUrl || '');
   const [customFontNameInput, setCustomFontNameInput] = useState(settings.customFontName || '');
-  const [colorsExpanded, setColorsExpanded] = useState(true);
-  
-  // Get current font size value for slider
-  const currentFontSizeValue = settings.fontSize === 'small' ? 14 : settings.fontSize === 'medium' ? 16 : 18;
+  const [colorsExpanded, setColorsExpanded] = useState(false);
 
   const handleSetPin = () => {
     if (newPin.length < 4 || newPin.length > 6) {
@@ -544,34 +537,22 @@ const Settings = () => {
               <p className="text-xs text-muted-foreground">Adjust text size</p>
             </div>
           </div>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">A</span>
-              <span className="text-lg font-medium text-primary">{currentFontSizeValue}px</span>
-              <span className="text-lg text-muted-foreground">A</span>
-            </div>
-            <Slider
-              value={[currentFontSizeValue]}
-              min={12}
-              max={22}
-              step={2}
-              onValueChange={(value) => {
-                const size = value[0];
-                const fontSize: AppSettings['fontSize'] = size <= 14 ? 'small' : size <= 16 ? 'medium' : 'large';
-                updateSetting('fontSize', fontSize);
-                // Apply custom px value directly
-                document.documentElement.style.fontSize = `${size}px`;
-              }}
-              className="w-full"
-            />
-            <div className="flex justify-between text-[10px] text-muted-foreground">
-              <span>12</span>
-              <span>14</span>
-              <span>16</span>
-              <span>18</span>
-              <span>20</span>
-              <span>22</span>
-            </div>
+          <div className="grid grid-cols-3 gap-2">
+            {fontSizeOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => updateSetting('fontSize', option.value)}
+                className={`
+                  px-4 py-3 rounded-lg border transition-smooth tap-highlight-none text-sm
+                  ${settings.fontSize === option.value 
+                    ? 'border-primary bg-primary/10 text-primary' 
+                    : 'border-border text-foreground hover:border-primary/30'
+                  }
+                `}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
         </section>
 
