@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">KC\'s Diary</string>
-    <string name="title_activity_main">KC\'s Diary</string>
+    <string name="app_name">Maggie</string>
+    <string name="title_activity_main">Maggie</string>
     <string name="package_name">com.krishna.dailyjournal</string>
     <string name="custom_url_scheme">com.krishna.dailyjournal</string>
     

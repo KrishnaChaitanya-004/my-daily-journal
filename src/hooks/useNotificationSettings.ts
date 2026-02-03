@@ -86,7 +86,7 @@ export const useNotificationSettings = () => {
       notifications: [
         {
           id: 1,
-          title: "KC's Diary",
+          title: "Maggie",
           body: settings.message,
           channelId: 'diary-reminder',
           smallIcon: 'ic_notification',

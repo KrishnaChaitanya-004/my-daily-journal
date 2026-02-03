@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette, Download, Upload, Lock, Fingerprint, Trash2, Bell, Clock, Link2, Lightbulb, Circle, Smartphone, RefreshCw, FileText } from 'lucide-react';
+import { ArrowLeft, Type, Palette, TextCursor, Pipette, Download, Upload, Lock, Fingerprint, Trash2, Bell, Clock, Link2, Lightbulb, Smartphone, RefreshCw, FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings, AppSettings } from '@/hooks/useSettings';
 import { useDiaryExportImport } from '@/hooks/useDiaryExportImport';
@@ -8,6 +8,7 @@ import { useNotificationSettings } from '@/hooks/useNotificationSettings';
 import { toast } from '@/hooks/use-toast';
 import { widgetsBridge } from '@/lib/widgetsBridge';
 import { PdfExportDialog } from '@/components/PdfExportDialog';
+import { Slider } from '@/components/ui/slider';
 
 const fontOptions: { value: AppSettings['fontFamily']; label: string }[] = [
   { value: 'inter', label: 'Inter' },
@@ -15,12 +16,6 @@ const fontOptions: { value: AppSettings['fontFamily']; label: string }[] = [
   { value: 'georgia', label: 'Georgia' },
   { value: 'courier', label: 'Courier' },
   { value: 'custom', label: 'Custom' }
-];
-
-const fontSizeOptions: { value: AppSettings['fontSize']; label: string }[] = [
-  { value: 'small', label: 'Small' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'large', label: 'Large' }
 ];
 
 const colorOptions: { value: AppSettings['themeColor']; color: string; hex: string }[] = [
@@ -133,6 +128,16 @@ const selectionColorOptions: { value: string; label: string; color: string; isAu
   { value: '#ef4444', label: 'Red', color: 'bg-red-500' },
 ];
 
+// Font size mapping for slider
+const fontSizeMap: { value: number; size: AppSettings['fontSize']; label: string; px: string }[] = [
+  { value: 12, size: 'small', label: '12', px: '12px' },
+  { value: 14, size: 'small', label: '14', px: '14px' },
+  { value: 16, size: 'medium', label: '16', px: '16px' },
+  { value: 18, size: 'large', label: '18', px: '18px' },
+  { value: 20, size: 'large', label: '20', px: '20px' },
+  { value: 22, size: 'large', label: '22', px: '22px' },
+];
+
 const Settings = () => {
   const navigate = useNavigate();
   const { settings, updateSetting } = useSettings();
@@ -155,6 +160,10 @@ const Settings = () => {
   const [pinError, setPinError] = useState('');
   const [customFontUrlInput, setCustomFontUrlInput] = useState(settings.customFontUrl || '');
   const [customFontNameInput, setCustomFontNameInput] = useState(settings.customFontName || '');
+  const [colorsExpanded, setColorsExpanded] = useState(true);
+  
+  // Get current font size value for slider
+  const currentFontSizeValue = settings.fontSize === 'small' ? 14 : settings.fontSize === 'medium' ? 16 : 18;
 
   const handleSetPin = () => {
     if (newPin.length < 4 || newPin.length > 6) {
@@ -230,210 +239,199 @@ const Settings = () => {
 
       {/* Settings content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
-        {/* Theme Color */}
-        <section className="bg-card rounded-xl border border-border p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Palette className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-sm font-medium text-foreground">Theme Color</h2>
-              <p className="text-xs text-muted-foreground">Choose your accent color</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-3 mb-4">
-            {colorOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => updateSetting('themeColor', option.value)}
-                className={`
-                  w-10 h-10 rounded-full ${option.color} transition-smooth tap-highlight-none
-                  ${settings.themeColor === option.value 
-                    ? 'ring-2 ring-offset-2 ring-offset-card ring-foreground scale-110' 
-                    : 'hover:scale-105'
-                  }
-                `}
-              />
-            ))}
-          </div>
-          <ModernColorPicker 
-            value={settings.themeColor === 'custom' ? (settings.customThemeColor || '#ef4444') : '#888888'} 
-            onChange={(color) => {
-              updateSetting('customThemeColor', color);
-              updateSetting('themeColor', 'custom');
-            }}
-            label="Custom Theme Color"
-          />
-        </section>
-
-        {/* Background Color */}
-        <section className="bg-card rounded-xl border border-border p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <PaintBucket className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-sm font-medium text-foreground">Background Color</h2>
-              <p className="text-xs text-muted-foreground">Set your background color</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-3 mb-4">
-            {backgroundColorOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => updateSetting('backgroundColor', option.value)}
-                title={option.label}
-                className={`
-                  w-10 h-10 rounded-full transition-smooth tap-highlight-none border border-border
-                  ${settings.backgroundColor === option.value 
-                    ? 'ring-2 ring-offset-2 ring-offset-card ring-foreground scale-110' 
-                    : 'hover:scale-105'
-                  }
-                `}
-                style={{ backgroundColor: option.value }}
-              />
-            ))}
-          </div>
-          <ModernColorPicker 
-            value={settings.backgroundColor || '#0a0a0a'} 
-            onChange={(color) => updateSetting('backgroundColor', color)}
-            label="Custom Background Color"
-          />
-        </section>
-
-        {/* Font Color */}
-        <section className="bg-card rounded-xl border border-border p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Type className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-sm font-medium text-foreground">Font Color</h2>
-              <p className="text-xs text-muted-foreground">Set your text color</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-3 mb-4">
-            {fontColorOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => updateSetting('fontColor', option.value)}
-                title={option.label}
-                className={`
-                  w-10 h-10 rounded-full transition-smooth tap-highlight-none border border-border
-                  ${settings.fontColor === option.value 
-                    ? 'ring-2 ring-offset-2 ring-offset-card ring-foreground scale-110' 
-                    : 'hover:scale-105'
-                  }
-                `}
-                style={{ backgroundColor: option.value }}
-              />
-            ))}
-          </div>
-          <ModernColorPicker 
-            value={settings.fontColor || '#ededed'} 
-            onChange={(color) => updateSetting('fontColor', color)}
-            label="Custom Font Color"
-          />
-        </section>
-
-        {/* Calendar Selection Color */}
-        <section className="bg-card rounded-xl border border-border p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Circle className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-sm font-medium text-foreground">Calendar Selection</h2>
-              <p className="text-xs text-muted-foreground">Color of selected date circle</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-3 mb-4">
-            {selectionColorOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => updateSetting('calendarSelectionColor', option.value)}
-                title={option.label}
-                className={`
-                  w-10 h-10 rounded-full transition-smooth tap-highlight-none border-2
-                  ${(settings.calendarSelectionColor || 'auto') === option.value 
-                    ? 'ring-2 ring-offset-2 ring-offset-card ring-foreground scale-110' 
-                    : 'hover:scale-105'
-                  }
-                  ${option.isAuto 
-                    ? 'border-dashed border-muted-foreground bg-gradient-to-br from-primary/60 to-primary flex items-center justify-center' 
-                    : `border-transparent ${option.color}`
-                  }
-                `}
-              >
-                {option.isAuto && <span className="text-[10px] font-bold text-primary-foreground">A</span>}
-              </button>
-            ))}
-          </div>
-          {settings.calendarSelectionColor !== 'auto' && (
-            <ModernColorPicker 
-              value={settings.calendarSelectionColor || '#3b82f6'} 
-              onChange={(color) => updateSetting('calendarSelectionColor', color)}
-              label="Custom Selection Color"
-            />
-          )}
-        </section>
-
-        {/* Widget Theme Color */}
-        <section className="bg-card rounded-xl border border-border p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Smartphone className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-sm font-medium text-foreground">Widget Theme</h2>
-              <p className="text-xs text-muted-foreground">Android home screen widget color</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-3 mb-4">
-            {[
-              { value: '#7C3AED', label: 'Purple' },
-              { value: '#3b82f6', label: 'Blue' },
-              { value: '#22c55e', label: 'Green' },
-              { value: '#ef4444', label: 'Red' },
-              { value: '#f97316', label: 'Orange' },
-              { value: '#ec4899', label: 'Pink' },
-              { value: '#14b8a6', label: 'Teal' },
-              { value: '#eab308', label: 'Yellow' },
-            ].map((option) => (
-              <button
-                key={option.value}
-                onClick={() => updateSetting('widgetThemeColor', option.value)}
-                title={option.label}
-                className={`
-                  w-10 h-10 rounded-full transition-smooth tap-highlight-none border-2
-                  ${settings.widgetThemeColor === option.value 
-                    ? 'ring-2 ring-offset-2 ring-offset-card ring-foreground scale-110' 
-                    : 'hover:scale-105'
-                  }
-                  border-transparent
-                `}
-                style={{ backgroundColor: option.value }}
-              />
-            ))}
-          </div>
-          <ModernColorPicker 
-            value={settings.widgetThemeColor || '#7C3AED'} 
-            onChange={(color) => updateSetting('widgetThemeColor', color)}
-            label="Custom Widget Color"
-          />
+        {/* Colors Section */}
+        <section className="bg-card rounded-xl border border-border overflow-hidden">
           <button
-            onClick={async () => {
-              await widgetsBridge.refresh();
-              toast({
-                title: 'Widgets Refreshed',
-                description: 'All Android widgets have been updated.',
-              });
-            }}
-            className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-smooth tap-highlight-none"
+            onClick={() => setColorsExpanded(!colorsExpanded)}
+            className="w-full flex items-center justify-between p-4 tap-highlight-none"
           >
-            <RefreshCw className="w-4 h-4" />
-            <span className="text-sm font-medium">Refresh All Widgets</span>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Palette className="w-5 h-5 text-primary" />
+              </div>
+              <div className="text-left">
+                <h2 className="text-sm font-medium text-foreground">Colors</h2>
+                <p className="text-xs text-muted-foreground">Theme, background, font & widget colors</p>
+              </div>
+            </div>
+            {colorsExpanded ? (
+              <ChevronUp className="w-5 h-5 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-muted-foreground" />
+            )}
           </button>
+          
+          <div className={`grid transition-all duration-300 ease-in-out ${colorsExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+            <div className="min-h-0 overflow-hidden">
+              <div className="px-4 pb-4 space-y-6">
+                {/* Theme Color */}
+                <div>
+                  <h3 className="text-xs font-medium text-muted-foreground mb-3">Theme Color</h3>
+                  <div className="flex flex-wrap gap-3 mb-3">
+                    {colorOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => updateSetting('themeColor', option.value)}
+                        className={`
+                          w-10 h-10 rounded-full ${option.color} transition-smooth tap-highlight-none
+                          ${settings.themeColor === option.value 
+                            ? 'ring-2 ring-offset-2 ring-offset-card ring-foreground scale-110' 
+                            : 'hover:scale-105'
+                          }
+                        `}
+                      />
+                    ))}
+                  </div>
+                  <ModernColorPicker 
+                    value={settings.themeColor === 'custom' ? (settings.customThemeColor || '#ef4444') : '#888888'} 
+                    onChange={(color) => {
+                      updateSetting('customThemeColor', color);
+                      updateSetting('themeColor', 'custom');
+                    }}
+                    label="Custom Theme Color"
+                  />
+                </div>
+
+                {/* Background Color */}
+                <div>
+                  <h3 className="text-xs font-medium text-muted-foreground mb-3">Background Color</h3>
+                  <div className="flex flex-wrap gap-3 mb-3">
+                    {backgroundColorOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => updateSetting('backgroundColor', option.value)}
+                        title={option.label}
+                        className={`
+                          w-10 h-10 rounded-full transition-smooth tap-highlight-none border border-border
+                          ${settings.backgroundColor === option.value 
+                            ? 'ring-2 ring-offset-2 ring-offset-card ring-foreground scale-110' 
+                            : 'hover:scale-105'
+                          }
+                        `}
+                        style={{ backgroundColor: option.value }}
+                      />
+                    ))}
+                  </div>
+                  <ModernColorPicker 
+                    value={settings.backgroundColor || '#0a0a0a'} 
+                    onChange={(color) => updateSetting('backgroundColor', color)}
+                    label="Custom Background Color"
+                  />
+                </div>
+
+                {/* Font Color */}
+                <div>
+                  <h3 className="text-xs font-medium text-muted-foreground mb-3">Font Color</h3>
+                  <div className="flex flex-wrap gap-3 mb-3">
+                    {fontColorOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => updateSetting('fontColor', option.value)}
+                        title={option.label}
+                        className={`
+                          w-10 h-10 rounded-full transition-smooth tap-highlight-none border border-border
+                          ${settings.fontColor === option.value 
+                            ? 'ring-2 ring-offset-2 ring-offset-card ring-foreground scale-110' 
+                            : 'hover:scale-105'
+                          }
+                        `}
+                        style={{ backgroundColor: option.value }}
+                      />
+                    ))}
+                  </div>
+                  <ModernColorPicker 
+                    value={settings.fontColor || '#ededed'} 
+                    onChange={(color) => updateSetting('fontColor', color)}
+                    label="Custom Font Color"
+                  />
+                </div>
+
+                {/* Calendar Selection Color */}
+                <div>
+                  <h3 className="text-xs font-medium text-muted-foreground mb-3">Calendar Selection</h3>
+                  <div className="flex flex-wrap gap-3 mb-3">
+                    {selectionColorOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => updateSetting('calendarSelectionColor', option.value)}
+                        title={option.label}
+                        className={`
+                          w-10 h-10 rounded-full transition-smooth tap-highlight-none border-2
+                          ${(settings.calendarSelectionColor || 'auto') === option.value 
+                            ? 'ring-2 ring-offset-2 ring-offset-card ring-foreground scale-110' 
+                            : 'hover:scale-105'
+                          }
+                          ${option.isAuto 
+                            ? 'border-dashed border-muted-foreground bg-gradient-to-br from-primary/60 to-primary flex items-center justify-center' 
+                            : `border-transparent ${option.color}`
+                          }
+                        `}
+                      >
+                        {option.isAuto && <span className="text-[10px] font-bold text-primary-foreground">A</span>}
+                      </button>
+                    ))}
+                  </div>
+                  {settings.calendarSelectionColor !== 'auto' && (
+                    <ModernColorPicker 
+                      value={settings.calendarSelectionColor || '#3b82f6'} 
+                      onChange={(color) => updateSetting('calendarSelectionColor', color)}
+                      label="Custom Selection Color"
+                    />
+                  )}
+                </div>
+
+                {/* Widget Theme Color */}
+                <div>
+                  <h3 className="text-xs font-medium text-muted-foreground mb-3">Widget Theme</h3>
+                  <div className="flex flex-wrap gap-3 mb-3">
+                    {[
+                      { value: '#7C3AED', label: 'Purple' },
+                      { value: '#3b82f6', label: 'Blue' },
+                      { value: '#22c55e', label: 'Green' },
+                      { value: '#ef4444', label: 'Red' },
+                      { value: '#f97316', label: 'Orange' },
+                      { value: '#ec4899', label: 'Pink' },
+                      { value: '#14b8a6', label: 'Teal' },
+                      { value: '#eab308', label: 'Yellow' },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => updateSetting('widgetThemeColor', option.value)}
+                        title={option.label}
+                        className={`
+                          w-10 h-10 rounded-full transition-smooth tap-highlight-none border-2
+                          ${settings.widgetThemeColor === option.value 
+                            ? 'ring-2 ring-offset-2 ring-offset-card ring-foreground scale-110' 
+                            : 'hover:scale-105'
+                          }
+                          border-transparent
+                        `}
+                        style={{ backgroundColor: option.value }}
+                      />
+                    ))}
+                  </div>
+                  <ModernColorPicker 
+                    value={settings.widgetThemeColor || '#7C3AED'} 
+                    onChange={(color) => updateSetting('widgetThemeColor', color)}
+                    label="Custom Widget Color"
+                  />
+                  <button
+                    onClick={async () => {
+                      await widgetsBridge.refresh();
+                      toast({
+                        title: 'Widgets Refreshed',
+                        description: 'All Android widgets have been updated.',
+                      });
+                    }}
+                    className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-smooth tap-highlight-none"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    <span className="text-sm font-medium">Refresh All Widgets</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
         <section className="bg-card rounded-xl border border-border p-4">
@@ -546,28 +544,34 @@ const Settings = () => {
               <p className="text-xs text-muted-foreground">Adjust text size</p>
             </div>
           </div>
-          <div className="flex gap-2">
-            {fontSizeOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => updateSetting('fontSize', option.value)}
-                className={`
-                  flex-1 px-4 py-3 rounded-lg border transition-smooth tap-highlight-none
-                  ${settings.fontSize === option.value 
-                    ? 'border-primary bg-primary/10 text-primary' 
-                    : 'border-border text-foreground hover:border-primary/30'
-                  }
-                `}
-              >
-                <span className={`
-                  ${option.value === 'small' ? 'text-xs' : ''}
-                  ${option.value === 'medium' ? 'text-sm' : ''}
-                  ${option.value === 'large' ? 'text-base' : ''}
-                `}>
-                  {option.label}
-                </span>
-              </button>
-            ))}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">A</span>
+              <span className="text-lg font-medium text-primary">{currentFontSizeValue}px</span>
+              <span className="text-lg text-muted-foreground">A</span>
+            </div>
+            <Slider
+              value={[currentFontSizeValue]}
+              min={12}
+              max={22}
+              step={2}
+              onValueChange={(value) => {
+                const size = value[0];
+                const fontSize: AppSettings['fontSize'] = size <= 14 ? 'small' : size <= 16 ? 'medium' : 'large';
+                updateSetting('fontSize', fontSize);
+                // Apply custom px value directly
+                document.documentElement.style.fontSize = `${size}px`;
+              }}
+              className="w-full"
+            />
+            <div className="flex justify-between text-[10px] text-muted-foreground">
+              <span>12</span>
+              <span>14</span>
+              <span>16</span>
+              <span>18</span>
+              <span>20</span>
+              <span>22</span>
+            </div>
           </div>
         </section>
 
@@ -796,7 +800,7 @@ const Settings = () => {
               {/* Battery optimization tip */}
               <p className="text-[10px] text-muted-foreground/70 leading-relaxed">
                 If notifications don't appear, check your device's battery optimization settings and allow 
-                KC's Diary to run in the background.
+                Maggie to run in the background.
               </p>
             </div>
           )}
@@ -894,7 +898,7 @@ const Settings = () => {
         <section className="bg-card rounded-xl border border-border p-4">
           <h2 className="text-sm font-medium text-foreground mb-2">About</h2>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            KC's Diary helps you capture your daily thoughts, tasks, and moments.
+            Maggie helps you capture your daily thoughts, tasks, and moments.
             Your data is stored locally on your device.
           </p>
           <div className="flex items-center gap-4 mt-3">
