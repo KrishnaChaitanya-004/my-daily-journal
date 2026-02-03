@@ -117,7 +117,7 @@ export const useDiaryExportImport = () => {
         });
 
         await Share.share({
-          title: "KC's Diary Backup",
+          title: "Maggie Backup",
           files: [result.uri],
         });
       } else {
