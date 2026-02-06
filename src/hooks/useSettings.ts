@@ -15,6 +15,7 @@ export interface AppSettings {
   showCalendar: boolean;
   calendarSelectionColor: string;
   widgetThemeColor: string;
+  diaryName: string;
 }
 
 const SETTINGS_KEY = 'diary-settings';
@@ -32,6 +33,7 @@ const defaultSettings: AppSettings = {
   showCalendar: true,
   calendarSelectionColor: 'auto',
   widgetThemeColor: '#7C3AED',
+  diaryName: "KC's Diary",
 };
 
 const themeColors: Record<string, { primary: string; ring: string }> = {

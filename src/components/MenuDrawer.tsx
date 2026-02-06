@@ -7,6 +7,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import { useSettings } from '@/hooks/useSettings';
 
 const STORAGE_KEY = 'diary-app-data';
 
@@ -48,6 +49,8 @@ const MenuDrawer = ({ open, onOpenChange }: MenuDrawerProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
+  const { settings } = useSettings();
+  const diaryName = settings.diaryName || "KC's Diary";
 
   const searchResults = useMemo<SearchResult[]>(() => {
     if (!searchQuery.trim()) return [];
@@ -115,9 +118,11 @@ const handleOpenChange = (isOpen: boolean) => {
           <div className="flex items-center justify-between">
             <SheetTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-                <span className="text-sm font-bold text-primary-foreground">KC</span>
+                <span className="text-sm font-bold text-primary-foreground">
+                  {diaryName.charAt(0).toUpperCase()}
+                </span>
               </div>
-              KC's Diary
+              {diaryName}
             </SheetTitle>
           </div>
         </SheetHeader>
