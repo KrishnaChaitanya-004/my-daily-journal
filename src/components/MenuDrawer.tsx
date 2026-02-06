@@ -7,6 +7,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import { useSettings } from '@/hooks/useSettings';
 
 const STORAGE_KEY = 'diary-app-data';
 
