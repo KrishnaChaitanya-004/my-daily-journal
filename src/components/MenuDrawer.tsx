@@ -49,6 +49,8 @@ const MenuDrawer = ({ open, onOpenChange }: MenuDrawerProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
+  const { settings } = useSettings();
+  const diaryName = settings.diaryName || "KC's Diary";
 
   const searchResults = useMemo<SearchResult[]>(() => {
     if (!searchQuery.trim()) return [];
