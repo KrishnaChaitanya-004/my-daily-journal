@@ -196,6 +196,7 @@ export const useHabits = () => {
     addHabit,
     updateHabit,
     deleteHabit,
+    reorderHabits,
     toggleHabitForDate,
     getHabitCompletions,
     getHabitStreak,
