@@ -71,6 +71,16 @@ export const useHabits = () => {
     return newHabit;
   }, [habits]);
 
+  const reorderHabits = useCallback((fromIndex: number, toIndex: number) => {
+    const updated = [...habits];
+    const [removed] = updated.splice(fromIndex, 1);
+    updated.splice(toIndex, 0, removed);
+    setHabits(updated);
+    localStorage.setItem(HABITS_KEY, JSON.stringify(updated));
+    setDataVersion(v => v + 1);
+    notifyHabitsChanged();
+  }, [habits]);
+
   const updateHabit = useCallback((id: string, updates: Partial<Habit>) => {
     const updated = habits.map(h => h.id === id ? { ...h, ...updates } : h);
     setHabits(updated);
