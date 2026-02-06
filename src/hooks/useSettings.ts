@@ -15,6 +15,7 @@ export interface AppSettings {
   showCalendar: boolean;
   calendarSelectionColor: string;
   widgetThemeColor: string;
+  diaryName: string;
 }
 
 const SETTINGS_KEY = 'diary-settings';
