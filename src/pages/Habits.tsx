@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ArrowLeft, Plus, Trash2, Check, Flame, BarChart2, X } from 'lucide-react';
+import { useState, useRef, useCallback } from 'react';
+import { ArrowLeft, Plus, Trash2, Check, Flame, BarChart2, X, GripVertical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useHabits } from '@/hooks/useHabits';
 import { getAllDiaryData, DayFileData } from '@/hooks/useFileStorage';
@@ -30,14 +30,22 @@ const Habits = () => {
     getHabitCompletions,
     getHabitStats,
     getTodayProgress,
+    reorderHabits,
     defaultIcons 
   } = useHabits();
 
   const [newHabitName, setNewHabitName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState('🎯');
+  const [customEmoji, setCustomEmoji] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [graphHabit, setGraphHabit] = useState<string | null>(null);
   const [, forceUpdate] = useState(0);
+
+  // Drag state for reordering
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const touchStartY = useRef<number>(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Helper to format date consistently (timezone-safe)
   const formatDateKey = (date: Date): string => {
@@ -48,10 +56,12 @@ const Habits = () => {
   const today = formatDateKey(new Date());
 
   const handleAddHabit = () => {
+    const icon = customEmoji.trim() || selectedIcon;
     if (newHabitName.trim()) {
-      addHabit(newHabitName.trim(), selectedIcon);
+      addHabit(newHabitName.trim(), icon);
       setNewHabitName('');
       setSelectedIcon('🎯');
+      setCustomEmoji('');
       setDialogOpen(false);
     }
   };
@@ -60,6 +70,58 @@ const Habits = () => {
     toggleHabitForDate(habitId, today);
     forceUpdate(n => n + 1);
   };
+
+  // Long press handlers for drag-to-reorder
+  const handleTouchStart = useCallback((index: number, e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+    longPressTimer.current = setTimeout(() => {
+      // Haptic feedback
+      if (navigator.vibrate) navigator.vibrate(30);
+      setDraggedIndex(index);
+      setIsDragging(true);
+    }, 500);
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isDragging || draggedIndex === null) {
+      // Cancel long press if moved too much
+      if (longPressTimer.current) {
+        const moveY = Math.abs(e.touches[0].clientY - touchStartY.current);
+        if (moveY > 10) {
+          clearTimeout(longPressTimer.current);
+          longPressTimer.current = null;
+        }
+      }
+      return;
+    }
+
+    const touch = e.touches[0];
+    const elements = document.elementsFromPoint(touch.clientX, touch.clientY);
+    const habitCard = elements.find(el => el.getAttribute('data-habit-index'));
+    
+    if (habitCard) {
+      const targetIndex = parseInt(habitCard.getAttribute('data-habit-index') || '-1');
+      if (targetIndex !== -1 && targetIndex !== draggedIndex) {
+        // Haptic feedback on swap
+        if (navigator.vibrate) navigator.vibrate(10);
+        reorderHabits(draggedIndex, targetIndex);
+        setDraggedIndex(targetIndex);
+      }
+    }
+  }, [isDragging, draggedIndex, reorderHabits]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    if (isDragging) {
+      // Final haptic feedback
+      if (navigator.vibrate) navigator.vibrate(15);
+    }
+    setDraggedIndex(null);
+    setIsDragging(false);
+  }, [isDragging]);
 
   // Get habit graph data for a specific habit
   const getHabitGraphData = (habitId: string) => {
@@ -132,15 +194,18 @@ const Habits = () => {
               
               <div>
                 <p className="text-sm text-muted-foreground mb-2">Choose an icon</p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mb-3">
                   {defaultIcons.map(icon => (
                     <button
                       key={icon}
-                      onClick={() => setSelectedIcon(icon)}
+                      onClick={() => {
+                        setSelectedIcon(icon);
+                        setCustomEmoji('');
+                      }}
                       className={`
                         w-10 h-10 rounded-lg text-xl flex items-center justify-center
                         transition-smooth border
-                        ${selectedIcon === icon 
+                        ${selectedIcon === icon && !customEmoji
                           ? 'bg-primary/20 border-primary' 
                           : 'bg-secondary border-transparent hover:bg-secondary/80'}
                       `}
@@ -149,6 +214,33 @@ const Habits = () => {
                     </button>
                   ))}
                 </div>
+                
+                {/* Custom emoji input */}
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="Or type your own emoji..."
+                    value={customEmoji}
+                    onChange={(e) => {
+                      // Only keep the last emoji character if multiple are pasted
+                      const value = e.target.value;
+                      const emojis = [...value].filter(char => {
+                        const codePoint = char.codePointAt(0) || 0;
+                        return codePoint > 127;
+                      });
+                      setCustomEmoji(emojis.length > 0 ? emojis[emojis.length - 1] : value.slice(-2));
+                    }}
+                    className="flex-1 text-center text-xl"
+                    maxLength={2}
+                  />
+                  {customEmoji && (
+                    <div className="w-10 h-10 rounded-lg bg-primary/20 border border-primary flex items-center justify-center text-xl">
+                      {customEmoji}
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Type or paste any emoji from your keyboard
+                </p>
               </div>
               
               <Button onClick={handleAddHabit} className="w-full" disabled={!newHabitName.trim()}>
@@ -194,15 +286,35 @@ const Habits = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {habits.map(habit => {
+            {isDragging && (
+              <p className="text-xs text-center text-muted-foreground animate-pulse">
+                Drag to reorder habits
+              </p>
+            )}
+            {habits.map((habit, index) => {
               const stats = getHabitStats(habit.id);
               const isCompletedToday = getHabitCompletions(habit.id, today);
+              const isBeingDragged = draggedIndex === index;
               
               return (
-                <div key={habit.id} className="bg-card rounded-xl p-4 border border-border">
+                <div 
+                  key={habit.id} 
+                  data-habit-index={index}
+                  onTouchStart={(e) => handleTouchStart(index, e)}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                  className={`
+                    bg-card rounded-xl p-4 border border-border transition-all duration-200
+                    ${isBeingDragged ? 'scale-105 shadow-lg border-primary z-10 relative' : ''}
+                    ${isDragging && !isBeingDragged ? 'opacity-60' : ''}
+                  `}
+                >
                   {/* Habit Header */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
+                      {isDragging && (
+                        <GripVertical className="w-4 h-4 text-muted-foreground" />
+                      )}
                       <span className="text-2xl">{habit.icon}</span>
                       <div>
                         <h4 className="font-medium text-foreground">{habit.name}</h4>
