@@ -45,7 +45,9 @@ const Habits = () => {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const touchStartY = useRef<number>(0);
+  const touchStartX = useRef<number>(0);
   const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Helper to format date consistently (timezone-safe)
   const formatDateKey = (date: Date): string => {
@@ -74,11 +76,17 @@ const Habits = () => {
   // Long press handlers for drag-to-reorder
   const handleTouchStart = useCallback((index: number, e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
+    touchStartX.current = e.touches[0].clientX;
     longPressTimer.current = setTimeout(() => {
       // Haptic feedback
       if (navigator.vibrate) navigator.vibrate(30);
       setDraggedIndex(index);
       setIsDragging(true);
+      // Disable scrolling on the container
+      if (containerRef.current) {
+        containerRef.current.style.overflow = 'hidden';
+      }
+      document.body.style.overflow = 'hidden';
     }, 500);
   }, []);
 
@@ -87,13 +95,17 @@ const Habits = () => {
       // Cancel long press if moved too much
       if (longPressTimer.current) {
         const moveY = Math.abs(e.touches[0].clientY - touchStartY.current);
-        if (moveY > 10) {
+        const moveX = Math.abs(e.touches[0].clientX - touchStartX.current);
+        if (moveY > 10 || moveX > 10) {
           clearTimeout(longPressTimer.current);
           longPressTimer.current = null;
         }
       }
       return;
     }
+
+    // Prevent scrolling during drag
+    e.preventDefault();
 
     const touch = e.touches[0];
     const elements = document.elementsFromPoint(touch.clientX, touch.clientY);
@@ -118,6 +130,11 @@ const Habits = () => {
     if (isDragging) {
       // Final haptic feedback
       if (navigator.vibrate) navigator.vibrate(15);
+      // Re-enable scrolling
+      if (containerRef.current) {
+        containerRef.current.style.overflow = '';
+      }
+      document.body.style.overflow = '';
     }
     setDraggedIndex(null);
     setIsDragging(false);
@@ -161,7 +178,7 @@ const Habits = () => {
   const selectedHabit = habits.find(h => h.id === graphHabit);
 
   return (
-    <main className="min-h-screen bg-background max-w-md mx-auto">
+    <main className="min-h-screen bg-background max-w-md mx-auto select-none" style={{ WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' } as React.CSSProperties}>
       {/* Header */}
       <header className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-border">
         <div className="flex items-center gap-3">
@@ -251,7 +268,7 @@ const Habits = () => {
         </Dialog>
       </header>
 
-      <div className="p-4 space-y-6">
+      <div ref={containerRef} className="p-4 space-y-6 overflow-y-auto" style={{ touchAction: isDragging ? 'none' : 'auto' }}>
         {/* Today's Progress */}
         <div className="bg-card rounded-xl p-4 border border-border">
           <div className="flex items-center justify-between mb-3">
@@ -303,10 +320,12 @@ const Habits = () => {
                   onTouchStart={(e) => handleTouchStart(index, e)}
                   onTouchMove={handleTouchMove}
                   onTouchEnd={handleTouchEnd}
+                  style={{ touchAction: isDragging ? 'none' : 'auto' }}
                   className={`
-                    bg-card rounded-xl p-4 border border-border transition-all duration-200
-                    ${isBeingDragged ? 'scale-105 shadow-lg border-primary z-10 relative' : ''}
-                    ${isDragging && !isBeingDragged ? 'opacity-60' : ''}
+                    bg-card rounded-xl p-4 border border-border
+                    transition-transform duration-200 ease-out
+                    ${isBeingDragged ? 'scale-[1.02] shadow-lg border-primary z-10 relative' : ''}
+                    ${isDragging && !isBeingDragged ? 'opacity-70' : ''}
                   `}
                 >
                   {/* Habit Header */}
