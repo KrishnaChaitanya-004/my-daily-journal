@@ -111,6 +111,20 @@
                 android:resource="@xml/widget_stats_info" />
         </receiver>
 
+        <!-- Calendar Widget (4th in order) -->
+        <receiver
+            android:name=".CalendarWidgetProvider"
+            android:enabled="true"
+            android:exported="true"
+            android:label="@string/widget_calendar_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_calendar_info" />
+        </receiver>
+
         <!-- Daily refresh (for midnight reset) -->
         <receiver
             android:name=".DailyWidgetRefreshReceiver"

@@ -12,6 +12,7 @@
     <string name="widget_today_diary_description">Write today\'s diary entry</string>
     <string name="widget_quick_add_description">Quick add notes, voice, or tasks</string>
     <string name="widget_habits_progress_description">View today\'s habits progress</string>
+    <string name="widget_calendar_description">Monthly calendar with habits and entries</string>
     
     <!-- Widget labels -->
     <string name="widget_quick_entry_label">Quick Entry</string>
@@ -20,4 +21,5 @@
     <string name="widget_today_diary_label">Today\'s Diary</string>
     <string name="widget_quick_add_label">Quick Add</string>
     <string name="widget_habits_progress_label">Habits Progress</string>
+    <string name="widget_calendar_label">Calendar</string>
 </resources>

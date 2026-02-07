@@ -16,6 +16,11 @@ import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 
 const WIDGET_DATA_FILE = 'widget-data.json';
 
+interface CalendarDayData {
+  habitProgress: number; // 0-100
+  hasEntry: boolean;
+}
+
 interface WidgetData {
   habitsCompleted: number;
   habitsTotal: number;
@@ -27,6 +32,8 @@ interface WidgetData {
   statsWords: number;
   themeColor: string;
   lastUpdated: string;
+  // Calendar widget data: dateKey (YYYY-MM-DD) -> day data
+  calendarDays: Record<string, CalendarDayData>;
 }
 
 // In-memory cache to reduce file reads
@@ -49,6 +56,7 @@ async function readWidgetData(): Promise<WidgetData> {
     statsWords: 0,
     themeColor: '#7C3AED',
     lastUpdated: new Date().toISOString(),
+    calendarDays: {},
   };
 
   try {
@@ -125,6 +133,27 @@ export const widgetsBridge = {
     });
   },
 
+  /**
+   * Update calendar day data for the calendar widget.
+   * @param calendarDays Map of dateKey (YYYY-MM-DD) to day data
+   */
+  async setCalendarDays(calendarDays: Record<string, CalendarDayData>) {
+    if (!Capacitor.isNativePlatform()) return;
+    await writeWidgetData({ calendarDays });
+  },
+
+  /**
+   * Update a single calendar day's data.
+   * @param dateKey Date in YYYY-MM-DD format
+   * @param dayData The day's habit progress and entry status
+   */
+  async updateCalendarDay(dateKey: string, dayData: CalendarDayData) {
+    if (!Capacitor.isNativePlatform()) return;
+    const current = await readWidgetData();
+    const calendarDays = { ...current.calendarDays, [dateKey]: dayData };
+    await writeWidgetData({ calendarDays });
+  },
+
   async refresh() {
     // No-op: widgets refresh when MainActivity.onResume() is called
     // This method exists for API compatibility
@@ -143,6 +172,7 @@ export const widgetsBridge = {
     statsStreak?: number;
     statsWords?: number;
     themeColor?: string;
+    calendarDays?: Record<string, CalendarDayData>;
   }) {
     if (!Capacitor.isNativePlatform()) return;
     await writeWidgetData(data);

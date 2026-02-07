@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
 import { syncWidgetStats } from '@/lib/syncWidgetStats';
+import { syncCalendarWidget } from '@/lib/syncCalendarWidget';
 
 export interface PhotoData {
   filename: string;
@@ -318,6 +319,8 @@ export const useFileStorage = (selectedDate: Date) => {
 
         // Sync stats to widgets after saving
         syncWidgetStats();
+        // Sync calendar widget as well (entry status)
+        syncCalendarWidget();
 
         if (isNativePlatform()) {
           await ensureFolder();

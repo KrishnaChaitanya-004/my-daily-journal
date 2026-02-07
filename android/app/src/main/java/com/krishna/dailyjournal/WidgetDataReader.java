@@ -6,6 +6,10 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * Reads widget data from JSON file written by the Capacitor/React app.
@@ -135,5 +139,54 @@ public final class WidgetDataReader {
         } catch (Exception e) {
             return fallback;
         }
+    }
+
+    // ========== Calendar Widget Data ==========
+
+    /**
+     * Get calendar data for a specific month.
+     * Returns a map of dateKey (YYYY-MM-DD) to int[2] where:
+     *   [0] = habit progress percentage (0-100)
+     *   [1] = has entry (0 or 1)
+     */
+    public static Map<String, int[]> getCalendarData(Context context, int year, int month) {
+        Map<String, int[]> result = new HashMap<>();
+        
+        JSONObject data = readWidgetData(context);
+        if (data == null) return result;
+
+        try {
+            // Get calendarDays object
+            JSONObject calendarDays = data.optJSONObject("calendarDays");
+            if (calendarDays == null) {
+                Log.d(TAG, "No calendarDays data found");
+                return result;
+            }
+
+            // Filter for the requested month
+            String monthPrefix = String.format(Locale.US, "%04d-%02d-", year, month + 1);
+            
+            Iterator<String> keys = calendarDays.keys();
+            while (keys.hasNext()) {
+                String dateKey = keys.next();
+                if (dateKey.startsWith(monthPrefix)) {
+                    try {
+                        JSONObject dayData = calendarDays.getJSONObject(dateKey);
+                        int habitProgress = dayData.optInt("habitProgress", 0);
+                        int hasEntry = dayData.optBoolean("hasEntry", false) ? 1 : 0;
+                        result.put(dateKey, new int[]{habitProgress, hasEntry});
+                    } catch (Exception e) {
+                        Log.w(TAG, "Error parsing day data for " + dateKey, e);
+                    }
+                }
+            }
+
+            Log.d(TAG, "Loaded calendar data for " + year + "-" + (month + 1) + ": " + result.size() + " days");
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting calendar data", e);
+        }
+
+        return result;
     }
 }
