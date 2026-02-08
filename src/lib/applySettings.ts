@@ -16,6 +16,7 @@ interface AppSettings {
   showCalendar: boolean;
   calendarSelectionColor: string;
   widgetThemeColor: string;
+  appTheme: 'dark' | 'light' | 'system';
 }
 
 const defaultSettings: AppSettings = {
@@ -31,6 +32,7 @@ const defaultSettings: AppSettings = {
   showCalendar: true,
   calendarSelectionColor: 'auto',
   widgetThemeColor: '#7C3AED',
+  appTheme: 'dark',
 };
 
 const themeColors: Record<string, { primary: string; ring: string }> = {
@@ -93,6 +95,14 @@ const getDarkerHsl = (hex: string | undefined, amount: number = 5): string => {
   return `${h} ${s}% ${newL}%`;
 };
 
+// Determine if we should use dark mode
+const shouldUseDarkMode = (appTheme: 'dark' | 'light' | 'system'): boolean => {
+  if (appTheme === 'dark') return true;
+  if (appTheme === 'light') return false;
+  // System preference
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+};
+
 export const applySettingsImmediately = () => {
   try {
     const stored = localStorage.getItem(SETTINGS_KEY);
@@ -101,6 +111,7 @@ export const applySettingsImmediately = () => {
       : defaultSettings;
     
     const root = document.documentElement;
+    const isDark = shouldUseDarkMode(settings.appTheme || 'dark');
     
     // Apply theme color
     let primaryHsl: string;
@@ -116,18 +127,27 @@ export const applySettingsImmediately = () => {
     root.style.setProperty('--today', primaryHsl);
     root.style.setProperty('--has-content', primaryHsl);
     
-    // Apply background color and derived colors
-    const bgColor = settings.backgroundColor || defaultSettings.backgroundColor;
+    // Apply background and foreground colors based on theme
+    let bgColor: string;
+    let fgColor: string;
+    
+    if (isDark) {
+      bgColor = settings.backgroundColor || defaultSettings.backgroundColor;
+      fgColor = settings.fontColor || defaultSettings.fontColor;
+    } else {
+      // Light mode defaults
+      bgColor = settings.backgroundColor === '#0a0a0a' ? '#ffffff' : settings.backgroundColor;
+      fgColor = settings.fontColor === '#ededed' ? '#1a1a1a' : settings.fontColor;
+    }
+    
     root.style.setProperty('--background', hexToHsl(bgColor));
-    root.style.setProperty('--card', getDarkerHsl(bgColor, 5));
-    root.style.setProperty('--popover', getDarkerHsl(bgColor, 5));
-    root.style.setProperty('--secondary', getDarkerHsl(bgColor, 8));
-    root.style.setProperty('--muted', getDarkerHsl(bgColor, 10));
-    root.style.setProperty('--accent', getDarkerHsl(bgColor, 10));
+    root.style.setProperty('--card', getDarkerHsl(bgColor, isDark ? 5 : -3));
+    root.style.setProperty('--popover', getDarkerHsl(bgColor, isDark ? 5 : -3));
+    root.style.setProperty('--secondary', getDarkerHsl(bgColor, isDark ? 8 : -5));
+    root.style.setProperty('--muted', getDarkerHsl(bgColor, isDark ? 10 : -8));
+    root.style.setProperty('--accent', getDarkerHsl(bgColor, isDark ? 10 : -8));
     
     // Apply calendar selection color
-    // - 'auto' follows the current theme primary color
-    // - otherwise use the chosen hex
     root.style.setProperty(
       '--calendar-selection',
       settings.calendarSelectionColor === 'auto'
@@ -136,7 +156,6 @@ export const applySettingsImmediately = () => {
     );
     
     // Apply font color
-    const fgColor = settings.fontColor || defaultSettings.fontColor;
     root.style.setProperty('--foreground', hexToHsl(fgColor));
     root.style.setProperty('--card-foreground', hexToHsl(fgColor));
     root.style.setProperty('--popover-foreground', hexToHsl(fgColor));
