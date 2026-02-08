@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette, Download, Upload, Lock, Fingerprint, Trash2, Bell, Clock, Link2, Lightbulb, Circle, Smartphone, RefreshCw, FileText, ChevronDown, Edit3 } from 'lucide-react';
+import { ArrowLeft, Type, Palette, TextCursor, PaintBucket, Pipette, Download, Upload, Lock, Fingerprint, Trash2, Bell, Clock, Link2, Lightbulb, Circle, Smartphone, RefreshCw, FileText, ChevronDown, Edit3, Moon, Sun, Monitor } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings, AppSettings } from '@/hooks/useSettings';
 import { useDiaryExportImport } from '@/hooks/useDiaryExportImport';
@@ -226,6 +226,44 @@ const Settings = () => {
 
       {/* Settings content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        {/* App Theme */}
+        <section className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Moon className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-sm font-medium text-foreground">App Theme</h2>
+              <p className="text-xs text-muted-foreground">Choose light, dark, or system theme</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            {[
+              { value: 'dark', label: 'Dark', icon: Moon },
+              { value: 'light', label: 'Light', icon: Sun },
+              { value: 'system', label: 'System', icon: Monitor },
+            ].map((option) => {
+              const Icon = option.icon;
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => updateSetting('appTheme', option.value as 'dark' | 'light' | 'system')}
+                  className={`
+                    flex-1 flex flex-col items-center gap-2 px-4 py-3 rounded-lg border transition-smooth tap-highlight-none
+                    ${settings.appTheme === option.value 
+                      ? 'border-primary bg-primary/10 text-primary' 
+                      : 'border-border text-foreground hover:border-primary/30'
+                    }
+                  `}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="text-xs font-medium">{option.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
         {/* Diary Name */}
         <section className="bg-card rounded-xl border border-border p-4">
           <div className="flex items-center gap-3 mb-4">
