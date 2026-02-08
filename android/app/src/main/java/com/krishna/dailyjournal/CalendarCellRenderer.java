@@ -45,14 +45,14 @@ public final class CalendarCellRenderer {
 
         float centerX = sizePx / 2f;
         float centerY = sizePx / 2f;
-        float radius = sizePx * 0.38f;
-        float strokeWidth = sizePx * 0.08f;
+        float radius = sizePx * 0.42f; // Increased for better visibility
+        float strokeWidth = sizePx * 0.12f; // Thicker ring
 
-        // Draw habit progress ring (background)
+        // Draw habit progress ring (background track)
         Paint ringBg = new Paint(Paint.ANTI_ALIAS_FLAG);
         ringBg.setStyle(Paint.Style.STROKE);
         ringBg.setStrokeWidth(strokeWidth);
-        ringBg.setColor(0xFF2A2A2A); // dark grey background
+        ringBg.setColor(0xFF3A3A3A); // Slightly lighter grey for visibility
 
         RectF oval = new RectF(
             centerX - radius,
@@ -61,11 +61,11 @@ public final class CalendarCellRenderer {
             centerY + radius
         );
         
+        // Always draw the ring background (shows what progress is possible)
+        canvas.drawArc(oval, 0, 360, false, ringBg);
+        
+        // Draw habit progress ring (foreground arc)
         if (habitProgress > 0) {
-            // Only draw ring if there's any habit progress
-            canvas.drawArc(oval, 0, 360, false, ringBg);
-            
-            // Draw habit progress ring (foreground)
             Paint ringFg = new Paint(Paint.ANTI_ALIAS_FLAG);
             ringFg.setStyle(Paint.Style.STROKE);
             ringFg.setStrokeWidth(strokeWidth);
@@ -77,21 +77,12 @@ public final class CalendarCellRenderer {
             canvas.drawArc(oval, 270f, sweep, false, ringFg);
         }
 
-        // Draw today highlight circle (filled, semi-transparent)
-        if (isToday) {
-            Paint todayBg = new Paint(Paint.ANTI_ALIAS_FLAG);
-            todayBg.setStyle(Paint.Style.FILL);
-            todayBg.setColor(accentColor);
-            todayBg.setAlpha(80); // semi-transparent
-            canvas.drawCircle(centerX, centerY, radius - strokeWidth, todayBg);
-        }
-
-        // Draw day number
+        // Draw day number (no today highlight per user request)
         Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        textPaint.setColor(isToday ? 0xFFFFFFFF : 0xFFE0E0E0);
-        textPaint.setTextSize(sizePx * 0.35f);
+        textPaint.setColor(0xFFE0E0E0); // Always same color
+        textPaint.setTextSize(sizePx * 0.32f);
         textPaint.setTextAlign(Paint.Align.CENTER);
-        textPaint.setTypeface(isToday ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
+        textPaint.setTypeface(Typeface.DEFAULT);
         
         // Center text vertically
         Paint.FontMetrics fm = textPaint.getFontMetrics();
@@ -99,21 +90,49 @@ public final class CalendarCellRenderer {
         
         canvas.drawText(String.valueOf(dayNumber), centerX, textY, textPaint);
 
-        // Draw strikethrough slash for diary entries
+        // Draw cool strikethrough for diary entries (double diagonal lines with glow effect)
         if (hasEntry) {
+            float slashOffset = radius * 0.55f;
+            
+            // Glow/shadow effect first (larger, semi-transparent)
+            Paint glowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            glowPaint.setStyle(Paint.Style.STROKE);
+            glowPaint.setStrokeWidth(sizePx * 0.10f);
+            glowPaint.setColor(accentColor);
+            glowPaint.setAlpha(80);
+            glowPaint.setStrokeCap(Paint.Cap.ROUND);
+            
+            // Main diagonal line (top-left to bottom-right for checkmark feel)
+            canvas.drawLine(
+                centerX - slashOffset, 
+                centerY - slashOffset,
+                centerX + slashOffset, 
+                centerY + slashOffset,
+                glowPaint
+            );
+            
+            // Main strikethrough line
             Paint slashPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             slashPaint.setStyle(Paint.Style.STROKE);
             slashPaint.setStrokeWidth(sizePx * 0.06f);
             slashPaint.setColor(accentColor);
             slashPaint.setStrokeCap(Paint.Cap.ROUND);
             
-            // Diagonal slash from top-right to bottom-left
-            float slashOffset = radius * 0.5f;
             canvas.drawLine(
-                centerX + slashOffset, 
-                centerY - slashOffset,
                 centerX - slashOffset, 
+                centerY - slashOffset,
+                centerX + slashOffset, 
                 centerY + slashOffset,
+                slashPaint
+            );
+            
+            // Second shorter accent line for style
+            float shortOffset = slashOffset * 0.4f;
+            canvas.drawLine(
+                centerX + slashOffset * 0.3f, 
+                centerY - slashOffset,
+                centerX + slashOffset, 
+                centerY - slashOffset * 0.3f,
                 slashPaint
             );
         }
