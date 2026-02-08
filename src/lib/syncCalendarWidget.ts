@@ -72,11 +72,24 @@ export const syncCalendarWidget = async () => {
       });
     }
 
-    // Sync to widget
+    // Sync to widget - this triggers the native file write
     await widgetsBridge.setCalendarDays(calendarDays);
     console.log('[syncCalendarWidget] Synced', Object.keys(calendarDays).length, 'days');
 
   } catch (e) {
     console.warn('[syncCalendarWidget] Failed:', e);
   }
+};
+
+/**
+ * Force immediate widget refresh by triggering all sync functions.
+ * Call after any data change that affects widgets.
+ */
+export const forceWidgetRefresh = async () => {
+  // Import dynamically to avoid circular dependencies
+  const { syncWidgetStats } = await import('./syncWidgetStats');
+  await Promise.all([
+    syncWidgetStats(),
+    syncCalendarWidget(),
+  ]);
 };
