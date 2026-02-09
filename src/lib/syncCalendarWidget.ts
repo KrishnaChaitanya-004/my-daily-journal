@@ -10,16 +10,16 @@ export const syncCalendarWidget = async () => {
 
   try {
     const DIARY_STORAGE_KEY = 'diary-app-data';
-    const HABITS_STORAGE_KEY = 'diary-habits';
+    const HABITS_LIST_KEY = 'diary-habits-list';
 
     const diaryRaw = localStorage.getItem(DIARY_STORAGE_KEY);
-    const habitsRaw = localStorage.getItem(HABITS_STORAGE_KEY);
+    const habitsListRaw = localStorage.getItem(HABITS_LIST_KEY);
 
     const allDiaryData: Record<string, DayFileData> = diaryRaw ? JSON.parse(diaryRaw) : {};
-    const habits = habitsRaw ? JSON.parse(habitsRaw) : [];
+    const habitsList: { id: string }[] = habitsListRaw ? JSON.parse(habitsListRaw) : [];
 
-    // Get all habit IDs
-    const totalHabits = habits.length;
+    const totalHabits = habitsList.length;
+    const habitIds = habitsList.map(h => h.id);
 
     // Build calendar days data
     const calendarDays: Record<string, { habitProgress: number; hasEntry: boolean }> = {};
@@ -29,14 +29,13 @@ export const syncCalendarWidget = async () => {
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
     
-    // Include data for current month and potentially last month for streak calculation
+    // Include data for current month and previous month for streak calculation
     const startDate = new Date(currentYear, currentMonth - 1, 1);
     const endDate = new Date(currentYear, currentMonth + 1, 0);
 
-    // Process all diary entries
+    // Process all diary entries - check content AND habit completions
     Object.entries(allDiaryData).forEach(([dateKey, dayData]) => {
       const data = dayData as DayFileData;
-      const hasContent = !!(data?.content?.trim() || data?.photos?.length);
       
       // Check if this date is within our range
       const [year, month] = dateKey.split('-').map(Number);
@@ -44,33 +43,20 @@ export const syncCalendarWidget = async () => {
       if (year === startDate.getFullYear() && month < startDate.getMonth() + 1) return;
       if (year === endDate.getFullYear() && month > endDate.getMonth() + 1) return;
 
-      if (!calendarDays[dateKey]) {
-        calendarDays[dateKey] = { habitProgress: 0, hasEntry: false };
+      const hasContent = !!(data?.content?.trim() || data?.photos?.length);
+
+      // Calculate habit progress from the habits map in diary data
+      let habitProgress = 0;
+      if (totalHabits > 0 && data?.habits) {
+        const completedCount = habitIds.filter(id => data.habits?.[id] === true).length;
+        habitProgress = Math.round((completedCount / totalHabits) * 100);
       }
-      calendarDays[dateKey].hasEntry = hasContent;
+
+      calendarDays[dateKey] = {
+        habitProgress,
+        hasEntry: hasContent,
+      };
     });
-
-    // Process habits completion data
-    if (totalHabits > 0) {
-      habits.forEach((habit: { completedDates?: string[] }) => {
-        const completedDates = habit.completedDates || [];
-        completedDates.forEach((dateKey: string) => {
-          // Check if within range
-          const [year, month] = dateKey.split('-').map(Number);
-          if (year < startDate.getFullYear() || year > endDate.getFullYear()) return;
-          if (year === startDate.getFullYear() && month < startDate.getMonth() + 1) return;
-          if (year === endDate.getFullYear() && month > endDate.getMonth() + 1) return;
-
-          if (!calendarDays[dateKey]) {
-            calendarDays[dateKey] = { habitProgress: 0, hasEntry: false };
-          }
-          // Increment progress for each completed habit
-          const currentProgress = calendarDays[dateKey].habitProgress;
-          const increment = Math.round(100 / totalHabits);
-          calendarDays[dateKey].habitProgress = Math.min(100, currentProgress + increment);
-        });
-      });
-    }
 
     // Sync to widget - this triggers the native file write
     await widgetsBridge.setCalendarDays(calendarDays);
@@ -86,7 +72,6 @@ export const syncCalendarWidget = async () => {
  * Call after any data change that affects widgets.
  */
 export const forceWidgetRefresh = async () => {
-  // Import dynamically to avoid circular dependencies
   const { syncWidgetStats } = await import('./syncWidgetStats');
   await Promise.all([
     syncWidgetStats(),
