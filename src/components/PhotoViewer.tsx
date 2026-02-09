@@ -1,5 +1,7 @@
 import { X, Download } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 
 interface PhotoViewerProps {
   src: string;
@@ -10,21 +12,59 @@ const PhotoViewer = ({ src, onClose }: PhotoViewerProps) => {
   const handleDownload = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      const response = await fetch(src);
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `photo-${Date.now()}.jpg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      toast({
-        title: 'Photo downloaded',
-        description: 'Photo saved to your device.',
-      });
+      if (Capacitor.isNativePlatform()) {
+        // Native Android: save to Downloads via Capacitor Filesystem
+        let base64Data = '';
+        
+        if (src.startsWith('data:')) {
+          // Already base64 data URL
+          base64Data = src.split(',')[1];
+        } else {
+          // Fetch and convert to base64
+          const response = await fetch(src);
+          const blob = await response.blob();
+          base64Data = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const result = reader.result as string;
+              resolve(result.split(',')[1]);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        }
+
+        const filename = `photo_${Date.now()}.jpg`;
+        
+        await Filesystem.writeFile({
+          path: `Download/${filename}`,
+          data: base64Data,
+          directory: Directory.ExternalStorage,
+        });
+
+        toast({
+          title: 'Photo saved',
+          description: `Saved to Downloads/${filename}`,
+        });
+      } else {
+        // Web fallback: blob download
+        const response = await fetch(src);
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `photo-${Date.now()}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        toast({
+          title: 'Photo downloaded',
+          description: 'Photo saved to your device.',
+        });
+      }
     } catch (error) {
+      console.error('Download failed:', error);
       toast({
         title: 'Download failed',
         description: 'Could not download the photo.',
