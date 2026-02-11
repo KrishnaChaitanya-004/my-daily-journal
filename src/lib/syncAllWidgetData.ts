@@ -79,13 +79,20 @@ export const syncAllWidgetData = async () => {
       habitsCompleted = habitIds.filter(id => todayData.habits?.[id] === true).length;
     }
 
-    // ──── Single atomic write ────
+    // ──── Today snippet ────
+    const todayContent = todayData?.content?.trim() || '';
+    const todaySnippet = todayContent.length > 100 ? todayContent.substring(0, 100) + '…' : todayContent;
+
+    // ──── Single atomic write (ALL fields, no read-modify-write) ────
     await widgetsBridge.syncAll({
       statsEntries: totalEntries,
       statsStreak: currentStreak,
       statsWords: totalWords,
       habitsCompleted,
       habitsTotal: totalHabits,
+      habitsDate: todayKey,
+      todaySnippet,
+      todayDate: todayKey,
       calendarDays,
     });
 

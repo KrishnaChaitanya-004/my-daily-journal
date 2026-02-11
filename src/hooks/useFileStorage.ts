@@ -435,7 +435,8 @@ export const useFileStorage = (selectedDate: Date) => {
         return merged;
       });
 
-      // Native persistence (also save to filesystem for backup/export)
+      // Sync widgets after photo add (changes entry count)
+      syncAllWidgetData();
       if (isNativePlatform()) {
         try {
           await ensureFolder();
@@ -568,6 +569,9 @@ export const useFileStorage = (selectedDate: Date) => {
         saveToLocalStorage(merged);
         return merged;
       });
+
+      // Sync widgets after photo delete
+      syncAllWidgetData();
 
       if (isNativePlatform()) {
         try {
