@@ -36,15 +36,13 @@ interface WidgetData {
   calendarDays: Record<string, CalendarDayData>;
 }
 
-// In-memory cache to reduce file reads
-let cachedData: WidgetData | null = null;
+// No cache - always read fresh data to prevent race conditions
+// The file is small so reads are fast
 
 /**
  * Read current widget data from file
  */
 async function readWidgetData(): Promise<WidgetData> {
-  if (cachedData) return cachedData;
-
   const defaultData: WidgetData = {
     habitsCompleted: 0,
     habitsTotal: 0,
@@ -67,11 +65,8 @@ async function readWidgetData(): Promise<WidgetData> {
     });
 
     const parsed = JSON.parse(result.data as string) as WidgetData;
-    cachedData = { ...defaultData, ...parsed };
-    return cachedData;
+    return { ...defaultData, ...parsed };
   } catch {
-    // File doesn't exist yet, use defaults
-    cachedData = defaultData;
     return defaultData;
   }
 }
@@ -95,8 +90,7 @@ async function writeWidgetData(data: Partial<WidgetData>): Promise<void> {
       data: JSON.stringify(updated),
     });
 
-    // Update cache
-    cachedData = updated;
+    // Data written successfully
   } catch (e) {
     console.warn('[widgetsBridge] Failed to write widget data:', e);
   }
