@@ -471,9 +471,6 @@ export const useFileStorage = (selectedDate: Date) => {
         }
       }
 
-      // Sync widgets after photo save (creates a diary entry)
-      syncAllWidgetData();
-
       return photo;
     },
     [dateKey, dateFolder, ensureFolder]
@@ -510,9 +507,6 @@ export const useFileStorage = (selectedDate: Date) => {
         saveToLocalStorage(merged);
         return merged;
       });
-
-      // Sync widgets after voice note save
-      syncAllWidgetData();
 
       return voice;
     },
