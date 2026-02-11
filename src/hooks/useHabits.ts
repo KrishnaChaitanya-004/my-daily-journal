@@ -1,8 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { getAllDiaryData, DayFileData } from './useFileStorage';
 import { subDays, parseISO, differenceInDays } from 'date-fns';
-import { widgetsBridge } from '@/lib/widgetsBridge';
-import { syncCalendarWidget } from '@/lib/syncCalendarWidget';
+import { syncAllWidgetData } from '@/lib/syncAllWidgetData';
 
 export interface Habit {
   id: string;
@@ -189,9 +188,8 @@ export const useHabits = () => {
 
   // Push today's habits progress into native widget storage (real-time)
   useEffect(() => {
-    widgetsBridge.setHabitsProgress(getTodayProgress.completed, getTodayProgress.total);
-    // Also sync calendar widget when habits progress changes
-    syncCalendarWidget();
+    // Single atomic sync for all widget data (stats + calendar + habits)
+    syncAllWidgetData();
   }, [getTodayProgress.completed, getTodayProgress.total]);
 
   return {

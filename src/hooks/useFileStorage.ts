@@ -1,8 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
-import { syncWidgetStats } from '@/lib/syncWidgetStats';
-import { syncCalendarWidget } from '@/lib/syncCalendarWidget';
+import { syncAllWidgetData } from '@/lib/syncAllWidgetData';
 
 export interface PhotoData {
   filename: string;
@@ -317,10 +316,8 @@ export const useFileStorage = (selectedDate: Date) => {
           return merged;
         });
 
-        // Sync stats to widgets after saving
-        syncWidgetStats();
-        // Sync calendar widget as well (entry status)
-        syncCalendarWidget();
+        // Sync all widget data atomically
+        syncAllWidgetData();
 
         if (isNativePlatform()) {
           await ensureFolder();
@@ -363,6 +360,9 @@ export const useFileStorage = (selectedDate: Date) => {
         saveToLocalStorage(mergedAll);
         return mergedAll;
       });
+
+      // Sync widgets after meta changes (habits, mood, etc.)
+      syncAllWidgetData();
 
       // Native: persist meta.json
       if (isNativePlatform()) {
