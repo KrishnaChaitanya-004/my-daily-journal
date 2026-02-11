@@ -72,7 +72,7 @@ async function readWidgetData(): Promise<WidgetData> {
 }
 
 /**
- * Write widget data to file
+ * Write widget data to file (partial merge with existing)
  */
 async function writeWidgetData(data: Partial<WidgetData>): Promise<void> {
   try {
@@ -89,8 +89,23 @@ async function writeWidgetData(data: Partial<WidgetData>): Promise<void> {
       encoding: Encoding.UTF8,
       data: JSON.stringify(updated),
     });
+  } catch (e) {
+    console.warn('[widgetsBridge] Failed to write widget data:', e);
+  }
+}
 
-    // Data written successfully
+/**
+ * Write COMPLETE widget data to file WITHOUT reading first.
+ * This eliminates race conditions when multiple syncs fire close together.
+ */
+async function writeWidgetDataAtomic(data: WidgetData): Promise<void> {
+  try {
+    await Filesystem.writeFile({
+      path: WIDGET_DATA_FILE,
+      directory: Directory.Data,
+      encoding: Encoding.UTF8,
+      data: JSON.stringify(data),
+    });
   } catch (e) {
     console.warn('[widgetsBridge] Failed to write widget data:', e);
   }
@@ -155,20 +170,31 @@ export const widgetsBridge = {
 
   /**
    * Force a full sync of all widget data.
-   * Useful when the app starts or comes to foreground.
+   * Writes the COMPLETE object atomically — no read-modify-write.
    */
   async syncAll(data: {
-    habitsCompleted?: number;
-    habitsTotal?: number;
-    todaySnippet?: string;
-    todayDate?: string;
-    statsEntries?: number;
-    statsStreak?: number;
-    statsWords?: number;
-    themeColor?: string;
-    calendarDays?: Record<string, CalendarDayData>;
+    habitsCompleted: number;
+    habitsTotal: number;
+    habitsDate: string;
+    todaySnippet: string;
+    todayDate: string;
+    statsEntries: number;
+    statsStreak: number;
+    statsWords: number;
+    calendarDays: Record<string, CalendarDayData>;
   }) {
     if (!Capacitor.isNativePlatform()) return;
-    await writeWidgetData(data);
+    // Read only themeColor from existing data (set separately by settings)
+    let themeColor = '#7C3AED';
+    try {
+      const current = await readWidgetData();
+      themeColor = current.themeColor || '#7C3AED';
+    } catch {}
+    const fullData: WidgetData = {
+      ...data,
+      themeColor,
+      lastUpdated: new Date().toISOString(),
+    };
+    await writeWidgetDataAtomic(fullData);
   },
 };
