@@ -10,6 +10,7 @@ const STORAGE_KEY = 'diary-app-data';
 const SETTINGS_KEY = 'diary-settings';
 const BOOKMARKS_KEY = 'diary-bookmarks';
 const HABITS_KEY = 'diary-habits-list';
+const VERSES_KEY = 'diary-verses';
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -102,6 +103,9 @@ export const useDiaryExportImport = () => {
 
       const habits = localStorage.getItem(HABITS_KEY);
       if (habits) diaryFolder.file('habits.json', habits);
+
+      const verses = localStorage.getItem(VERSES_KEY);
+      if (verses) diaryFolder.file('verses.json', verses);
 
       /* ---- generate and share ZIP ---- */
       const fileName = `kcs-diary-backup-${Date.now()}.zip`;
@@ -247,6 +251,13 @@ export const useDiaryExportImport = () => {
         localStorage.setItem(
           HABITS_KEY,
           await habits.async('string')
+        );
+
+      const verses = diaryFolder.file('verses.json');
+      if (verses)
+        localStorage.setItem(
+          VERSES_KEY,
+          await verses.async('string')
         );
 
       toast({
