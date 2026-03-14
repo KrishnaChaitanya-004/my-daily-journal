@@ -143,13 +143,10 @@ const Index = () => {
 
     // Vertical swipe for calendar collapse/expand (must be strong vertical swipe)
     if (absDy > 80 && absDy > absDx * 2) {
-      // Swipe up => collapse calendar, swipe down => expand calendar
       if (dy < 0 && isCalendarVisible) {
-        // Haptic feedback
         if (navigator.vibrate) navigator.vibrate(10);
         updateSetting('showCalendar', false);
       } else if (dy > 0 && !isCalendarVisible) {
-        // Haptic feedback
         if (navigator.vibrate) navigator.vibrate(10);
         updateSetting('showCalendar', true);
       }
