@@ -33,6 +33,7 @@ const defaultSettings: AppSettings = {
   customFontName: '',
   showWritingPrompts: true,
   showCalendar: true,
+  showAchievements: true,
   calendarSelectionColor: 'auto',
   widgetThemeColor: '#7C3AED',
   diaryName: "KC's Diary",

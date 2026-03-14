@@ -181,7 +181,9 @@ const handleOpenChange = (isOpen: boolean) => {
             </div>
           ) : (
             <nav className="p-2 space-y-1">
-              {menuItems.map((item) => {
+              {allMenuItems
+                .filter((item) => !item.settingKey || (settings as any)[item.settingKey] !== false)
+                .map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
                   <button

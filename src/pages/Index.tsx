@@ -165,7 +165,7 @@ const Index = () => {
       const prevMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
       handleMonthChange(prevMonth);
     }
-  }, [isEditing, shiftSelectedDate, isCalendarVisible, updateSetting]);
+  }, [isEditing, currentMonth, handleMonthChange, isCalendarVisible, updateSetting]);
 
   const addTask = useCallback((taskText: string) => {
     const taskLine = `□ ${taskText}`;

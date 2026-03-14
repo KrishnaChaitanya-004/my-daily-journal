@@ -901,6 +901,39 @@ const Settings = () => {
           </button>
         </section>
 
+        {/* Achievements */}
+        <section className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Lightbulb className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-sm font-medium text-foreground">Achievements</h2>
+              <p className="text-xs text-muted-foreground">Show achievements section in menu</p>
+            </div>
+          </div>
+          
+          <button
+            onClick={() => updateSetting('showAchievements', !settings.showAchievements)}
+            className={`w-full flex items-center justify-between p-3 rounded-lg border transition-smooth
+              ${settings.showAchievements !== false
+                ? 'border-primary bg-primary/10' 
+                : 'border-border hover:border-primary/30'
+              }`}
+          >
+            <div className="flex items-center gap-2">
+              <Lightbulb className="w-4 h-4" />
+              <span className="text-sm text-foreground">Show Achievements</span>
+            </div>
+            <div className={`w-10 h-6 rounded-full transition-all ${
+              settings.showAchievements !== false ? 'bg-primary' : 'bg-muted'
+            }`}>
+              <div className={`w-5 h-5 rounded-full bg-white mt-0.5 transition-all`} 
+                style={{ marginLeft: settings.showAchievements !== false ? '18px' : '2px' }} />
+            </div>
+          </button>
+        </section>
+
         {/* Data Management */}
         <section className="bg-card rounded-xl border border-border p-4">
           <div className="flex items-center gap-3 mb-4">
