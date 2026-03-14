@@ -22,19 +22,19 @@ interface MenuDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const menuItems = [
-  { icon: Home, label: 'Home', path: '/' },
-  { icon: BarChart3, label: 'Statistics', path: '/statistics' },
-  { icon: Trophy, label: 'Achievements', path: '/achievements' },
-  { icon: CheckSquare, label: 'Habits', path: '/habits' },
-  { icon: Tag, label: 'Tags', path: '/tags' },
-  { icon: Image, label: 'Photos', path: '/photos' },
-  { icon: Mic, label: 'Voice Notes', path: '/voice-notes' },
-  { icon: MapPin, label: 'Places', path: '/places' },
-  { icon: Bookmark, label: 'Bookmarks', path: '/bookmarks' },
-  { icon: Timer, label: 'Pomodoro', path: '/pomodoro' },
-  { icon: ScrollText, label: 'Verses', path: '/verses' },
-  { icon: Settings, label: 'Settings', path: '/settings' }
+const allMenuItems = [
+  { icon: Home, label: 'Home', path: '/', settingKey: null },
+  { icon: BarChart3, label: 'Statistics', path: '/statistics', settingKey: null },
+  { icon: Trophy, label: 'Achievements', path: '/achievements', settingKey: 'showAchievements' as const },
+  { icon: CheckSquare, label: 'Habits', path: '/habits', settingKey: null },
+  { icon: Tag, label: 'Tags', path: '/tags', settingKey: null },
+  { icon: Image, label: 'Photos', path: '/photos', settingKey: null },
+  { icon: Mic, label: 'Voice Notes', path: '/voice-notes', settingKey: null },
+  { icon: MapPin, label: 'Places', path: '/places', settingKey: null },
+  { icon: Bookmark, label: 'Bookmarks', path: '/bookmarks', settingKey: null },
+  { icon: Timer, label: 'Pomodoro', path: '/pomodoro', settingKey: null },
+  { icon: ScrollText, label: 'Verses', path: '/verses', settingKey: null },
+  { icon: Settings, label: 'Settings', path: '/settings', settingKey: null }
 ];
 
 const formatDisplayDate = (dateKey: string): string => {
