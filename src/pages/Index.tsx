@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Bookmark } from 'lucide-react';
+import { Bookmark, Flame } from 'lucide-react';
 import Calendar from '@/components/Calendar';
 import DailyContent from '@/components/DailyContent';
 import AppMenu from '@/components/AppMenu';
@@ -10,6 +10,7 @@ import { useFileStorage, LocationData, WeatherData } from '@/hooks/useFileStorag
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { useSettings } from '@/hooks/useSettings';
 import { useAutoSave } from '@/hooks/useAutoSave';
+import { useStatistics } from '@/hooks/useStatistics';
 
 const Index = () => {
   const [isEditing, setIsEditing] = useState(false);
