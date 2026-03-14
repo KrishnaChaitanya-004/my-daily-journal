@@ -7,50 +7,41 @@
     android:padding="10dp"
     android:background="@drawable/widget_background">
 
-    <!-- Header: Month+Streak on left, Date+Day on right -->
+    <!-- Header: Month on left, Date+Day on right -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="6dp">
+        android:layout_marginBottom="4dp">
 
-        <!-- Left: Month + Streak -->
-        <LinearLayout
+        <!-- Left: Month (accent colored) -->
+        <TextView
+            android:id="@+id/calendar_month"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:text="MAR"
+            android:textColor="#7C3AED"
+            android:textSize="13sp"
+            android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/calendar_month"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="FEB"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/calendar_streak"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:text="🔥3"
-                android:textColor="#FF9500"
-                android:textSize="14sp" />
-
-        </LinearLayout>
+        <!-- Streak hidden but kept for code compatibility -->
+        <TextView
+            android:id="@+id/calendar_streak"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:visibility="gone"
+            android:text="" />
 
         <!-- Right: Date + Day -->
         <TextView
             android:id="@+id/calendar_date_day"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="07-02-2026 FRI"
+            android:text="14-03-2026 SAT"
             android:textColor="#B0B0B0"
-            android:textSize="11sp" />
+            android:textSize="13sp" />
 
     </LinearLayout>
 
@@ -59,77 +50,28 @@
         android:id="@+id/widget_accent"
         android:layout_width="match_parent"
         android:layout_height="2dp"
-        android:layout_marginBottom="6dp"
+        android:layout_marginBottom="4dp"
         android:background="#7C3AED"
         android:contentDescription="accent" />
 
-    <!-- Week headers: SAT SUN MON TUE WED THU FRI -->
+    <!-- Week headers -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginBottom="2dp">
+        android:layout_marginBottom="0dp">
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="SAT"
-            android:textColor="#808080"
-            android:textSize="8sp"
-            android:gravity="center" />
-        <TextView
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="SUN"
-            android:textColor="#808080"
-            android:textSize="8sp"
-            android:gravity="center" />
-        <TextView
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="MON"
-            android:textColor="#808080"
-            android:textSize="8sp"
-            android:gravity="center" />
-        <TextView
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="TUE"
-            android:textColor="#808080"
-            android:textSize="8sp"
-            android:gravity="center" />
-        <TextView
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="WED"
-            android:textColor="#808080"
-            android:textSize="8sp"
-            android:gravity="center" />
-        <TextView
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="THU"
-            android:textColor="#808080"
-            android:textSize="8sp"
-            android:gravity="center" />
-        <TextView
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:text="FRI"
-            android:textColor="#808080"
-            android:textSize="8sp"
-            android:gravity="center" />
+        <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="SAT" android:textColor="#808080" android:textSize="9sp" android:gravity="center" />
+        <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="SUN" android:textColor="#808080" android:textSize="9sp" android:gravity="center" />
+        <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="MON" android:textColor="#808080" android:textSize="9sp" android:gravity="center" />
+        <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="TUE" android:textColor="#808080" android:textSize="9sp" android:gravity="center" />
+        <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="WED" android:textColor="#808080" android:textSize="9sp" android:gravity="center" />
+        <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="THU" android:textColor="#808080" android:textSize="9sp" android:gravity="center" />
+        <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="FRI" android:textColor="#808080" android:textSize="9sp" android:gravity="center" />
 
     </LinearLayout>
 
-    <!-- Calendar grid (6 rows x 7 columns) - each cell is an ImageView -->
+    <!-- Calendar grid (6 rows x 7 columns) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -137,11 +79,7 @@
         android:orientation="vertical">
 
         <!-- Row 1 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="horizontal">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
             <ImageView android:id="@+id/cell_0_0" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:scaleType="centerInside" android:contentDescription="day" />
             <ImageView android:id="@+id/cell_0_1" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:scaleType="centerInside" android:contentDescription="day" />
             <ImageView android:id="@+id/cell_0_2" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:scaleType="centerInside" android:contentDescription="day" />
@@ -152,11 +90,7 @@
         </LinearLayout>
 
         <!-- Row 2 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="horizontal">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
             <ImageView android:id="@+id/cell_1_0" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:scaleType="centerInside" android:contentDescription="day" />
             <ImageView android:id="@+id/cell_1_1" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:scaleType="centerInside" android:contentDescription="day" />
             <ImageView android:id="@+id/cell_1_2" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:scaleType="centerInside" android:contentDescription="day" />
@@ -167,11 +101,7 @@
         </LinearLayout>
 
         <!-- Row 3 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="horizontal">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
             <ImageView android:id="@+id/cell_2_0" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:scaleType="centerInside" android:contentDescription="day" />
             <ImageView android:id="@+id/cell_2_1" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:scaleType="centerInside" android:contentDescription="day" />
             <ImageView android:id="@+id/cell_2_2" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:scaleType="centerInside" android:contentDescription="day" />
@@ -182,11 +112,7 @@
         </LinearLayout>
 
         <!-- Row 4 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="horizontal">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
             <ImageView android:id="@+id/cell_3_0" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:scaleType="centerInside" android:contentDescription="day" />
             <ImageView android:id="@+id/cell_3_1" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:scaleType="centerInside" android:contentDescription="day" />
             <ImageView android:id="@+id/cell_3_2" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:scaleType="centerInside" android:contentDescription="day" />
@@ -197,11 +123,7 @@
         </LinearLayout>
 
         <!-- Row 5 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="horizontal">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
             <ImageView android:id="@+id/cell_4_0" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:scaleType="centerInside" android:contentDescription="day" />
             <ImageView android:id="@+id/cell_4_1" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:scaleType="centerInside" android:contentDescription="day" />
             <ImageView android:id="@+id/cell_4_2" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:scaleType="centerInside" android:contentDescription="day" />
@@ -212,11 +134,7 @@
         </LinearLayout>
 
         <!-- Row 6 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="horizontal">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
             <ImageView android:id="@+id/cell_5_0" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:scaleType="centerInside" android:contentDescription="day" />
             <ImageView android:id="@+id/cell_5_1" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:scaleType="centerInside" android:contentDescription="day" />
             <ImageView android:id="@+id/cell_5_2" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:scaleType="centerInside" android:contentDescription="day" />

@@ -31,8 +31,8 @@ public final class CalendarCellRenderer {
 
         float centerX = sizePx / 2f;
         float centerY = sizePx / 2f;
-        float radius = sizePx * 0.42f;
-        float strokeWidth = sizePx * 0.12f;
+        float radius = sizePx * 0.44f;
+        float strokeWidth = sizePx * 0.10f;
 
         // Draw habit progress ring (background track)
         Paint ringBg = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -62,10 +62,10 @@ public final class CalendarCellRenderer {
             canvas.drawArc(oval, 270f, sweep, false, ringFg);
         }
 
-        // Draw day number (no today highlight)
+        // Draw day number
         Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         textPaint.setColor(0xFFE0E0E0);
-        textPaint.setTextSize(sizePx * 0.32f);
+        textPaint.setTextSize(sizePx * 0.36f);
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTypeface(Typeface.DEFAULT);
         
