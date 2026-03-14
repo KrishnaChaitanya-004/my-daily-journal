@@ -65,6 +65,7 @@ const Index = () => {
   } = useFileStorage(selectedDate);
 
   const { isBookmarked, toggleBookmark } = useBookmarks();
+  const { summary } = useStatistics();
 
   // Auto-save when app goes to background
   const { registerSaveCallback } = useAutoSave();
