@@ -62,10 +62,10 @@ public final class CalendarCellRenderer {
             canvas.drawArc(oval, 270f, sweep, false, ringFg);
         }
 
-        // Draw day number (no today highlight)
+        // Draw day number
         Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         textPaint.setColor(0xFFE0E0E0);
-        textPaint.setTextSize(sizePx * 0.32f);
+        textPaint.setTextSize(sizePx * 0.36f);
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTypeface(Typeface.DEFAULT);
         

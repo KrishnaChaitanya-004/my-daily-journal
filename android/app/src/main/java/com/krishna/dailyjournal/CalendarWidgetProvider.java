@@ -92,8 +92,8 @@ public class CalendarWidgetProvider extends AppWidgetProvider {
 
             int daysInMonth = firstOfMonth.getActualMaximum(Calendar.DAY_OF_MONTH);
 
-            // Cell size for rendering - increased for better ring visibility
-            int cellSizeDp = 36;
+            // Cell size for rendering - larger for better visibility
+            int cellSizeDp = 42;
 
             // Render each cell
             int dayCounter = 1;
