@@ -153,13 +153,18 @@ const Index = () => {
       return;
     }
 
-    // Horizontal swipe for day navigation
+    // Horizontal swipe for month navigation on calendar area
     if (absDx < 60) return;
     if (absDx < absDy * 1.3) return;
 
-    // Swipe left => next day, swipe right => previous day
-    if (dx < 0) shiftSelectedDate(1);
-    else shiftSelectedDate(-1);
+    // Swipe left => next month, swipe right => previous month
+    if (dx < 0) {
+      const nextMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
+      handleMonthChange(nextMonth);
+    } else {
+      const prevMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+      handleMonthChange(prevMonth);
+    }
   }, [isEditing, shiftSelectedDate, isCalendarVisible, updateSetting]);
 
   const addTask = useCallback((taskText: string) => {
