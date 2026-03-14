@@ -143,27 +143,29 @@ const Index = () => {
 
     // Vertical swipe for calendar collapse/expand (must be strong vertical swipe)
     if (absDy > 80 && absDy > absDx * 2) {
-      // Swipe up => collapse calendar, swipe down => expand calendar
       if (dy < 0 && isCalendarVisible) {
-        // Haptic feedback
         if (navigator.vibrate) navigator.vibrate(10);
         updateSetting('showCalendar', false);
       } else if (dy > 0 && !isCalendarVisible) {
-        // Haptic feedback
         if (navigator.vibrate) navigator.vibrate(10);
         updateSetting('showCalendar', true);
       }
       return;
     }
 
-    // Horizontal swipe for day navigation
+    // Horizontal swipe for month navigation on calendar area
     if (absDx < 60) return;
     if (absDx < absDy * 1.3) return;
 
-    // Swipe left => next day, swipe right => previous day
-    if (dx < 0) shiftSelectedDate(1);
-    else shiftSelectedDate(-1);
-  }, [isEditing, shiftSelectedDate, isCalendarVisible, updateSetting]);
+    // Swipe left => next month, swipe right => previous month
+    if (dx < 0) {
+      const nextMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
+      handleMonthChange(nextMonth);
+    } else {
+      const prevMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+      handleMonthChange(prevMonth);
+    }
+  }, [isEditing, currentMonth, handleMonthChange, isCalendarVisible, updateSetting]);
 
   const addTask = useCallback((taskText: string) => {
     const taskLine = `□ ${taskText}`;
