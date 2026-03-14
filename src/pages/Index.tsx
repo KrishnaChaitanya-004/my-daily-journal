@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Bookmark } from 'lucide-react';
+import { Bookmark, Flame } from 'lucide-react';
 import Calendar from '@/components/Calendar';
 import DailyContent from '@/components/DailyContent';
 import AppMenu from '@/components/AppMenu';
@@ -10,6 +10,7 @@ import { useFileStorage, LocationData, WeatherData } from '@/hooks/useFileStorag
 import { useBookmarks } from '@/hooks/useBookmarks';
 import { useSettings } from '@/hooks/useSettings';
 import { useAutoSave } from '@/hooks/useAutoSave';
+import { useStatistics } from '@/hooks/useStatistics';
 
 const Index = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -64,6 +65,7 @@ const Index = () => {
   } = useFileStorage(selectedDate);
 
   const { isBookmarked, toggleBookmark } = useBookmarks();
+  const { summary } = useStatistics();
 
   // Auto-save when app goes to background
   const { registerSaveCallback } = useAutoSave();
@@ -216,21 +218,29 @@ const Index = () => {
         >
           {settings.diaryName || "KC's Diary"}
         </h1>
-        <button
-          onClick={() => toggleBookmark(selectedDate)}
-          className={`
-            p-2.5 transition-smooth tap-highlight-none rounded-xl
-            ${currentDateBookmarked
-              ? 'text-primary bg-primary/10'
-              : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
-            }
-          `}
-          title={currentDateBookmarked ? 'Remove bookmark' : 'Bookmark this day'}
-        >
-          <Bookmark
-            className={`w-5 h-5 ${currentDateBookmarked ? 'fill-primary' : ''}`}
-          />
-        </button>
+        <div className="flex items-center gap-1">
+          {/* Streak */}
+          <div className="flex items-center gap-0.5 px-2 py-1.5 rounded-xl text-muted-foreground">
+            <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
+            <span className="text-xs font-medium text-orange-500">{summary.currentStreak}</span>
+          </div>
+          {/* Bookmark */}
+          <button
+            onClick={() => toggleBookmark(selectedDate)}
+            className={`
+              p-2.5 transition-smooth tap-highlight-none rounded-xl
+              ${currentDateBookmarked
+                ? 'text-primary bg-primary/10'
+                : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+              }
+            `}
+            title={currentDateBookmarked ? 'Remove bookmark' : 'Bookmark this day'}
+          >
+            <Bookmark
+              className={`w-5 h-5 ${currentDateBookmarked ? 'fill-primary' : ''}`}
+            />
+          </button>
+        </div>
       </header>
 
       {/* Calendar Section - compact */}
