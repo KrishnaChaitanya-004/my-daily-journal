@@ -13,6 +13,7 @@ export interface AppSettings {
   customFontName: string;
   showWritingPrompts: boolean;
   showCalendar: boolean;
+  showAchievements: boolean;
   calendarSelectionColor: string;
   widgetThemeColor: string;
   diaryName: string;
