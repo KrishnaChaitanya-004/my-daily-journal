@@ -61,14 +61,11 @@ public class CalendarWidgetProvider extends AppWidgetProvider {
             int currentMonth = now.get(Calendar.MONTH);
             int currentDay = now.get(Calendar.DAY_OF_MONTH);
 
-            // Set month name (short)
+            // Set month name (short) with accent color
             SimpleDateFormat monthFormat = new SimpleDateFormat("MMM", Locale.getDefault());
             String monthName = monthFormat.format(now.getTime()).toUpperCase();
             views.setTextViewText(R.id.calendar_month, monthName);
-
-            // Set streak with fire emoji
-            int streak = WidgetDataReader.getStatsStreak(context);
-            views.setTextViewText(R.id.calendar_streak, "🔥" + streak);
+            views.setTextColor(R.id.calendar_month, accent);
 
             // Set date and day
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy EEE", Locale.getDefault());

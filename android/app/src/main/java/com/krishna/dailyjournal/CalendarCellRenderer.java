@@ -31,8 +31,8 @@ public final class CalendarCellRenderer {
 
         float centerX = sizePx / 2f;
         float centerY = sizePx / 2f;
-        float radius = sizePx * 0.42f;
-        float strokeWidth = sizePx * 0.12f;
+        float radius = sizePx * 0.44f;
+        float strokeWidth = sizePx * 0.10f;
 
         // Draw habit progress ring (background track)
         Paint ringBg = new Paint(Paint.ANTI_ALIAS_FLAG);
