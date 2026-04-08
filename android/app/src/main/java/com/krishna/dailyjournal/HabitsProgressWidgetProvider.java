@@ -5,7 +5,10 @@ import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
+import android.os.Bundle;
 import android.util.Log;
+import android.util.TypedValue;
 import android.widget.RemoteViews;
 
 public class HabitsProgressWidgetProvider extends AppWidgetProvider {
@@ -15,6 +18,16 @@ public class HabitsProgressWidgetProvider extends AppWidgetProvider {
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
         updateAll(context, appWidgetManager, appWidgetIds);
+    }
+
+    @Override
+    public void onAppWidgetOptionsChanged(
+        Context context,
+        AppWidgetManager appWidgetManager,
+        int appWidgetId,
+        Bundle newOptions
+    ) {
+        updateAppWidget(context, appWidgetManager, appWidgetId);
     }
 
     public static void updateAll(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
@@ -30,13 +43,7 @@ public class HabitsProgressWidgetProvider extends AppWidgetProvider {
 
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_habits_progress);
 
-            // Apply theme accent color from file-based bridge
             int accent = WidgetDataReader.getWidgetThemeColor(context, 0xFF7C3AED);
-            try {
-                views.setInt(R.id.widget_accent, "setBackgroundColor", accent);
-            } catch (Exception e) {
-                Log.w(TAG, "Could not set accent color", e);
-            }
 
             // Read habits data from file-based bridge
             int completed = WidgetDataReader.getHabitsCompleted(context);
@@ -45,13 +52,35 @@ public class HabitsProgressWidgetProvider extends AppWidgetProvider {
             Log.d(TAG, "Widget data: completed=" + completed + ", total=" + total);
 
             views.setTextViewText(R.id.progress_count, completed + "/" + total);
-            views.setTextViewText(R.id.progress_label, "Tap to view");
+
+            int cardSizeDp = getCardSizeDp(appWidgetManager, appWidgetId);
+            int ringSizeDp = Math.max(72, cardSizeDp - 24);
+            float textSizeSp = Math.max(20f, Math.min(28f, cardSizeDp * 0.18f));
+            int strokeDp = Math.max(6, Math.round(ringSizeDp / 14f));
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                views.setViewLayoutWidth(
+                    R.id.widget_habits_progress_card,
+                    cardSizeDp,
+                    TypedValue.COMPLEX_UNIT_DIP
+                );
+                views.setViewLayoutHeight(
+                    R.id.widget_habits_progress_card,
+                    cardSizeDp,
+                    TypedValue.COMPLEX_UNIT_DIP
+                );
+                views.setTextViewTextSize(
+                    R.id.progress_count,
+                    TypedValue.COMPLEX_UNIT_SP,
+                    textSizeSp
+                );
+            }
 
             int pct = (total > 0) ? Math.round((completed * 100f) / total) : 0;
             // Always render from 0 with the latest computed value (no animation/spin).
             views.setImageViewBitmap(
                 R.id.progress_ring_image,
-                RingRenderer.render(context, 88, 6, pct, accent)
+                RingRenderer.render(context, ringSizeDp, strokeDp, pct, accent)
             );
 
             // Create intent to open habits page
@@ -66,11 +95,19 @@ public class HabitsProgressWidgetProvider extends AppWidgetProvider {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
             );
 
-            views.setOnClickPendingIntent(R.id.widget_habits_progress, pendingIntent);
+            views.setOnClickPendingIntent(R.id.widget_habits_progress_card, pendingIntent);
 
             appWidgetManager.updateAppWidget(appWidgetId, views);
         } catch (Exception e) {
             Log.e(TAG, "Error updating widget", e);
         }
+    }
+
+    private static int getCardSizeDp(AppWidgetManager appWidgetManager, int appWidgetId) {
+        Bundle options = appWidgetManager.getAppWidgetOptions(appWidgetId);
+        int widthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 120);
+        int heightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 120);
+        int shortestSideDp = Math.min(widthDp, heightDp);
+        return Math.max(96, Math.min(156, shortestSideDp));
     }
 }

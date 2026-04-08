@@ -71,7 +71,11 @@ const Index = () => {
   const { registerSaveCallback } = useAutoSave();
 
   // Swipe navigation state
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const touchStartRef = useRef<{
+    x: number;
+    y: number;
+    area: 'calendar' | 'content';
+  } | null>(null);
 
   // Register auto-save callback - this saves the latest content from the hook
   // The actual editor saves on close, this is a fallback for when app goes to background
@@ -119,18 +123,18 @@ const Index = () => {
     handleDateSelect(next);
   }, [selectedDate, handleDateSelect]);
 
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
+  const onTouchStart = useCallback((area: 'calendar' | 'content') => (e: React.TouchEvent) => {
     if (isEditing) return;
     const t = e.touches[0];
     if (!t) return;
-    touchStartRef.current = { x: t.clientX, y: t.clientY };
+    touchStartRef.current = { x: t.clientX, y: t.clientY, area };
   }, [isEditing]);
 
-  const onTouchEnd = useCallback((e: React.TouchEvent) => {
+  const onTouchEnd = useCallback((area: 'calendar' | 'content') => (e: React.TouchEvent) => {
     if (isEditing) return;
     const start = touchStartRef.current;
     touchStartRef.current = null;
-    if (!start) return;
+    if (!start || start.area !== area) return;
 
     const t = e.changedTouches[0];
     if (!t) return;
@@ -141,31 +145,47 @@ const Index = () => {
     const absDx = Math.abs(dx);
     const absDy = Math.abs(dy);
 
-    // Vertical swipe for calendar collapse/expand (must be strong vertical swipe)
-    if (absDy > 80 && absDy > absDx * 2) {
-      if (dy < 0 && isCalendarVisible) {
-        if (navigator.vibrate) navigator.vibrate(10);
-        updateSetting('showCalendar', false);
-      } else if (dy > 0 && !isCalendarVisible) {
-        if (navigator.vibrate) navigator.vibrate(10);
-        updateSetting('showCalendar', true);
+    if (area === 'calendar') {
+      // Vertical swipe for calendar collapse/expand (must be strong vertical swipe)
+      if (absDy > 80 && absDy > absDx * 2) {
+        if (dy < 0 && isCalendarVisible) {
+          if (navigator.vibrate) navigator.vibrate(10);
+          updateSetting('showCalendar', false);
+        } else if (dy > 0 && !isCalendarVisible) {
+          if (navigator.vibrate) navigator.vibrate(10);
+          updateSetting('showCalendar', true);
+        }
+        return;
+      }
+
+      if (absDx < 60) return;
+      if (absDx < absDy * 1.3) return;
+
+      // Swipe left => next month, swipe right => previous month
+      if (dx < 0) {
+        const nextMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
+        handleMonthChange(nextMonth);
+      } else {
+        const prevMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
+        handleMonthChange(prevMonth);
       }
       return;
     }
 
-    // Horizontal swipe for month navigation on calendar area
     if (absDx < 60) return;
     if (absDx < absDy * 1.3) return;
 
-    // Swipe left => next month, swipe right => previous month
-    if (dx < 0) {
-      const nextMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
-      handleMonthChange(nextMonth);
-    } else {
-      const prevMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1);
-      handleMonthChange(prevMonth);
-    }
-  }, [isEditing, currentMonth, handleMonthChange, isCalendarVisible, updateSetting]);
+    // Swipe left => next day, swipe right => previous day
+    if (dx < 0) shiftSelectedDate(1);
+    else shiftSelectedDate(-1);
+  }, [
+    isEditing,
+    currentMonth,
+    handleMonthChange,
+    isCalendarVisible,
+    shiftSelectedDate,
+    updateSetting,
+  ]);
 
   const addTask = useCallback((taskText: string) => {
     const taskLine = `□ ${taskText}`;
@@ -246,7 +266,11 @@ const Index = () => {
       </header>
 
       {/* Calendar Section - compact */}
-      <section className="pb-1 shrink-0">
+      <section
+        className="pb-1 shrink-0"
+        onTouchStart={onTouchStart('calendar')}
+        onTouchEnd={onTouchEnd('calendar')}
+      >
         <Calendar
           selectedDate={selectedDate}
           currentMonth={currentMonth}
@@ -274,8 +298,8 @@ const Index = () => {
       <section
         key={selectedDate.toISOString()}
         className="flex-1 flex flex-col min-h-0 overflow-hidden"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
+        onTouchStart={onTouchStart('content')}
+        onTouchEnd={onTouchEnd('content')}
       >
         <DailyContent
           content={content}

@@ -1,71 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_habits_progress"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    android:gravity="center"
-    android:background="@drawable/widget_background">
+    android:padding="0dp">
 
-    <!-- Accent bar -->
-    <!-- <ImageView
-        android:id="@+id/widget_accent"
-        android:layout_width="match_parent"
-        android:layout_height="4dp"
-        android:layout_marginBottom="12dp"
-        android:background="#7C3AED"
-        android:contentDescription="accent" /> -->
-
-    <!-- Title -->
-    <!-- <TextView
-        android:id="@+id/widget_title"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Habits Progress"
-        android:textColor="#FFFFFF"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:gravity="center" /> -->
-
-    <!-- Ring container -->
     <FrameLayout
-        android:layout_width="104dp"
-        android:layout_height="104dp"
-        android:layout_marginTop="14dp">
+        android:id="@+id/widget_habits_progress_card"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_gravity="center"
+        android:background="@drawable/widget_background"
+        android:padding="12dp">
 
-        <!-- Static background ring + progress arc rendered as a bitmap (RemoteViews-safe) -->
-        <ImageView
-            android:id="@+id/progress_ring_image"
-            android:layout_width="88dp"
-            android:layout_height="88dp"
-            android:layout_gravity="center"
-            android:contentDescription="progress ring" />
+        <FrameLayout
+            android:id="@+id/progress_ring_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
 
-        <!-- Center text -->
-        <TextView
-            android:id="@+id/progress_count"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="0/0"
-            android:textColor="#FFFFFF"
-            android:textSize="22sp"
-            android:textStyle="bold" />
+            <!-- Static background ring + progress arc rendered as a bitmap (RemoteViews-safe) -->
+            <ImageView
+                android:id="@+id/progress_ring_image"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:contentDescription="progress ring"
+                android:scaleType="fitCenter" />
 
+            <!-- Center text -->
+            <TextView
+                android:id="@+id/progress_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="0/0"
+                android:textColor="#FFFFFF"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+        </FrameLayout>
     </FrameLayout>
-
-
-    <!-- Footer label -->
-    <TextView
-        android:id="@+id/progress_label"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Tap to view habits"
-        android:textColor="#B0B0B0"
-        android:textSize="12sp"
-        android:gravity="center"
-        android:layout_marginTop="12dp" />
-
-</LinearLayout>
-
+</FrameLayout>
