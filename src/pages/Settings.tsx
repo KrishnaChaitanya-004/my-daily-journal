@@ -18,10 +18,16 @@ const fontOptions: { value: AppSettings['fontFamily']; label: string }[] = [
   { value: 'custom', label: 'Custom' }
 ];
 
-const fontSizeOptions: { value: AppSettings['fontSize']; label: string }[] = [
-  { value: 'small', label: 'Small' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'large', label: 'Large' }
+const fontSizeOptions: {
+  value: AppSettings['fontSize'];
+  label: string;
+  description: string;
+}[] = [
+  { value: 'xsmall', label: 'Tiny', description: 'Maximum space for content' },
+  { value: 'small', label: 'Compact', description: 'Slightly smaller text' },
+  { value: 'medium', label: 'Default', description: 'Balanced and comfortable' },
+  { value: 'large', label: 'Large', description: 'Bigger text for easier reading' },
+  { value: 'xlarge', label: 'Huge', description: 'Largest text size' }
 ];
 
 const colorOptions: { value: AppSettings['themeColor']; color: string; hex: string }[] = [
@@ -140,6 +146,11 @@ const Settings = () => {
   const [customFontUrlInput, setCustomFontUrlInput] = useState(settings.customFontUrl || '');
   const [customFontNameInput, setCustomFontNameInput] = useState(settings.customFontName || '');
   const [colorsOpen, setColorsOpen] = useState(false);
+  const currentFontSizeIndex = Math.max(
+    0,
+    fontSizeOptions.findIndex((option) => option.value === settings.fontSize)
+  );
+  const selectedFontSizeOption = fontSizeOptions[currentFontSizeIndex] || fontSizeOptions[2];
   const [diaryNameInput, setDiaryNameInput] = useState(settings.diaryName || "KC's Diary");
 
   const handleSetPin = () => {
@@ -612,28 +623,54 @@ const Settings = () => {
               <p className="text-xs text-muted-foreground">Adjust text size</p>
             </div>
           </div>
-          <div className="flex gap-2">
-            {fontSizeOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => updateSetting('fontSize', option.value)}
-                className={`
-                  flex-1 px-4 py-3 rounded-lg border transition-smooth tap-highlight-none
-                  ${settings.fontSize === option.value 
-                    ? 'border-primary bg-primary/10 text-primary' 
-                    : 'border-border text-foreground hover:border-primary/30'
-                  }
-                `}
-              >
-                <span className={`
-                  ${option.value === 'small' ? 'text-xs' : ''}
-                  ${option.value === 'medium' ? 'text-sm' : ''}
-                  ${option.value === 'large' ? 'text-base' : ''}
-                `}>
-                  {option.label}
-                </span>
-              </button>
-            ))}
+          <div className="rounded-[24px] border border-border/70 bg-secondary/20 p-4">
+            <div className="flex items-center gap-4">
+              <span className="text-2xl font-semibold leading-none text-foreground/80">A</span>
+
+              <div className="relative flex-1">
+                <div className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-border/80" />
+                <div
+                  className="absolute left-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-primary/70 transition-all duration-300"
+                  style={{
+                    width: `${(currentFontSizeIndex / (fontSizeOptions.length - 1)) * 100}%`,
+                  }}
+                />
+
+                <div className="relative flex items-center justify-between">
+                  {fontSizeOptions.map((option, index) => {
+                    const isSelected = index === currentFontSizeIndex;
+                    const isPassed = index < currentFontSizeIndex;
+
+                    return (
+                      <button
+                        key={option.value}
+                        onClick={() => updateSetting('fontSize', option.value)}
+                        className="flex h-8 w-8 items-center justify-center tap-highlight-none"
+                        aria-label={`Set font size to ${option.label}`}
+                      >
+                        <span
+                          className={`
+                            block rounded-full border transition-all duration-300
+                            ${isSelected
+                              ? 'h-5 w-5 border-primary bg-background shadow-[0_0_0_4px_hsl(var(--primary)/0.2)]'
+                              : isPassed
+                                ? 'h-3 w-3 border-primary bg-primary'
+                                : 'h-3 w-3 border-border bg-secondary'}
+                          `}
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <span className="text-5xl font-semibold leading-none text-foreground">A</span>
+            </div>
+
+            <div className="mt-4 text-center">
+              <p className="text-lg font-medium text-foreground">{selectedFontSizeOption.label}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{selectedFontSizeOption.description}</p>
+            </div>
           </div>
         </section>
 

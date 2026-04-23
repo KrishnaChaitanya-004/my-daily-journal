@@ -2,6 +2,11 @@ import { useMemo, useState, useEffect } from 'react';
 import { DayFileData } from './useFileStorage';
 import { startOfWeek, endOfWeek, eachDayOfInterval, format, subDays, differenceInDays, parseISO } from 'date-fns';
 import { widgetsBridge } from '@/lib/widgetsBridge';
+import {
+  TASKS_UPDATE_EVENT,
+  getStructuredTaskCountsForDate,
+  loadTasksFromStorage,
+} from '@/lib/tasks';
 
 const STORAGE_KEY = 'diary-app-data';
 
@@ -52,7 +57,7 @@ const countWords = (text: string): number => {
   return text.trim().split(/\s+/).filter(word => word.length > 0).length;
 };
 
-const countTasks = (content: string): { total: number; completed: number } => {
+const countLegacyTasks = (content: string): { total: number; completed: number } => {
   if (!content) return { total: 0, completed: 0 };
   const lines = content.split('\n');
   let total = 0;
@@ -73,24 +78,29 @@ const countTasks = (content: string): { total: number; completed: number } => {
 export const useStatistics = () => {
   // Use state to make data reactive after import
   const [allData, setAllData] = useState<Record<string, DayFileData>>(loadDiaryData);
+  const [allTasks, setAllTasks] = useState(loadTasksFromStorage);
   
   // Listen for storage changes (e.g., after import)
   useEffect(() => {
     const handleStorageChange = () => {
       setAllData(loadDiaryData());
+      setAllTasks(loadTasksFromStorage());
     };
     
     // Listen for storage events from other tabs
     window.addEventListener('storage', handleStorageChange);
     // Listen for custom event from import (same-tab)
     window.addEventListener('diary-data-changed', handleStorageChange);
+    window.addEventListener(TASKS_UPDATE_EVENT, handleStorageChange);
     
     // Also reload on mount in case data changed
     setAllData(loadDiaryData());
+    setAllTasks(loadTasksFromStorage());
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('diary-data-changed', handleStorageChange);
+      window.removeEventListener(TASKS_UPDATE_EVENT, handleStorageChange);
     };
   }, []);
 
@@ -105,20 +115,21 @@ export const useStatistics = () => {
 
       const dayData = allData[dateKey] as DayFileData | undefined;
       
-      const tasks = countTasks(dayData?.content || '');
+      const legacyTasks = countLegacyTasks(dayData?.content || '');
+      const structuredTasks = getStructuredTaskCountsForDate(allTasks, dateKey);
       
       stats.push({
         date: dateKey,
         wordCount: countWords(dayData?.content || ''),
         photoCount: dayData?.photos?.length || 0,
-        taskCount: tasks.total,
-        completedTasks: tasks.completed,
+        taskCount: legacyTasks.total + structuredTasks.total,
+        completedTasks: legacyTasks.completed + structuredTasks.completed,
         hasEntry: !!(dayData?.content?.trim() || dayData?.photos?.length)
       });
     }
     
     return stats;
-  }, [allData]);
+  }, [allData, allTasks]);
 
   const weekdayStats = useMemo<WeekdayStats[]>(() => {
     const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -182,9 +193,10 @@ export const useStatistics = () => {
         totalPhotos += data?.photos?.length || 0;
         entryDates.push(dateKey);
         
-        const tasks = countTasks(data?.content || '');
-        totalTasks += tasks.total;
-        completedTasks += tasks.completed;
+        const legacyTasks = countLegacyTasks(data?.content || '');
+        const structuredTasks = getStructuredTaskCountsForDate(allTasks, dateKey);
+        totalTasks += legacyTasks.total + structuredTasks.total;
+        completedTasks += legacyTasks.completed + structuredTasks.completed;
       }
     });
     
@@ -242,7 +254,7 @@ const currDate = new Date(entryDates[i]);
       longestStreak,
       averageWordsPerEntry: totalEntries > 0 ? Math.round(totalWords / totalEntries) : 0
     };
-  }, [allData]);
+  }, [allData, allTasks]);
 
   // Push stats to native widgets whenever summary changes
   useEffect(() => {

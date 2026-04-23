@@ -1,4 +1,4 @@
-import { Image, Bookmark, Settings, Home, Search, BarChart3, CheckSquare, Tag, Mic, MapPin, Trophy, Timer, ScrollText } from 'lucide-react';
+import { Image, Bookmark, Settings, Home, Search, BarChart3, CheckSquare, Tag, Mic, MapPin, Trophy, Timer, ScrollText, ListTodo } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -26,6 +26,7 @@ const allMenuItems = [
   { icon: Home, label: 'Home', path: '/', settingKey: null },
   { icon: BarChart3, label: 'Statistics', path: '/statistics', settingKey: null },
   { icon: Trophy, label: 'Achievements', path: '/achievements', settingKey: 'showAchievements' as const },
+  { icon: ListTodo, label: 'Tasks', path: '/tasks', settingKey: null },
   { icon: CheckSquare, label: 'Habits', path: '/habits', settingKey: null },
   { icon: Tag, label: 'Tags', path: '/tags', settingKey: null },
   { icon: Image, label: 'Photos', path: '/photos', settingKey: null },

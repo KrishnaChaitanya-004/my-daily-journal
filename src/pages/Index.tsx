@@ -11,9 +11,11 @@ import { useBookmarks } from '@/hooks/useBookmarks';
 import { useSettings } from '@/hooks/useSettings';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useStatistics } from '@/hooks/useStatistics';
+import { useTasks } from '@/hooks/useTasks';
 
 const Index = () => {
   const [isEditing, setIsEditing] = useState(false);
+  const [isPhotoViewerOpen, setIsPhotoViewerOpen] = useState(false);
   const [searchParams] = useSearchParams();
   const dateParam = searchParams.get('date');
 
@@ -66,6 +68,12 @@ const Index = () => {
 
   const { isBookmarked, toggleBookmark } = useBookmarks();
   const { summary } = useStatistics();
+  const {
+    tasksForSelectedDate,
+    createTaskForDate,
+    toggleTask: toggleScheduledTask,
+    hasTasksOnDate,
+  } = useTasks(selectedDate);
 
   // Auto-save when app goes to background
   const { registerSaveCallback } = useAutoSave();
@@ -86,6 +94,12 @@ const Index = () => {
       // The DailyContent component handles its own save on background
     });
   }, [registerSaveCallback]);
+
+  useEffect(() => {
+    if (isPhotoViewerOpen) {
+      touchStartRef.current = null;
+    }
+  }, [isPhotoViewerOpen]);
 
   // Update date from URL param
   useEffect(() => {
@@ -124,14 +138,14 @@ const Index = () => {
   }, [selectedDate, handleDateSelect]);
 
   const onTouchStart = useCallback((area: 'calendar' | 'content') => (e: React.TouchEvent) => {
-    if (isEditing) return;
+    if (isEditing || isPhotoViewerOpen) return;
     const t = e.touches[0];
     if (!t) return;
     touchStartRef.current = { x: t.clientX, y: t.clientY, area };
-  }, [isEditing]);
+  }, [isEditing, isPhotoViewerOpen]);
 
   const onTouchEnd = useCallback((area: 'calendar' | 'content') => (e: React.TouchEvent) => {
-    if (isEditing) return;
+    if (isEditing || isPhotoViewerOpen) return;
     const start = touchStartRef.current;
     touchStartRef.current = null;
     if (!start || start.area !== area) return;
@@ -180,6 +194,7 @@ const Index = () => {
     else shiftSelectedDate(-1);
   }, [
     isEditing,
+    isPhotoViewerOpen,
     currentMonth,
     handleMonthChange,
     isCalendarVisible,
@@ -188,14 +203,10 @@ const Index = () => {
   ]);
 
   const addTask = useCallback((taskText: string) => {
-    const taskLine = `□ ${taskText}`;
-    const newContent = content
-      ? `${content}\n${taskLine}`
-      : taskLine;
-    saveContent(newContent);
-  }, [content, saveContent]);
+    createTaskForDate(taskText, selectedDate);
+  }, [createTaskForDate, selectedDate]);
 
-  const toggleTask = useCallback((lineIndex: number) => {
+  const toggleLegacyTask = useCallback((lineIndex: number) => {
     const lines = content.split('\n');
     const line = lines[lineIndex];
 
@@ -207,6 +218,10 @@ const Index = () => {
 
     saveContent(lines.join('\n'));
   }, [content, saveContent]);
+
+  const hasCalendarContent = useCallback((date: Date) => {
+    return hasContent(date) || hasTasksOnDate(date);
+  }, [hasContent, hasTasksOnDate]);
 
   const handleAddPhoto = useCallback(async (base64: string) => {
     await savePhoto(base64);
@@ -276,7 +291,7 @@ const Index = () => {
           currentMonth={currentMonth}
           onDateSelect={handleDateSelect}
           onMonthChange={handleMonthChange}
-          hasContent={hasContent}
+          hasContent={hasCalendarContent}
           isBookmarked={isBookmarked}
           collapsed={!isCalendarVisible}
           onToggleCollapsed={() =>
@@ -303,6 +318,7 @@ const Index = () => {
       >
         <DailyContent
           content={content}
+          tasks={tasksForSelectedDate}
           photos={photos}
           tags={tags}
           location={location}
@@ -313,13 +329,15 @@ const Index = () => {
           onEditingChange={setIsEditing}
           onUpdateContent={saveContent}
           onAddTask={addTask}
-          onToggleTask={toggleTask}
+          onToggleTask={toggleScheduledTask}
+          onToggleLegacyTask={toggleLegacyTask}
           onAddPhoto={handleAddPhoto}
           onDeletePhoto={deletePhoto}
           onSaveMeta={handleSaveMeta}
           onSaveVoiceNote={handleSaveVoiceNote}
           onDeleteVoiceNote={deleteVoiceNote}
           getPhotoUrl={getPhotoUrl}
+          onPhotoViewerOpenChange={setIsPhotoViewerOpen}
         />
       </section>
 
@@ -330,7 +348,7 @@ const Index = () => {
       <div className="h-4 shrink-0" />
 
       {/* Quick Add FAB - hidden when editing */}
-      {!isEditing && (
+      {!isEditing && !isPhotoViewerOpen && (
         <QuickAddFAB
           onAddNote={() => {
             setIsEditing(true);

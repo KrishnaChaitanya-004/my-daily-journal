@@ -1,4 +1,4 @@
-import { ArrowLeft, TrendingUp, Calendar, Image, CheckSquare, Flame, BarChart3, Target, PenLine, CalendarDays, ListOrdered } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Calendar, Image, CheckSquare, Flame, BarChart3, Target, PenLine, CalendarDays } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStatistics } from '@/hooks/useStatistics';
 import { useHabits } from '@/hooks/useHabits';
@@ -20,7 +20,7 @@ import { getAllDiaryData, DayFileData } from '@/hooks/useFileStorage';
 const Statistics = () => {
   const navigate = useNavigate();
   const { dailyStats, weekdayStats, monthlyStats, summary } = useStatistics();
-  const { habits, getHabitStats } = useHabits();
+  const { habits } = useHabits();
   const allData = getAllDiaryData();
 
   // Format daily stats for chart
@@ -71,7 +71,7 @@ label = isNaN(d.getTime()) ? stat.date : format(d, 'MMM d');
     words: { label: 'Words', color: 'hsl(var(--primary))' },
     photos: { label: 'Photos', color: 'hsl(var(--accent))' },
     entries: { label: 'Entries', color: 'hsl(var(--primary))' },
-    percentage: { label: 'Completion %', color: 'hsl(142, 76%, 36%)' }
+    percentage: { label: 'Completion %', color: 'hsl(var(--primary))' }
   };
 
   return (
@@ -194,8 +194,8 @@ label = isNaN(d.getTime()) ? stat.date : format(d, 'MMM d');
                 <AreaChart data={habitsConsistencyData} margin={{ left: 0, right: 0, top: 0, bottom: 20 }}>
                   <defs>
                     <linearGradient id="habitGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <XAxis 
@@ -210,7 +210,7 @@ label = isNaN(d.getTime()) ? stat.date : format(d, 'MMM d');
                   <Area 
                     type="monotone" 
                     dataKey="percentage" 
-                    stroke="hsl(142, 76%, 36%)" 
+                    stroke="hsl(var(--primary))" 
                     fillOpacity={1}
                     fill="url(#habitGradient)"
                   />
@@ -261,34 +261,6 @@ label = isNaN(d.getTime()) ? stat.date : format(d, 'MMM d');
           </div>
         </div>
 
-        {/* Monthly Overview */}
-        {monthlyStats.length > 0 && (
-          <div className="bg-card rounded-xl p-4 border border-border">
-            <div className="flex items-center gap-2 mb-4">
-              <ListOrdered className="w-4 h-4 text-primary" />
-              <h3 className="text-sm font-medium text-foreground">Monthly Overview</h3>
-            </div>
-            <div className="space-y-3">
-              {monthlyStats.slice(-4).reverse().map(month => (
-                <div key={month.month} className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {(() => {
-  const d = new Date(month.month + '-01T00:00:00');
-  return isNaN(d.getTime())
-    ? month.month
-    : format(d, 'MMMM yyyy');
-})()}
-
-                  </span>
-                  <div className="flex gap-4 text-foreground">
-                    <span>{month.entries} entries</span>
-                    <span>{month.words.toLocaleString()} words</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </main>
   );

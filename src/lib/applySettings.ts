@@ -5,7 +5,7 @@ const SETTINGS_KEY = 'diary-settings';
 
 interface AppSettings {
   fontFamily: 'inter' | 'delius' | 'georgia' | 'courier' | 'custom';
-  fontSize: 'small' | 'medium' | 'large';
+  fontSize: 'xsmall' | 'small' | 'medium' | 'large' | 'xlarge';
   themeColor: 'red' | 'blue' | 'green' | 'purple' | 'orange' | 'pink' | 'custom';
   customThemeColor: string;
   backgroundColor: string;
@@ -183,7 +183,13 @@ export const applySettingsImmediately = () => {
     }
     
     // Apply font size
-    const fontSizes = { small: '14px', medium: '16px', large: '18px' };
+    const fontSizes = {
+      xsmall: '13px',
+      small: '14.5px',
+      medium: '16px',
+      large: '17.5px',
+      xlarge: '19px',
+    };
     document.documentElement.style.fontSize = fontSizes[settings.fontSize];
     
   } catch (e) {

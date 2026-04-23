@@ -1,16 +1,18 @@
 import { useState, useRef, useEffect, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckSquare, Camera, Clock, Check, MapPin, Cloud, Hash, X, Mic, Square, Play, Pause, Trash2 } from 'lucide-react';
+import { CheckSquare, Camera, Clock, Check, MapPin, Cloud, Hash, Mic, Square, Play, Pause } from 'lucide-react';
 import { Camera as CapacitorCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import PhotoThumbnail from './PhotoThumbnail';
 import PhotoViewer from './PhotoViewer';
+import TaskPillSection from './TaskPillSection';
 import { format } from 'date-fns';
 import { LocationData, WeatherData, VoiceNoteData } from '@/hooks/useFileStorage';
 import { useLocation } from '@/hooks/useLocation';
 import { useWeather } from '@/hooks/useWeather';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
+import { DiaryTask } from '@/lib/tasks';
 
 interface PhotoData {
   filename: string;
@@ -21,6 +23,7 @@ interface PhotoData {
 
 interface DailyContentProps {
   content: string;
+  tasks: DiaryTask[];
   photos: PhotoData[];
   tags: string[];
   location?: LocationData;
@@ -31,17 +34,20 @@ interface DailyContentProps {
   onEditingChange: (editing: boolean) => void;
   onUpdateContent: (content: string) => void;
   onAddTask: (taskText: string) => void;
-  onToggleTask: (lineIndex: number) => void;
+  onToggleTask: (taskId: string) => void;
+  onToggleLegacyTask: (lineIndex: number) => void;
   onAddPhoto: (base64: string) => Promise<void>;
   onDeletePhoto: (filename: string) => void;
   onSaveMeta: (meta: { tags?: string[]; location?: LocationData; weather?: WeatherData }) => void;
   onSaveVoiceNote: (base64: string, duration: number) => Promise<void>;
   onDeleteVoiceNote: (filename: string) => void;
   getPhotoUrl: (photo: PhotoData) => string;
+  onPhotoViewerOpenChange?: (open: boolean) => void;
 }
 
 const DailyContent = ({ 
   content, 
+  tasks,
   photos,
   tags,
   location,
@@ -53,18 +59,20 @@ const DailyContent = ({
   onUpdateContent, 
   onAddTask,
   onToggleTask,
+  onToggleLegacyTask,
   onAddPhoto,
   onDeletePhoto,
   onSaveMeta,
   onSaveVoiceNote,
   onDeleteVoiceNote,
-  getPhotoUrl
+  getPhotoUrl,
+  onPhotoViewerOpenChange,
 }: DailyContentProps) => {
+  const photoMarkerRegex = /^\[photo:(.+?)\]$/;
   const navigate = useNavigate();
   const [taskText, setTaskText] = useState('');
   const [localContent, setLocalContent] = useState(content);
-  const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
-  const [tagInput, setTagInput] = useState('');
+  const [viewingPhotoIndex, setViewingPhotoIndex] = useState<number | null>(null);
   const [playingVoice, setPlayingVoice] = useState<string | null>(null);
   const [playbackTime, setPlaybackTime] = useState<number>(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -167,18 +175,11 @@ const DailyContent = ({
     };
   }, [isEditing, localContent, onUpdateContent]);
 
-const handleAddTask = () => {
-  if (!taskText.trim()) return;
-
-  const taskLine = `□ ${taskText.trim()}`;
-  const newContent = localContent
-    ? `${localContent}\n${taskLine}`
-    : taskLine;
-
-  setLocalContent(newContent);
-  onUpdateContent(newContent); // 🔥 important
-  setTaskText('');
-};
+  const handleAddTask = () => {
+    if (!taskText.trim()) return;
+    onAddTask(taskText.trim());
+    setTaskText('');
+  };
 
   const handleInsertTime = () => {
     const currentTime = format(new Date(), 'hh:mm a').toLowerCase();
@@ -222,16 +223,26 @@ const handleAddTask = () => {
     }
   };
 
+  const fileToBase64 = (file: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(',')[1]);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleFileInput = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
     
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = (reader.result as string).split(',')[1];
+    for (const file of files) {
+      const base64 = await fileToBase64(file);
       await onAddPhoto(base64);
-    };
-    reader.readAsDataURL(file);
+    }
     e.target.value = '';
   };
 
@@ -248,18 +259,6 @@ const handleAddTask = () => {
     if (w) {
       onSaveMeta({ weather: w });
     }
-  };
-
-  const handleAddTag = () => {
-    const newTag = tagInput.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-    if (newTag && !tags.includes(newTag)) {
-      onSaveMeta({ tags: [...tags, newTag] });
-    }
-    setTagInput('');
-  };
-
-  const handleRemoveTag = (tag: string) => {
-    onSaveMeta({ tags: tags.filter(t => t !== tag) });
   };
 
   const handleVoiceRecord = async () => {
@@ -298,82 +297,150 @@ const handleAddTask = () => {
   };
 
   const getPhotoByFilename = (filename: string): PhotoData | undefined => {
-    return photos.find(p => p.filename === filename);
+    return photos.find((photo) => photo.filename === filename);
+  };
+
+  const viewerPhotos = photos
+    .map((photo) => ({
+      filename: photo.filename,
+      src: getPhotoUrl(photo),
+      timestamp: photo.timestamp,
+    }))
+    .filter((photo) => !!photo.src);
+
+  useEffect(() => {
+    if (viewingPhotoIndex === null) return;
+
+    if (viewerPhotos.length === 0) {
+      setViewingPhotoIndex(null);
+      return;
+    }
+
+    if (viewingPhotoIndex > viewerPhotos.length - 1) {
+      setViewingPhotoIndex(viewerPhotos.length - 1);
+    }
+  }, [viewerPhotos.length, viewingPhotoIndex]);
+
+  useEffect(() => {
+    onPhotoViewerOpenChange?.(viewingPhotoIndex !== null);
+    return () => {
+      onPhotoViewerOpenChange?.(false);
+    };
+  }, [onPhotoViewerOpenChange, viewingPhotoIndex]);
+
+  const openPhotoViewer = (filename: string) => {
+    const index = viewerPhotos.findIndex((photo) => photo.filename === filename);
+    if (index !== -1) {
+      setViewingPhotoIndex(index);
+    }
+  };
+
+  const handleViewerDelete = (filename: string) => {
+    const currentLength = viewerPhotos.length;
+    onDeletePhoto(filename);
+    setViewingPhotoIndex((prev) => {
+      if (prev === null) return null;
+      if (currentLength <= 1) return null;
+      return Math.min(prev, currentLength - 2);
+    });
   };
 
   const renderContent = () => {
     if (!content && photos.length === 0) return null;
     
     const lines = content ? content.split('\n') : [];
-    
-    return (
-      <>
-        {lines.map((line, index) => {
-          // More tolerant photo matching - allow whitespace around the marker
-          const photoMatch = line.trim().match(/^\[photo:(.+?)\]$/);
-          if (photoMatch) {
-            const filename = photoMatch[1].trim();
-            const photo = getPhotoByFilename(filename);
-            if (photo) {
-              const photoUrl = getPhotoUrl(photo);
-              return (
-                <div key={index} className="py-1 w-fit" onClick={(e) => e.stopPropagation()}>
-                  <PhotoThumbnail
-                    src={photoUrl}
-                    timestamp={photo.timestamp}
-                    onView={() => setViewingPhoto(photoUrl)}
-                    onDelete={() => onDeletePhoto(photo.filename)}
-                  />
-                </div>
-              );
-            }
-            // Photo marker exists but photo not found in array - show placeholder
-            return (
-              <div key={index} className="text-sm text-muted-foreground py-0.5 italic">
-                [Photo not found: {filename}]
-              </div>
-            );
-          }
+    const blocks: React.ReactNode[] = [];
 
-          const isUncheckedTask = line.startsWith('□ ');
-          const isCheckedTask = line.startsWith('✓ ');
-          
-          if (isUncheckedTask || isCheckedTask) {
-            const taskContent = line.slice(2);
-            return (
-              <div key={index} className="flex items-baseline gap-2 py-0.5">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleTask(index);
-                  }}
-                  className={`
-                    text-[20px] leading-none transition-smooth tap-highlight-none flex-shrink-0
-                    ${isCheckedTask ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}
-                  `}
-                >
-                  {isCheckedTask ? '✓' : '□'}
-                </button>
-                <span
-                  className={`
-                    text-sm font-light
-                    ${isCheckedTask ? 'line-through text-muted-foreground' : 'text-foreground'}
-                  `}
-                >
-                  {taskContent}
-                </span>
+    for (let index = 0; index < lines.length; index++) {
+      const line = lines[index];
+      const photoMatch = line.trim().match(photoMarkerRegex);
+
+      if (photoMatch) {
+        const groupedPhotos: PhotoData[] = [];
+        let groupIndex = index;
+
+        while (groupIndex < lines.length) {
+          const groupedMatch = lines[groupIndex].trim().match(photoMarkerRegex);
+          if (!groupedMatch) break;
+
+          const groupedFilename = groupedMatch[1].trim();
+          const groupedPhoto = getPhotoByFilename(groupedFilename);
+          if (!groupedPhoto) break;
+
+          groupedPhotos.push(groupedPhoto);
+          groupIndex++;
+        }
+
+        if (groupedPhotos.length > 0) {
+          blocks.push(
+            <div key={`photo-group-${index}`} className="py-1" onClick={(e) => e.stopPropagation()}>
+              <div className="flex flex-wrap gap-3">
+                {groupedPhotos.map((photo) => (
+                  <PhotoThumbnail
+                    key={photo.filename}
+                    src={getPhotoUrl(photo)}
+                    timestamp={photo.timestamp}
+                    onView={() => openPhotoViewer(photo.filename)}
+                    onDelete={() => onDeletePhoto(photo.filename)}
+                    sizeClassName="w-[72px]"
+                  />
+                ))}
               </div>
-            );
-          }
-          
-          return (
-            <div key={index} className="text-sm font-light leading-relaxed text-foreground py-0.5">
-              {line || <br />}
             </div>
           );
-        })}
-      </>
-    );
+          index = groupIndex - 1;
+          continue;
+        }
+
+        const filename = photoMatch[1].trim();
+        blocks.push(
+          <div key={`photo-missing-${index}`} className="py-0.5 text-sm italic text-muted-foreground">
+            [Photo not found: {filename}]
+          </div>
+        );
+        continue;
+      }
+
+      const isUncheckedTask = line.startsWith('□ ');
+      const isCheckedTask = line.startsWith('✓ ');
+      
+      if (isUncheckedTask || isCheckedTask) {
+        const taskContent = line.slice(2);
+        blocks.push(
+          <div key={`task-${index}`} className="flex items-baseline gap-2 py-0.5">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleLegacyTask(index);
+              }}
+              className={`
+                text-[20px] leading-none transition-smooth tap-highlight-none flex-shrink-0
+                ${isCheckedTask ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}
+              `}
+            >
+              {isCheckedTask ? '✓' : '□'}
+            </button>
+            <span
+              className={`
+                text-sm font-light
+                ${isCheckedTask ? 'line-through text-muted-foreground' : 'text-foreground'}
+              `}
+            >
+              {taskContent}
+            </span>
+          </div>
+        );
+        continue;
+      }
+
+      blocks.push(
+        <div key={`text-${index}`} className="py-0.5 text-sm font-light leading-relaxed text-foreground">
+          {line || <br />}
+        </div>
+      );
+    }
+
+    return <>{blocks}</>;
   };
 
   return (
@@ -383,14 +450,18 @@ const handleAddTask = () => {
         type="file"
         accept="image/*"
         capture="environment"
+        multiple
         onChange={handleFileInput}
         className="hidden"
       />
       
-      {viewingPhoto && (
+      {viewingPhotoIndex !== null && viewerPhotos[viewingPhotoIndex] && (
         <PhotoViewer 
-          src={viewingPhoto} 
-          onClose={() => setViewingPhoto(null)} 
+          photos={viewerPhotos}
+          currentIndex={viewingPhotoIndex}
+          onChangeIndex={setViewingPhotoIndex}
+          onClose={() => setViewingPhotoIndex(null)}
+          onDelete={handleViewerDelete}
         />
       )}
 
@@ -435,24 +506,8 @@ const handleAddTask = () => {
           <div key={tag} className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-full text-xs text-primary">
             <Hash className="w-3 h-3" />
             <span>{tag}</span>
-            <button onClick={() => handleRemoveTag(tag)} className="ml-0.5 hover:text-destructive">
-              <X className="w-3 h-3" />
-            </button>
           </div>
         ))}
-        
-        {/* Add Tag Input */}
-        <div className="flex items-center">
-          <input
-            type="text"
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
-            onBlur={handleAddTag}
-            placeholder="#tag"
-            className="w-16 px-2 py-1 bg-transparent text-xs placeholder:text-muted-foreground/50 focus:outline-none"
-          />
-        </div>
       </div>
 
       {/* Voice Notes */}
@@ -472,12 +527,6 @@ const handleAddTask = () => {
                   : formatDuration(note.duration)
                 }
               </span>
-              <button
-                onClick={() => onDeleteVoiceNote(note.filename)}
-                className="text-muted-foreground hover:text-destructive transition-smooth"
-              >
-                <Trash2 className="w-3 h-3" />
-              </button>
             </div>
           ))}
         </div>
@@ -517,7 +566,12 @@ const handleAddTask = () => {
             </button>
           </div>
           
-          <div className="flex-1 p-4 overflow-hidden">
+          <div className="flex flex-1 flex-col overflow-hidden p-4">
+            <TaskPillSection
+              tasks={tasks}
+              onToggleTask={onToggleTask}
+              className="mb-4"
+            />
             <textarea
               ref={textareaRef}
               data-content-editor
@@ -525,7 +579,7 @@ const handleAddTask = () => {
               onChange={handleContentChange}
               placeholder="Start writing..."
               className="
-                w-full h-full
+                h-full w-full flex-1
                 bg-transparent text-foreground text-sm font-light
                 placeholder:text-muted-foreground/60
                 focus:outline-none resize-none
@@ -598,9 +652,16 @@ const handleAddTask = () => {
         }}
       >
         <div className="min-h-[200px]">
+          <div onClick={(e) => e.stopPropagation()}>
+            <TaskPillSection
+              tasks={tasks}
+              onToggleTask={onToggleTask}
+              className="mb-4"
+            />
+          </div>
           {content || photos.length > 0 ? (
             renderContent()
-          ) : (
+          ) : tasks.length > 0 ? null : (
             <span className="text-muted-foreground/60 text-sm font-light">
               Start writing...
             </span>

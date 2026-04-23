@@ -52,7 +52,17 @@ export const useHabits = () => {
   // calculations (including widget syncing) refresh reliably.
   const [dataVersion, setDataVersion] = useState(0);
 
-  const allData = useMemo(() => getAllDiaryData(), [dataVersion]);
+  const persistHabits = useCallback((updated: Habit[]) => {
+    setHabits(updated);
+    localStorage.setItem(HABITS_KEY, JSON.stringify(updated));
+    setDataVersion(v => v + 1);
+    notifyHabitsChanged();
+  }, []);
+
+  const allData = useMemo(() => {
+    void dataVersion;
+    return getAllDiaryData();
+  }, [dataVersion]);
 
   const addHabit = useCallback((name: string, icon: string = '🎯') => {
     const newHabit: Habit = {
@@ -64,38 +74,40 @@ export const useHabits = () => {
     };
 
     const updated = [...habits, newHabit];
-    setHabits(updated);
-    localStorage.setItem(HABITS_KEY, JSON.stringify(updated));
-    setDataVersion(v => v + 1);
-    notifyHabitsChanged();
+    persistHabits(updated);
     return newHabit;
-  }, [habits]);
+  }, [habits, persistHabits]);
 
   const reorderHabits = useCallback((fromIndex: number, toIndex: number) => {
     const updated = [...habits];
     const [removed] = updated.splice(fromIndex, 1);
     updated.splice(toIndex, 0, removed);
-    setHabits(updated);
-    localStorage.setItem(HABITS_KEY, JSON.stringify(updated));
-    setDataVersion(v => v + 1);
-    notifyHabitsChanged();
-  }, [habits]);
+    persistHabits(updated);
+  }, [habits, persistHabits]);
+
+  const setHabitsOrder = useCallback((orderedIds: string[]) => {
+    const habitsById = new Map(habits.map((habit) => [habit.id, habit]));
+    const orderedHabits = orderedIds
+      .map((habitId) => habitsById.get(habitId))
+      .filter((habit): habit is Habit => Boolean(habit));
+    const remainingHabits = habits.filter((habit) => !orderedIds.includes(habit.id));
+    const nextHabits = [...orderedHabits, ...remainingHabits];
+
+    const hasChanged = nextHabits.some((habit, index) => habit.id !== habits[index]?.id);
+    if (!hasChanged) return;
+
+    persistHabits(nextHabits);
+  }, [habits, persistHabits]);
 
   const updateHabit = useCallback((id: string, updates: Partial<Habit>) => {
     const updated = habits.map(h => h.id === id ? { ...h, ...updates } : h);
-    setHabits(updated);
-    localStorage.setItem(HABITS_KEY, JSON.stringify(updated));
-    setDataVersion(v => v + 1);
-    notifyHabitsChanged();
-  }, [habits]);
+    persistHabits(updated);
+  }, [habits, persistHabits]);
 
   const deleteHabit = useCallback((id: string) => {
     const updated = habits.filter(h => h.id !== id);
-    setHabits(updated);
-    localStorage.setItem(HABITS_KEY, JSON.stringify(updated));
-    setDataVersion(v => v + 1);
-    notifyHabitsChanged();
-  }, [habits]);
+    persistHabits(updated);
+  }, [habits, persistHabits]);
 
   const toggleHabitForDate = useCallback((habitId: string, dateKey: string) => {
     try {
@@ -198,6 +210,7 @@ export const useHabits = () => {
     updateHabit,
     deleteHabit,
     reorderHabits,
+    setHabitsOrder,
     toggleHabitForDate,
     getHabitCompletions,
     getHabitStreak,

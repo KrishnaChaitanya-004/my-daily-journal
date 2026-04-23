@@ -5,6 +5,7 @@ import { Share } from '@capacitor/share';
 import { Capacitor } from '@capacitor/core';
 import { toast } from '@/hooks/use-toast';
 import { DayFileData } from './useFileStorage';
+import { TASKS_KEY } from '@/lib/tasks';
 
 const STORAGE_KEY = 'diary-app-data';
 const SETTINGS_KEY = 'diary-settings';
@@ -106,6 +107,9 @@ export const useDiaryExportImport = () => {
 
       const verses = localStorage.getItem(VERSES_KEY);
       if (verses) diaryFolder.file('verses.json', verses);
+
+      const tasks = localStorage.getItem(TASKS_KEY);
+      if (tasks) diaryFolder.file('tasks.json', tasks);
 
       /* ---- generate and share ZIP ---- */
       const fileName = `kcs-diary-backup-${Date.now()}.zip`;
@@ -258,6 +262,13 @@ export const useDiaryExportImport = () => {
         localStorage.setItem(
           VERSES_KEY,
           await verses.async('string')
+        );
+
+      const tasks = diaryFolder.file('tasks.json');
+      if (tasks)
+        localStorage.setItem(
+          TASKS_KEY,
+          await tasks.async('string')
         );
 
       toast({

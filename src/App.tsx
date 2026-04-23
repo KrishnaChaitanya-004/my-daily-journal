@@ -17,6 +17,7 @@ import Statistics from "./pages/Statistics";
 import Habits from "./pages/Habits";
 import Tags from "./pages/Tags";
 import Achievements from "./pages/Achievements";
+import Tasks from "./pages/Tasks";
 import Pomodoro from "./pages/Pomodoro";
 import Verses from "./pages/Verses";
 import NotFound from "./pages/NotFound";
@@ -131,6 +132,7 @@ const AppContent = () => {
         <Route path="/bookmarks" element={<Bookmarks />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/statistics" element={<Statistics />} />
+        <Route path="/tasks" element={<Tasks />} />
         <Route path="/habits" element={<Habits />} />
         <Route path="/tags" element={<Tags />} />
         <Route path="/achievements" element={<Achievements />} />

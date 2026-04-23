@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { ArrowLeft, Plus, Trash2, Check, Flame, BarChart2, X, GripVertical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useHabits } from '@/hooks/useHabits';
@@ -30,7 +30,7 @@ const Habits = () => {
     getHabitCompletions,
     getHabitStats,
     getTodayProgress,
-    reorderHabits,
+    setHabitsOrder,
     defaultIcons 
   } = useHabits();
 
@@ -42,12 +42,27 @@ const Habits = () => {
   const [, forceUpdate] = useState(0);
 
   // Drag state for reordering
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [draggedHabitId, setDraggedHabitId] = useState<string | null>(null);
+  const [draftOrder, setDraftOrder] = useState<string[] | null>(null);
+  const [dragOffset, setDragOffset] = useState(0);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const touchStartY = useRef<number>(0);
   const touchStartX = useRef<number>(0);
+  const dragPointerOffsetY = useRef<number>(0);
+  const activeTouchId = useRef<number | null>(null);
+  const draftOrderRef = useRef<string[] | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  const orderedHabits = useMemo(() => {
+    if (!draftOrder) return habits;
+
+    const habitsById = new Map(habits.map((habit) => [habit.id, habit]));
+    return draftOrder
+      .map((habitId) => habitsById.get(habitId))
+      .filter((habit): habit is typeof habits[number] => Boolean(habit));
+  }, [draftOrder, habits]);
 
   // Helper to format date consistently (timezone-safe)
   const formatDateKey = (date: Date): string => {
@@ -74,28 +89,68 @@ const Habits = () => {
   };
 
   // Long press handlers for drag-to-reorder
-  const handleTouchStart = useCallback((index: number, e: React.TouchEvent) => {
-    touchStartY.current = e.touches[0].clientY;
-    touchStartX.current = e.touches[0].clientX;
+  const setCardRef = useCallback((habitId: string, node: HTMLDivElement | null) => {
+    cardRefs.current[habitId] = node;
+  }, []);
+
+  const moveHabitId = useCallback((habitIds: string[], fromIndex: number, toIndex: number) => {
+    const nextHabitIds = [...habitIds];
+    const [removed] = nextHabitIds.splice(fromIndex, 1);
+
+    if (!removed) return habitIds;
+
+    nextHabitIds.splice(toIndex, 0, removed);
+    return nextHabitIds;
+  }, []);
+
+  const handleDragHandleTouchStart = useCallback((habitId: string, e: React.TouchEvent) => {
+    e.stopPropagation();
+    const touch = e.touches[0];
+    if (!touch) return;
+
+    const cardRect = cardRefs.current[habitId]?.getBoundingClientRect();
+    touchStartY.current = touch.clientY;
+    touchStartX.current = touch.clientX;
+    dragPointerOffsetY.current = cardRect ? touch.clientY - cardRect.top : 0;
+    activeTouchId.current = touch.identifier;
+
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+    }
+
     longPressTimer.current = setTimeout(() => {
       // Haptic feedback
       if (navigator.vibrate) navigator.vibrate(30);
-      setDraggedIndex(index);
+      const baseOrder = habits.map((habit) => habit.id);
+      draftOrderRef.current = baseOrder;
+      setDraftOrder(baseOrder);
+      setDraggedHabitId(habitId);
+      setDragOffset(0);
       setIsDragging(true);
       // Disable scrolling on the container
       if (containerRef.current) {
         containerRef.current.style.overflow = 'hidden';
       }
       document.body.style.overflow = 'hidden';
-    }, 500);
+    }, 260);
+  }, [habits]);
+
+  const findTouch = useCallback((touches: React.TouchList) => {
+    const activeId = activeTouchId.current;
+    if (activeId === null) return touches[0];
+
+    return Array.from(touches).find((touch) => touch.identifier === activeId) || touches[0];
   }, []);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!isDragging || draggedIndex === null) {
+    const touch = findTouch(e.touches);
+    if (!touch) return;
+
+    if (!isDragging || !draggedHabitId) {
       // Cancel long press if moved too much
       if (longPressTimer.current) {
-        const moveY = Math.abs(e.touches[0].clientY - touchStartY.current);
-        const moveX = Math.abs(e.touches[0].clientX - touchStartX.current);
+        const moveY = Math.abs(touch.clientY - touchStartY.current);
+        const moveX = Math.abs(touch.clientX - touchStartX.current);
         if (moveY > 10 || moveX > 10) {
           clearTimeout(longPressTimer.current);
           longPressTimer.current = null;
@@ -106,21 +161,47 @@ const Habits = () => {
 
     // Prevent scrolling during drag
     e.preventDefault();
+    e.stopPropagation();
 
-    const touch = e.touches[0];
-    const elements = document.elementsFromPoint(touch.clientX, touch.clientY);
-    const habitCard = elements.find(el => el.getAttribute('data-habit-index'));
-    
-    if (habitCard) {
-      const targetIndex = parseInt(habitCard.getAttribute('data-habit-index') || '-1');
-      if (targetIndex !== -1 && targetIndex !== draggedIndex) {
-        // Haptic feedback on swap
-        if (navigator.vibrate) navigator.vibrate(10);
-        reorderHabits(draggedIndex, targetIndex);
-        setDraggedIndex(targetIndex);
+    const draggedCard = cardRefs.current[draggedHabitId];
+    const draggedRect = draggedCard?.getBoundingClientRect();
+    if (draggedRect) {
+      setDragOffset(touch.clientY - dragPointerOffsetY.current - draggedRect.top);
+    }
+
+    const currentOrder = draftOrderRef.current ?? orderedHabits.map((habit) => habit.id);
+    const currentIndex = currentOrder.indexOf(draggedHabitId);
+    if (currentIndex === -1) return;
+
+    let targetIndex = currentOrder.length - 1;
+    for (let index = 0; index < currentOrder.length; index++) {
+      const habitId = currentOrder[index];
+      if (habitId === draggedHabitId) continue;
+
+      const card = cardRefs.current[habitId];
+      if (!card) continue;
+
+      const rect = card.getBoundingClientRect();
+      if (touch.clientY < rect.top + rect.height / 2) {
+        targetIndex = index;
+        break;
       }
     }
-  }, [isDragging, draggedIndex, reorderHabits]);
+
+    if (targetIndex !== currentIndex) {
+      if (navigator.vibrate) navigator.vibrate(10);
+
+      const targetRect = cardRefs.current[currentOrder[targetIndex]]?.getBoundingClientRect();
+      const nextOrder = moveHabitId(currentOrder, currentIndex, targetIndex);
+
+      draftOrderRef.current = nextOrder;
+      setDraftOrder(nextOrder);
+
+      if (draggedRect && targetRect) {
+        setDragOffset((prev) => prev - (targetRect.top - draggedRect.top));
+      }
+    }
+  }, [draggedHabitId, findTouch, isDragging, moveHabitId, orderedHabits]);
 
   const handleTouchEnd = useCallback(() => {
     if (longPressTimer.current) {
@@ -130,15 +211,22 @@ const Habits = () => {
     if (isDragging) {
       // Final haptic feedback
       if (navigator.vibrate) navigator.vibrate(15);
+      if (draftOrderRef.current) {
+        setHabitsOrder(draftOrderRef.current);
+      }
       // Re-enable scrolling
       if (containerRef.current) {
         containerRef.current.style.overflow = '';
       }
       document.body.style.overflow = '';
     }
-    setDraggedIndex(null);
+    draftOrderRef.current = null;
+    setDraftOrder(null);
+    setDraggedHabitId(null);
+    setDragOffset(0);
     setIsDragging(false);
-  }, [isDragging]);
+    activeTouchId.current = null;
+  }, [isDragging, setHabitsOrder]);
 
   // Get habit graph data for a specific habit
   const getHabitGraphData = (habitId: string) => {
@@ -268,7 +356,14 @@ const Habits = () => {
         </Dialog>
       </header>
 
-      <div ref={containerRef} className="p-4 space-y-6 overflow-y-auto" style={{ touchAction: isDragging ? 'none' : 'auto' }}>
+      <div
+        ref={containerRef}
+        className="p-4 space-y-6 overflow-y-auto"
+        style={{ touchAction: isDragging ? 'none' : 'pan-y' }}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+      >
         {/* Today's Progress */}
         <div className="bg-card rounded-xl p-4 border border-border">
           <div className="flex items-center justify-between mb-3">
@@ -303,47 +398,62 @@ const Habits = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {isDragging && (
-              <p className="text-xs text-center text-muted-foreground animate-pulse">
-                Drag to reorder habits
-              </p>
+            {habits.length > 1 && (
+              <div className="rounded-2xl border border-dashed border-border bg-secondary/30 px-3 py-2.5">
+                <p className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <GripVertical className="w-4 h-4" />
+                  Press and hold the grip to smoothly reorder your habits.
+                </p>
+              </div>
             )}
-            {habits.map((habit, index) => {
+            {orderedHabits.map((habit) => {
               const stats = getHabitStats(habit.id);
               const isCompletedToday = getHabitCompletions(habit.id, today);
-              const isBeingDragged = draggedIndex === index;
+              const isBeingDragged = draggedHabitId === habit.id;
               
               return (
                 <div 
                   key={habit.id} 
-                  data-habit-index={index}
-                  onTouchStart={(e) => handleTouchStart(index, e)}
-                  onTouchMove={handleTouchMove}
-                  onTouchEnd={handleTouchEnd}
-                  style={{ touchAction: isDragging ? 'none' : 'auto' }}
+                  ref={(node) => setCardRef(habit.id, node)}
+                  style={{
+                    touchAction: isDragging ? 'none' : 'auto',
+                    transform: isBeingDragged ? `translate3d(0, ${dragOffset}px, 0) scale(1.02)` : undefined,
+                    willChange: isBeingDragged ? 'transform' : undefined,
+                  }}
                   className={`
-                    bg-card rounded-xl p-4 border border-border
-                    transition-transform duration-200 ease-out
-                    ${isBeingDragged ? 'scale-[1.02] shadow-lg border-primary z-10 relative' : ''}
-                    ${isDragging && !isBeingDragged ? 'opacity-70' : ''}
+                    rounded-[28px] border p-4 ease-out
+                    ${isBeingDragged ? 'relative z-10 border-primary/40 bg-background shadow-2xl' : 'border-border bg-card shadow-sm'}
+                    ${isBeingDragged ? 'transition-none' : 'transition-[transform,box-shadow,opacity,border-color] duration-200'}
+                    ${isDragging && !isBeingDragged ? 'opacity-75' : ''}
                   `}
+                  aria-grabbed={isBeingDragged}
+                  role="listitem"
                 >
                   {/* Habit Header */}
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      {isDragging && (
-                        <GripVertical className="w-4 h-4 text-muted-foreground" />
-                      )}
+                      <button
+                        onTouchStart={(e) => handleDragHandleTouchStart(habit.id, e)}
+                        className={`
+                          flex h-10 w-10 items-center justify-center rounded-2xl border transition-smooth
+                          ${isBeingDragged
+                            ? 'border-primary/40 bg-primary/10 text-primary'
+                            : 'border-border bg-secondary/50 text-muted-foreground'}
+                        `}
+                        title="Hold to reorder"
+                      >
+                        <GripVertical className="w-4 h-4" />
+                      </button>
                       <span className="text-2xl">{habit.icon}</span>
                       <div>
-                        <h4 className="font-medium text-foreground">{habit.name}</h4>
+                        <p className="text-sm font-medium text-foreground">{habit.name}</p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Flame className="w-3 h-3 text-orange-500" />
                           <span>{stats.streak} day streak</span>
                         </div>
                       </div>
                     </div>
-                    
+                  
                     <button
                       onClick={() => handleToggle(habit.id)}
                       className={`
@@ -357,9 +467,9 @@ const Habits = () => {
                       <Check className={`w-5 h-5 ${isCompletedToday ? 'scale-100' : 'scale-75 opacity-50'}`} />
                     </button>
                   </div>
-                  
+                
                   {/* Week View */}
-                  <div className="flex gap-1 mb-3">
+                  <div className="mb-3 flex gap-1">
                     {last7Days.map(day => {
                       const isCompleted = getHabitCompletions(habit.id, day.dateKey);
                       const isToday = day.dateKey === today;
@@ -373,7 +483,7 @@ const Habits = () => {
                             forceUpdate(n => n + 1);
                           }}
                         >
-                          <p className="text-[10px] text-muted-foreground mb-1">{day.dayName}</p>
+                          <p className="mb-1 text-xs text-muted-foreground">{day.dayName}</p>
                           <div 
                             className={`
                               aspect-square rounded-md flex items-center justify-center text-xs font-medium
@@ -392,12 +502,12 @@ const Habits = () => {
                   </div>
                   
                   {/* Stats */}
-                  <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border">
+                  <div className="flex items-center justify-between border-t border-border pt-2 text-xs text-muted-foreground">
                     <span>This week: {stats.last7Days}/7</span>
                     <span>This month: {stats.last30Days}</span>
                     <button
                       onClick={() => setGraphHabit(habit.id)}
-                      className="text-primary hover:text-primary/80 p-1"
+                      className="p-1 text-primary hover:text-primary/80"
                       title="View Graph"
                     >
                       <BarChart2 className="w-4 h-4" />
@@ -423,7 +533,7 @@ const Habits = () => {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <span className="text-xl">{selectedHabit.icon}</span>
-                <h3 className="font-medium text-foreground">{selectedHabit.name}</h3>
+                <h3 className="text-sm font-medium text-foreground">{selectedHabit.name}</h3>
               </div>
               <button 
                 onClick={() => setGraphHabit(null)}
@@ -467,15 +577,15 @@ const Habits = () => {
             <div className="grid grid-cols-3 gap-2 mt-4 text-center">
               <div className="bg-secondary rounded-lg p-2">
                 <p className="text-lg font-bold text-foreground">{getHabitStats(graphHabit).streak}</p>
-                <p className="text-[10px] text-muted-foreground">Current Streak</p>
+                <p className="text-xs text-muted-foreground">Current Streak</p>
               </div>
               <div className="bg-secondary rounded-lg p-2">
                 <p className="text-lg font-bold text-foreground">{getHabitStats(graphHabit).last7Days}/7</p>
-                <p className="text-[10px] text-muted-foreground">This Week</p>
+                <p className="text-xs text-muted-foreground">This Week</p>
               </div>
               <div className="bg-secondary rounded-lg p-2">
                 <p className="text-lg font-bold text-foreground">{getHabitStats(graphHabit).last30Days}</p>
-                <p className="text-[10px] text-muted-foreground">This Month</p>
+                <p className="text-xs text-muted-foreground">This Month</p>
               </div>
             </div>
           </div>
